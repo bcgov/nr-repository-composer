@@ -1,18 +1,18 @@
 FROM node:21
 
-USER node
-
 ARG APP=app
 ARG HOME=/home/node
 
 ENV NPM_CONFIG_PREFIX=$HOME/.npm-global
 ENV PATH=$PATH:$HOME/.npm-global/bin
 
-COPY --chown=node:node . $HOME/$APP/
 RUN npm install -g yo@4.3.1
 
-WORKDIR $HOME/$APP/generator-nr-pipeline-template
+COPY --chown=node:node ./generator-nr-pipeline-template $HOME/$APP/
+RUN cd $HOME/$APP/ && npm ci && npm link
 
-RUN npm ci && npm link
+ENV HOME=/tmp
+WORKDIR /src
+VOLUME ["/src"]
 
-CMD ["yo", "nr-pipeline-template"]
+CMD ["yo", "--local-only", "$HOME/$APP"]

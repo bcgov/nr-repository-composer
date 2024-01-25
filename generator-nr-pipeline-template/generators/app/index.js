@@ -49,22 +49,22 @@ module.exports = class extends Generator {
   writing() {
     this.fs.copyTpl(
       this.templatePath('ci.yaml'),
-      this.destinationPath('/home/node/app/.github/workflows/ci.yaml'),
+      this.destinationPath('.github/workflows/ci.yaml'),
       { projectName: this.props.projectName, serviceName: this.props.serviceName, artifactoryProject: this.props.artifactoryProject,
         pomRoot: this.props.pomRoot }
     );
     this.fs.copyTpl(
       this.templatePath('build-intention.json'),
-      this.destinationPath('/home/node/app/.github/workflows/build-intention.json'),
+      this.destinationPath('.github/workflows/build-intention.json'),
       { projectName: this.props.projectName, serviceName: this.props.serviceName }
     );
     this.fs.copyTpl(
       this.templatePath('build-intention.sh'),
-      this.destinationPath('/home/node/app/.github/workflows/build-intention.sh')
+      this.destinationPath('.github/workflows/build-intention.sh')
     );
     this.fs.copyTpl(
       this.templatePath('deployment-intention.json'),
-      this.destinationPath('/home/node/app/.jenkins/deployment-intention.json'),
+      this.destinationPath('.jenkins/deployment-intention.json'),
       { projectName: this.props.projectName, serviceName: this.props.serviceName }
     );
   }

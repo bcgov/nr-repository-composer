@@ -1,8 +1,13 @@
 # nr-pipeline-template: Generates GitHub CI workflow and NR Broker intention files
 
-Run the generate script:
+Run the build script:
 ```
-./generate.sh
+./build.sh
+```
+
+Change current directory to root of repo and run the container:
+```
+podman run --rm -it -v$PWD:/src --userns keep-id nr-pipeline-template
 ```
 
 Answer the prompts:

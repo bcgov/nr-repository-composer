@@ -1,0 +1,10 @@
+{
+  "generator-nr-pipeline-template": {
+    "promptValues": {
+      "projectName": "results",
+      "serviceName": "results-app",
+      "artifactoryProject": "cc20",
+      "pomRoot": "./"
+    }
+  }
+}

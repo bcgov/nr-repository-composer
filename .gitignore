@@ -1,0 +1,9 @@
+**/*.vscode
+**/local.*
+**/.classpath
+**/.project
+**/.settings/
+**/target/
+**/Non-deliverables
+**/lib*
+**/node_modules/

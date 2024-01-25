@@ -2,4 +2,3 @@
 
 # Build the image
 podman build -t nr-pipeline-template .
-

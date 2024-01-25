@@ -1,14 +1,20 @@
-# nr-pipeline-template: Generates GitHub CI workflow and NR Broker intention files
+# nr-pipeline-template:
+> A central location for storing [Yeoman](http://yeoman.io) generators used for scaffolding applications that use the NR Broker
 
-Run the build script:
+> Currently consists of a single generator, nr-maven-build, used to generate the CI workflow and NR Broker intention files for building Java/Tomcat with Maven in GitHub
+
+Run the build script (optional for local testing):
 ```
 ./build.sh
 ```
 
-Change current directory to root of repo and run the container:
+Run the following command from the root of your application repository to generate your CI workflow and NR Broker intention files:
 ```
-podman run --rm -it -v$PWD:/src --userns keep-id nr-pipeline-template
+podman run --rm -it -v $PWD:/src --userns keep-id ghcr.io/bcgov-nr/nr-pipeline-template:4-pr -- nr-maven-build
 ```
+
+Note: You can run the command with or without the generator specified.
+
 
 Answer the prompts:
 

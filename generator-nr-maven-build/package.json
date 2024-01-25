@@ -1,7 +1,7 @@
 {
-  "name": "generator-nr-pipeline-template",
+  "name": "generator-nr-maven-build",
   "version": "1.0.0",
-  "description": "Generates the files needed for Polaris Jenkins pipeline deployments",
+  "description": "Generate the CI workflow and NR Broker intention files needed Java/Tomcat Maven builds in GitHub",
   "files": [
     "generators"
   ],

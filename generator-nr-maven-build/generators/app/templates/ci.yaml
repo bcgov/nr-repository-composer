@@ -20,6 +20,8 @@ jobs:
     # Map a step output to a job output
     outputs:
       project_version: ${{ steps.set-build-output-parameters.outputs.project_version }}
+      intention_id: ${{ steps.set-intention-id.outputs.intention_id }}
+
     steps:
       - uses: actions/checkout@v4
       - name: Set up Java for publishing to OpenShift Artifactory
@@ -69,6 +71,13 @@ jobs:
         with:
           action_token: ${{ env.ACTION_TOKEN_LOGIN }}
 
+      - name: Set intention ID for deployment job
+        id: set-intention-id
+        run: |
+          echo "intention_id=${INTENTION_ID}" >> $GITHUB_OUTPUT
+        env:
+          INTENTION_ID: ${{ env.INTENTION_ID }}
+
       - name: Publish to OpenShift Artifactory
         run: mvn --batch-mode -Dmaven.test.skip=true -Partifactory deploy
         env:
@@ -111,44 +120,45 @@ jobs:
         uses: bcgov-nr/action-broker-intention-close@v1
         with:
           intention_token: ${{ env.INTENTION_TOKEN }}
-  
-  # ghcr:
-  #   name: GHCR
-  #   runs-on: ubuntu-latest
-  #   permissions:
-  #     contents: read
-  #     packages: write
-  #   steps:
-  #     - uses: actions/checkout@v4
-  #     - name: Set up Java for publishing to GitHub Packages
-  #       uses: actions/setup-java@v3
-  #       with:
-  #         java-version: '8'
-  #         distribution: 'temurin'
-  #         cache: maven
-  #     - name: Publish to GitHub Packages
-  #       run: mvn --batch-mode -Dmaven.test.skip=true -Pgithub deploy
-  #       env:
-  #         GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-
+<% if (gitHubPackages) { %>
+  ghcr:
+    name: GHCR
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+      packages: write
+    steps:
+      - uses: actions/checkout@v4
+      - name: Set up Java for publishing to GitHub Packages
+        uses: actions/setup-java@v3
+        with:
+          java-version: '8'
+          distribution: 'temurin'
+          cache: maven
+      - name: Publish to GitHub Packages
+        run: mvn --batch-mode -Dmaven.test.skip=true -Pgithub deploy --file <%= pomRoot %>pom.xml
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}<% } %>
+<% if (deployOnPrem) { %>
   # https://www.jenkins.io/doc/book/using/remote-access-api/
   # https://plugins.jenkins.io/build-token-root/
-  # jenkins:
-  #   name: Jenkins Build
-  #   needs: [build]
-  #   runs-on: ubuntu-latest
-  #   steps:
-  #     - name: Submit a job to Jenkins
-  #       env:
-  #         job: buildByToken/buildWithParameters?job=edqa/edqa-war
-  #         url: https://cd-io.nrs.gov.bc.ca
-  #         PROJECT_VERSION: ${{ needs.build.outputs.project_version }}
-  #         TRACE_ID: ${{ needs.build.outputs.build_trace_id }}
-  #       run: |
-  #         curl -v --data-urlencode "token=${{ secrets.JENKINS_TOKEN }}" --data-urlencode "githubToken=${{ secrets.GITHUB_TOKEN }}" \
-  #         --data-urlencode "artifactoryBuildNumber=${{ github.run_number }}" --data-urlencode "cdVersion=${{ env.PROJECT_VERSION }}" \
-  #         --data-urlencode "traceId=${{ env.TRACE_ID }}" -H "Connection: close" ${{ env.url }}/${{ env.job }}
-  #     # The automatically generated GitHub token will expire when the workflow ends. We need to wait so the job has time to clone the repo.
-  #     - name: Sleep for 30 seconds
-  #       run: sleep 30s
-  #       shell: bash
+  jenkins:
+    name: Jenkins Build
+    needs: [build]
+    runs-on: ubuntu-latest
+    steps:
+      - name: Submit a job to Jenkins
+        env:
+          job: buildByToken/buildWithParameters?job=<%= projectName %>/<%= serviceName %>
+          url: https://cd.io.nrs.gov.bc.ca/
+          PROJECT_VERSION: ${{ needs.build.outputs.project_version }}
+          INTENTION_ID: ${{ needs.build.outputs.intention_id }}
+        run: |
+          curl -v --data-urlencode "token=${{ secrets.JENKINS_TOKEN }}" --data-urlencode "githubToken=${{ secrets.GITHUB_TOKEN }}" \
+          --data-urlencode "artifactoryBuildNumber=${{ github.run_number }}" --data-urlencode "cdVersion=${{ env.PROJECT_VERSION }}" \
+          --data-urlencode "intentionId=${{ env.INTENTION_ID }}" -H "Connection: close" ${{ env.url }}/${{ env.job }}
+      # The automatically generated GitHub token will expire when the workflow ends. We need to wait so the job has time to clone the repo.
+      - name: Sleep for 30 seconds
+        run: sleep 30s
+        shell: bash
+<% } -%>

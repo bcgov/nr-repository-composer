@@ -19,7 +19,7 @@ jobs:
       packages: write
     # Map a step output to a job output
     outputs:
-      project_version: ${{ steps.set-project-version.outputs.project_version }}
+      project_version: ${{ steps.set-build-output-parameters.outputs.project_version }}
     steps:
       - uses: actions/checkout@v4
       - name: Set up Java for publishing to OpenShift Artifactory

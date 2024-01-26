@@ -21,21 +21,35 @@ module.exports = class extends Generator {
       {
         type: 'input',
         name: 'serviceName',
-        message: 'what is your service name?',
+        message: 'What is your service name?',
         store: true
       },
       {
         type: 'input',
         name: 'artifactoryProject',
-        message: 'what is your Artifactory project?',
+        message: 'What is your Artifactory project?',
         default: "cc20",
         store: true
       },
       {
         type: 'input',
         name: 'pomRoot',
-        message: 'what is your Maven pom file root?',
+        message: 'What is your Maven pom file root?',
         default: "./",
+        store: true
+      },
+      {
+        type: 'confirm',
+        name: 'gitHubPackages',
+        message: 'Publish to GitHub Packages?',
+        default: false,
+        store: true
+      },
+      {
+        type: 'confirm',
+        name: 'deployOnPrem',
+        message: 'Will you be deploying to on-premise servers?',
+        default: false,
         store: true
       }
     ];
@@ -51,7 +65,7 @@ module.exports = class extends Generator {
       this.templatePath('ci.yaml'),
       this.destinationPath('.github/workflows/ci.yaml'),
       { projectName: this.props.projectName, serviceName: this.props.serviceName, artifactoryProject: this.props.artifactoryProject,
-        pomRoot: this.props.pomRoot }
+        pomRoot: this.props.pomRoot, gitHubPackages: this.props.gitHubPackages, deployOnPrem: this.props.deployOnPrem }
     );
     this.fs.copyTpl(
       this.templatePath('build-intention.json'),
@@ -62,10 +76,12 @@ module.exports = class extends Generator {
       this.templatePath('build-intention.sh'),
       this.destinationPath('.github/workflows/build-intention.sh')
     );
-    this.fs.copyTpl(
-      this.templatePath('deployment-intention.json'),
-      this.destinationPath('.jenkins/deployment-intention.json'),
-      { projectName: this.props.projectName, serviceName: this.props.serviceName }
-    );
+    if (this.props.deployOnPrem) {
+      this.fs.copyTpl(
+        this.templatePath('deployment-intention.json'),
+        this.destinationPath('.jenkins/deployment-intention.json'),
+        { projectName: this.props.projectName, serviceName: this.props.serviceName }
+      );
+    }    
   }
 };

@@ -53,7 +53,7 @@ jobs:
 
       # https://github.com/bcgov-nr/action-broker-intention-open
       - name: Open intention
-        uses: bcgov-nr/action-broker-intention-open@v1
+        uses: bcgov-nr/action-broker-intention-open@v2
         with:
           broker_jwt: ${{ secrets.BROKER_JWT }}
           intention_path: intention.json

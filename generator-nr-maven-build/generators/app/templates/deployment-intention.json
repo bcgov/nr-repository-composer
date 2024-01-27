@@ -47,6 +47,9 @@
       "package": {
         "version": "",
         "buildGuid": ""
+      },
+      "source": {
+        "action": "package-build#build"
       }
     }
   ],

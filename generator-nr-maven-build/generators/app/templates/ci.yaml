@@ -150,7 +150,7 @@ jobs:
       - name: Submit a job to Jenkins
         env:
           job: buildByToken/buildWithParameters?job=<%= projectName %>/<%= serviceName %>
-          url: https://cd.io.nrs.gov.bc.ca/
+          url: https://cd.io.nrs.gov.bc.ca
           PROJECT_VERSION: ${{ needs.build.outputs.project_version }}
           INTENTION_ID: ${{ needs.build.outputs.intention_id }}
         run: |

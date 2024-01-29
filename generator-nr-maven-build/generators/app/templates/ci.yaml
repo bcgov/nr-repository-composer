@@ -11,13 +11,13 @@ env:
   SERVICE_NAME: <%= serviceName %>
 
 jobs:
-  build:
-    name: Build
+  publish:
+    name: Publish
     runs-on: ubuntu-latest
     permissions:
       contents: read
       packages: write
-    # Map a step output to a job output
+
     outputs:
       project_version: ${{ steps.set-build-output-parameters.outputs.project_version }}
       intention_id: ${{ steps.set-intention-id.outputs.intention_id }}
@@ -79,7 +79,7 @@ jobs:
           INTENTION_ID: ${{ env.INTENTION_ID }}
 
       - name: Publish to OpenShift Artifactory
-        run: mvn --batch-mode -Dmaven.test.skip=true -Partifactory deploy
+        run: mvn --batch-mode -Dmaven.test.skip=true -Partifactory deploy --file <%= pomRoot %>pom.xml
         env:
           ARTIFACTORY_USERNAME: ${{ secrets.ARTIFACTORY_USERNAME }}
           ARTIFACTORY_PASSWORD: ${{ secrets.ARTIFACTORY_PASSWORD }}
@@ -143,18 +143,18 @@ jobs:
   # https://www.jenkins.io/doc/book/using/remote-access-api/
   # https://plugins.jenkins.io/build-token-root/
   jenkins:
-    name: Jenkins Build
-    needs: [build]
+    name: Jenkins Promote
+    needs: [publish]
     runs-on: ubuntu-latest
     steps:
       - name: Submit a job to Jenkins
         env:
           job: buildByToken/buildWithParameters?job=<%= projectName %>/<%= serviceName %>
           url: https://cd.io.nrs.gov.bc.ca
-          PROJECT_VERSION: ${{ needs.build.outputs.project_version }}
-          INTENTION_ID: ${{ needs.build.outputs.intention_id }}
+          PROJECT_VERSION: ${{ needs.publish.outputs.project_version }}
+          INTENTION_ID: ${{ needs.publish.outputs.intention_id }}
         run: |
-          curl -v --data-urlencode "token=${{ secrets.JENKINS_TOKEN }}" --data-urlencode "githubToken=${{ secrets.GITHUB_TOKEN }}" \
+          curl --data-urlencode "token=${{ secrets.JENKINS_TOKEN }}" --data-urlencode "githubToken=${{ secrets.GITHUB_TOKEN }}" \
           --data-urlencode "artifactoryBuildNumber=${{ github.run_number }}" --data-urlencode "cdVersion=${{ env.PROJECT_VERSION }}" \
           --data-urlencode "intentionId=${{ env.INTENTION_ID }}" -H "Connection: close" ${{ env.url }}/${{ env.job }}
       # The automatically generated GitHub token will expire when the workflow ends. We need to wait so the job has time to clone the repo.

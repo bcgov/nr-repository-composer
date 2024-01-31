@@ -82,6 +82,6 @@ module.exports = class extends Generator {
         this.destinationPath('.jenkins/deployment-intention.json'),
         { projectName: this.props.projectName, serviceName: this.props.serviceName }
       );
-    }    
+    }
   }
 };

@@ -1,4 +1,4 @@
-FROM node:21
+FROM node:21-alpine
 
 ARG APP=app
 ARG HOME=/home/node

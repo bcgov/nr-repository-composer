@@ -22,7 +22,7 @@ The generator will output a file saving your answers. This is useful if you want
 This command will run the 'nr-maven-build' generator:
 
 ```
-podman run --rm -it -v $PWD:/src --userns keep-id ghcr.io/bcgov-nr/nr-pipeline-template:latest -- nr-maven-build
+podman run --rm -it -v ${PWD}:/src --userns keep-id ghcr.io/bcgov-nr/nr-pipeline-template:latest -- nr-maven-build
 ```
 
 Note: You can run the command with or without the generator specified.

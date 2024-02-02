@@ -11,9 +11,18 @@ env:
   SERVICE_NAME: <%= serviceName %>
 
 jobs:
+<% if (unitTestsPath) { -%>
+  test:
+    name: Test
+    uses: <%= unitTestsPath %>
+<% } -%>
+  
   publish:
     name: Publish
     runs-on: ubuntu-latest
+<% if (unitTestsPath) { -%>
+    needs: [test]
+<% } -%>
     permissions:
       contents: read
       packages: write
@@ -138,7 +147,8 @@ jobs:
       - name: Publish to GitHub Packages
         run: mvn --batch-mode -Dmaven.test.skip=true -Pgithub deploy --file <%= pomRoot %>pom.xml
         env:
-          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}<% } %>
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+<% } -%>
 <% if (deployOnPrem) { %>
   # https://www.jenkins.io/doc/book/using/remote-access-api/
   # https://plugins.jenkins.io/build-token-root/

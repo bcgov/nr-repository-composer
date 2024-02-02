@@ -1,9 +1,8 @@
 'use strict';
-const Generator = require('yeoman-generator');
-const chalk = require('chalk');
-const yosay = require('yosay');
+import Generator from "yeoman-generator";
+import yosay from "yosay";
 
-module.exports = class extends Generator {
+export default class extends Generator {
   prompting() {
     this.log(
       yosay(
@@ -82,6 +81,6 @@ module.exports = class extends Generator {
         this.destinationPath('.jenkins/deployment-intention.json'),
         { projectName: this.props.projectName, serviceName: this.props.serviceName }
       );
-    }    
+    }
   }
-};
+}

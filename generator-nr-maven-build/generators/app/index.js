@@ -82,5 +82,7 @@ export default class extends Generator {
         { projectName: this.props.projectName, serviceName: this.props.serviceName }
       );
     }
+
+    this.config.save();
   }
 }

@@ -1,0 +1,60 @@
+name: Release
+
+on:
+  push:
+    tags:
+      - 'v*'
+
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  update-pom-file:
+
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+      - name: Set up Java
+        uses: actions/setup-java@v3
+        with:
+          java-version: '8'
+          distribution: 'temurin'
+          cache: maven
+      - name: Update pom.xml
+        id: repo
+        shell: bash
+        run: |
+          TAG=${{ github.ref_name }}
+          echo "VERSION=${TAG#v}" >> $GITHUB_ENV
+          mvn versions:set -DnewVersion=$TAG --file <%= pomRoot %>pom.xml
+      - name: Test repo
+        id: repo
+        shell: bash
+        run: |
+          if [[ $(git diff --stat) != '' ]]; then
+            echo 'Repo dirty'
+            echo "test=dirty" >> "$GITHUB_OUTPUT"
+          else
+            echo 'Skipping commit'
+            echo "test=clean" >> "$GITHUB_OUTPUT"
+          fi
+      - name: Commit project files
+        if: steps.repo.outputs.test == 'dirty'
+        run: |
+          git config --local user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git config --local user.name "github-actions[bot]"
+          git add <%= pomRoot %>pom.xml
+          git commit -m "Update pom for release ${{ github.ref_name }}"
+      - name: Push changes
+        if: steps.repo.outputs.test == 'dirty'
+        uses: ad-m/github-push-action@master
+        with:
+          github_token: ${{ secrets.GITHUB_TOKEN }}
+          branch: ${{ github.ref }}
+
+  call-ci:
+    needs: update-pom-file
+    uses: ./.github/workflows/ci.yml

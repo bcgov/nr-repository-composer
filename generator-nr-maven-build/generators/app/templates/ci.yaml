@@ -4,6 +4,7 @@ on:
   pull_request:
     branches: [main]
   workflow_dispatch:
+  workflow_call:
 
 env:
   BROKER_URL: https://nr-broker.apps.silver.devops.gov.bc.ca
@@ -34,7 +35,8 @@ jobs:
       branch: ${{ steps.set-branch-dispatch.outputs.branch || steps.set-branch-pr.outputs.branch }}
 
     steps:
-      - uses: actions/checkout@v4
+      - name: Checkout repository
+        uses: actions/checkout@v4
       - name: Set up Java for publishing to OpenShift Artifactory
         uses: actions/setup-java@v3
         with:
@@ -84,12 +86,12 @@ jobs:
           intention_path: intention.json
           quickstart: true
 
-      # https://github.com/bcgov-nr/action-broker-action-start  
+      # https://github.com/bcgov-nr/action-broker-action-start
       - name: Start configure action
         uses: bcgov-nr/action-broker-action-start@v1
         with:
           action_token: ${{ env.ACTION_TOKEN_CONFIGURE }}
-      
+
       # https://github.com/bcgov-nr/action-broker-vault-login
       - name: Vault login
         uses: bcgov-nr/action-broker-vault-login@v1

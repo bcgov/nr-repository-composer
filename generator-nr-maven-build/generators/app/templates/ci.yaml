@@ -31,7 +31,7 @@ jobs:
     outputs:
       project_version: ${{ steps.set-build-output-parameters.outputs.project_version }}
       intention_id: ${{ steps.set-intention-id.outputs.intention_id }}
-      branch: ${{ steps.set-branch-ci.outputs.branch }}
+      branch: ${{ steps.set-branch-dispatch.outputs.branch || steps.set-branch-pr.outputs.branch }}
 
     steps:
       - uses: actions/checkout@v4
@@ -46,11 +46,18 @@ jobs:
           server-password: ARTIFACTORY_PASSWORD
 
       # Get branch for manual runs
-      - name: Get branch 
-        id: set-branch-ci
+      - name: Get branch
+        id: set-branch-dispatch
         if: ${{ startsWith(github.ref, 'refs/heads/') }}
         run: |
           echo "branch=${{ github.ref_name }}" >> "$GITHUB_OUTPUT"
+
+      # Get branch for pull requests
+      - name: Get branch
+        id: set-branch-pr
+        if: ${{ startsWith(github.ref, 'refs/pull/') }}
+        run: |
+          echo "branch=${{ github.head_ref }}" >> "$GITHUB_OUTPUT"
 
       - name: Set build output parameters
         id: set-build-output-parameters

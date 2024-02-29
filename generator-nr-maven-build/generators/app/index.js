@@ -6,7 +6,7 @@ export default class extends Generator {
   prompting() {
     this.log(
       yosay(
-        'Welcome to the GitHub CI workflow and NR Broker intention file generator!'
+        'Welcome to the GitHub workflow and NR Broker intention file generator!'
       )
     );
 
@@ -65,13 +65,13 @@ export default class extends Generator {
     });
   }
 
-  // Generate GitHub workflow and NR Broker intention files
+  // Generate GitHub workflows and NR Broker intention files
   writing() {
     this.fs.copyTpl(
-      this.templatePath('ci.yaml'),
-      this.destinationPath('.github/workflows/ci.yaml'),
+      this.templatePath('build.yaml'),
+      this.destinationPath('.github/workflows/build.yaml'),
       { projectName: this.props.projectName, serviceName: this.props.serviceName, artifactoryProject: this.props.artifactoryProject,
-        pomRoot: this.props.pomRoot, unitTestsPath: this.props.unitTestsPath, gitHubPackages: this.props.gitHubPackages, deployOnPrem: this.props.deployOnPrem }
+        pomRoot: this.props.pomRoot, unitTestsPath: this.props.unitTestsPath, gitHubPackages: this.props.gitHubPackages }
     );
     this.fs.copyTpl(
       this.templatePath('build-intention.json'),
@@ -82,7 +82,17 @@ export default class extends Generator {
       this.templatePath('build-intention.sh'),
       this.destinationPath('.github/workflows/build-intention.sh')
     );
+    this.fs.copyTpl(
+      this.templatePath('release.yaml'),
+      this.destinationPath('.github/workflows/release.yaml'),
+      { projectName: this.props.projectName, serviceName: this.props.serviceName, pomRoot: this.props.pomRoot }
+    );
     if (this.props.deployOnPrem) {
+      this.fs.copyTpl(
+        this.templatePath('deploy.yaml'),
+        this.destinationPath('.github/workflows/deploy.yaml'),
+        { projectName: this.props.projectName, serviceName: this.props.serviceName }
+      );
       this.fs.copyTpl(
         this.templatePath('deployment-intention.json'),
         this.destinationPath('.jenkins/deployment-intention.json'),
@@ -90,12 +100,6 @@ export default class extends Generator {
       );
     }
 
-    this.config.set('projectName', this.props.projectName);
-    this.config.set('serviceName', this.props.serviceName);
-    this.config.set('artifactoryProject', this.props.artifactoryProject);
-    this.config.set('pomRoot', this.props.pomRoot);
-    this.config.set('unitTestsPath', this.props.unitTestsPath);
-    this.config.set('gitHubPackages', this.props.gitHubPackages);
-    this.config.set('deployOnPrem', this.props.deployOnPrem);
+    this.config.save();
   }
 }

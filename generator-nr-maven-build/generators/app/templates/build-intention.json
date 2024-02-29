@@ -16,7 +16,8 @@
       },
       "package": {
         "version": "",
-        "buildVersion": ""
+        "buildVersion": "",
+        "buildNumber": 0
       }
     }
   ],

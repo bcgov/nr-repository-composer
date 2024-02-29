@@ -1,0 +1,162 @@
+name: Build
+
+on:
+  pull_request:
+    branches: main
+  workflow_call:
+    outputs:
+      branch:
+        value: ${{ jobs.build.outputs.branch }}
+      project_version:
+        value: ${{ jobs.build.outputs.project_version }}
+      intention_id:
+        value: ${{ jobs.build.outputs.intention_id }}
+  workflow_dispatch:
+
+concurrency:
+  group: ci-${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
+env:
+  BROKER_URL: https://nr-broker.apps.silver.devops.gov.bc.ca
+  BROKER_JWT: ${{ secrets.BROKER_JWT }}
+  SERVICE_PROJECT: <%= projectName %>
+  SERVICE_NAME: <%= serviceName %>
+
+jobs:
+<% if (unitTestsPath) { -%>
+  test:
+    name: Test
+    uses: <%= unitTestsPath %>
+<% } -%>
+  build:
+    name: Build
+    runs-on: ubuntu-latest
+<% if (unitTestsPath) { -%>
+    needs: test
+<% } -%>
+    permissions:
+      contents: read
+      packages: write
+    outputs:
+      branch: ${{ steps.set-branch.outputs.branch }}
+      project_version: ${{ steps.set-build-output-parameters.outputs.project_version }}
+      intention_id: ${{ steps.set-intention-id.outputs.intention_id }}
+    steps:
+      - uses: actions/checkout@v4
+        with:
+            fetch-depth: 0
+            fetch-tags: true
+            ref: ${{ github.ref }}
+      - name: Set up Java
+        uses: actions/setup-java@v4
+        with:
+          java-version: '8'
+          distribution: 'temurin'
+          cache: maven
+          server-id: artifactory
+          server-username: ARTIFACTORY_USERNAME
+          server-password: ARTIFACTORY_PASSWORD
+      - name: Set branch
+        id: set-branch
+        run: |
+          if [[ ${{ startsWith(github.ref, 'refs/heads/') }} = true ]]; then
+            echo "branch=${{ github.ref_name }}" >> "$GITHUB_OUTPUT"
+          fi          
+          if [[ ${{ startsWith(github.ref, 'refs/pull/') }} = true ]]; then
+            echo "branch=${{ github.head_ref }}" >> "$GITHUB_OUTPUT"
+          fi      
+      - name: Set build output parameters
+        id: set-build-output-parameters
+        run: |
+          echo "project_version=$(mvn help:evaluate -Dexpression=project.version -q -DforceStdout --file <%= pomRoot %>pom.xml)" >> $GITHUB_OUTPUT
+          echo "artifact_id=$(mvn help:evaluate -Dexpression=project.artifactId -q -DforceStdout --file <%= pomRoot %>pom.xml)" >> $GITHUB_OUTPUT
+          echo "git_commit=$(git rev-parse --verify HEAD)" >> $GITHUB_OUTPUT
+      - name: Build intention
+        run: sh ./.github/workflows/build-intention.sh
+        env:
+          GITHUB_REPOSITORY: ${{ github.repository}}
+          GITHUB_RUN_ID: ${{ github.run_id}}
+          SERVICE_PROJECT: ${{ env.SERVICE_PROJECT }}
+          SERVICE_NAME: ${{ env.SERVICE_NAME }}
+          PROJECT_VERSION: ${{ steps.set-build-output-parameters.outputs.project_version }}
+          GIT_COMMIT: ${{ steps.set-build-output-parameters.outputs.git_commit }}
+          BUILD_NUMBER: ${{ github.run_number }}
+      - name: Open intention
+        uses: bcgov-nr/action-broker-intention-open@v2
+        with:
+          broker_jwt: ${{ secrets.BROKER_JWT }}
+          intention_path: intention.json
+          quickstart: true
+      - name: Start configure action
+        uses: bcgov-nr/action-broker-action-start@v1
+        with:
+          action_token: ${{ env.ACTION_TOKEN_CONFIGURE }}      
+      - name: Vault login
+        uses: bcgov-nr/action-broker-vault-login@v1
+        with:
+          action_token: ${{ env.ACTION_TOKEN_LOGIN }}
+      - name: Set intention ID for deployment job
+        id: set-intention-id
+        run: |
+          echo "intention_id=${INTENTION_ID}" >> $GITHUB_OUTPUT
+        env:
+          INTENTION_ID: ${{ env.INTENTION_ID }}
+      - name: Publish to OpenShift Artifactory
+        run: mvn --batch-mode -Dmaven.test.skip=true -Partifactory deploy --file <%= pomRoot %>pom.xml
+        env:
+          ARTIFACTORY_USERNAME: ${{ secrets.ARTIFACTORY_USERNAME }}
+          ARTIFACTORY_PASSWORD: ${{ secrets.ARTIFACTORY_PASSWORD }}
+          BUILD_NUMBER: ${{ github.run_number }}
+          BUILD_URL: ${{ github.repositoryUrl }}
+      - name: Set build info
+        id: set-build-info
+        run: |
+          BUILD_INFO=$(curl -s -u ${{ secrets.ARTIFACTORY_USERNAME }}:${{ secrets.ARTIFACTORY_PASSWORD }} \
+              https://artifacts.developer.gov.bc.ca/artifactory/api/build/${{ env.ARTIFACT_ID }}/${{ github.run_number }}?project=cc20)
+          echo "vcs_revision=$(echo ${BUILD_INFO} | jq -r '.buildInfo.vcs[0].revision')" >> $GITHUB_OUTPUT
+          echo "vcs_message=$(echo ${BUILD_INFO} | jq -r '.buildInfo.vcs[0].message')" >> $GITHUB_OUTPUT
+          echo "vcs_branch=$(echo ${BUILD_INFO} | jq -r '.buildInfo.vcs[0].branch')" >> $GITHUB_OUTPUT
+          echo "vcs_url=$(echo ${BUILD_INFO} | jq -r '.buildInfo.vcs[0].url')" >> $GITHUB_OUTPUT
+          echo "artifact_type=$(echo ${BUILD_INFO} | jq -r '.buildInfo.modules[0].artifacts[0].type')" >> $GITHUB_OUTPUT
+          echo "artifact_sha1=$(echo ${BUILD_INFO} | jq -r '.buildInfo.modules[0].artifacts[0].sha1')" >> $GITHUB_OUTPUT
+          echo "artifact_sha256=$(echo ${BUILD_INFO} | jq -r '.buildInfo.modules[0].artifacts[0].sha256')" >> $GITHUB_OUTPUT
+          echo "artifact_md5=$(echo ${BUILD_INFO} | jq -r '.buildInfo.modules[0].artifacts[0].md5')" >> $GITHUB_OUTPUT
+          echo "artifact_name=$(echo ${BUILD_INFO} | jq -r '.buildInfo.modules[0].artifacts[0].name')" >> $GITHUB_OUTPUT
+        env:
+          ARTIFACT_ID: ${{ steps.set-build-output-parameters.outputs.artifact_id }}
+      - name: Send build info
+        run: |
+          curl -s POST ${{ env.BROKER_URL }}/v1/intention/action/artifact \
+              -H 'Content-Type: application/json' \
+              -H 'X-Broker-Token: '"${BUILD_TOKEN}"'' \
+              -d '{"checksum": "sha256:'${ARTIFACT_SHA256}'", "name": "'${ARTIFACT_NAME}'", "type": "'${ARTIFACT_TYPE}'" }'
+        env:
+          ARTIFACT_SHA256: ${{ steps.set-build-info.outputs.artifact_sha256 }}
+          ARTIFACT_NAME: ${{ steps.set-build-info.outputs.artifact_name }}
+          ARTIFACT_TYPE: ${{ steps.set-build-info.outputs.artifact_type }}
+          BUILD_TOKEN: ${{ env.ACTION_TOKEN_BUILD }}
+      - name: Close intention
+        uses: bcgov-nr/action-broker-intention-close@v1
+        with:
+          intention_token: ${{ env.INTENTION_TOKEN }}
+<% if (gitHubPackages) { -%>
+  ghcr:
+    name: GHCR
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+      packages: write
+    steps:
+      - uses: actions/checkout@v4
+      - name: Set up Java for publishing to GitHub Packages
+        uses: actions/setup-java@v3
+        with:
+          java-version: '8'
+          distribution: 'temurin'
+          cache: maven
+      - name: Publish to GitHub Packages
+        run: mvn --batch-mode -Dmaven.test.skip=true -Pgithub deploy --file <%= pomRoot %>pom.xml
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+<% } %>

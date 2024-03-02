@@ -8,7 +8,7 @@ ENV PATH=$PATH:$HOME/.npm-global/bin
 
 RUN npm install -g yo
 
-COPY --chown=node:node ./generator-nr-maven-build $HOME/$APP/
+COPY --chown=node:node ./ $HOME/$APP/
 RUN cd $HOME/$APP/ && npm ci && npm link
 
 ENV HOME=/tmp

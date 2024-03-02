@@ -6,3 +6,7 @@
 *.md
 
 node_modules
+__tests__
+
+Dockerfile
+renovate.json

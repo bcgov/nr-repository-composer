@@ -11,7 +11,7 @@ The generators are easiest to run by installing Podman or Docker so that you can
 * [Podman](https://podman.io)
 * [Docker](https://www.docker.com)
 
-# Usage
+# Usage - Podman
 
 First, open a terminal and change the current working directory to the root of the checked out repository that you wish to scaffold. The examples map the current working directory to the '/src' directory inside of the container which is the directory the generator outputs to.
 
@@ -19,19 +19,32 @@ It is recommended that you run the generators only on a clean repository.
 
 The generator will output a file saving your answers. This is useful if you want to rerun the generator in the future to take advantage of any updated workflows.
 
-This command will run the 'nr-maven-build' generator:
+This command will run the 'gh-maven-build' generator:
 
 ```
-podman run --rm -it -v ${PWD}:/src --userns keep-id ghcr.io/bcgov-nr/nr-pipeline-template:latest -- nr-maven-build
+podman run --rm -it -v ${PWD}:/src --userns keep-id ghcr.io/bcgov-nr/nr-pipeline-template:latest -- nr-repository-composer:gh-maven-build
 ```
 
 Note: You can run the command with or without the generator specified.
 
+# Usage - Local
+
+```bash
+npm ci
+npm link
+```
+
+Then, run a generator:
+
+```bash
+npx yo nr-repository-composer:gh-maven-build
+```
+
 ## Generators
 
-### NR Maven Build: nr-maven-build
+### Github Maven Build: gh-maven-build
 
-The generator, nr-maven-build, generates the CI workflow and NR Broker intention files for building Java/Tomcat with Maven in GitHub.
+The generator, gh-maven-build, generates the CI workflow and NR Broker intention files for building Java/Tomcat with Maven in GitHub.
 
 Answer the prompts:
 
@@ -53,7 +66,7 @@ The following are expected to be installed.
 
 ## Building the image
 
-The Dockerfile can be built by running './build.sh'. The image will be tagged as 'nr-pipeline-template' locally.
+The Dockerfile can be built by running './build.sh'. The image will be tagged as 'nr-repository-composer' locally.
 
 # License
 

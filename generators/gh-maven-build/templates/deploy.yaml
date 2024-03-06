@@ -14,76 +14,75 @@ env:
   URL: https://cd.io.nrs.gov.bc.ca
 
 jobs:
-  call-build:
-    name: Build
-    if: ${{ ! startsWith(github.ref, 'refs/tags/') }}
-    uses: ./.github/workflows/build.yaml
-    permissions:
-      contents: read
-      packages: write
-    secrets: inherit
-
-  deploy-build:
+  deploy-snapshot:
     name: Deploy development version
+    id: deploy-snapshot
     if: ${{ ! startsWith(github.ref, 'refs/tags/') }}
-    needs: call-build
     runs-on: ubuntu-latest
     steps:
-      - name: Submit a job to Jenkins
-        run: |
-          curl \
-          --data-urlencode "token=${{ secrets.JENKINS_TOKEN }}" \
-          --data-urlencode "githubToken=${{ secrets.GITHUB_TOKEN }}" \
-          --data-urlencode "artifactoryBuildNumber=${{ github.run_number }}" \
-          --data-urlencode "cdVersion=${{ needs.call-build.outputs.project_version }}" \
-          --data-urlencode "gitBranch=${{ needs.call-build.outputs.branch }}" \
-          --data-urlencode "intentionId=${{ needs.call-build.outputs.intention_id }}" \
-          -H "Connection: close" \
-          ${{ env.URL }}/${{ env.JOB }}
-      # The automatically generated GitHub token will expire when the workflow ends. We need to wait so the job has time to clone the repo.
-      - name: Sleep for 30 seconds
-        run: sleep 30s
-        shell: bash
-  
-  deploy-tag:
-    name: Deploy release version
-    if: ${{ startsWith(github.ref, 'refs/tags/') }}
-    runs-on: ubuntu-latest
-    steps:
-      - name: Set project version 
-        id: set-project-version
-        run: |
-          TAG=${{ github.ref_name }}
-          VERSION=${TAG#v}
-          echo "project_version=${VERSION}" >> $GITHUB_OUTPUT
       - name: Set build number and build guid (intention)
-        id: set-build-guid-number
         run: |
           RESPONSE=$(curl -s -X 'POST' \
-            "${BROKER_URL}/v1/intention/search?where=%7B%22actions.action%22%3A%22package-build%22%2C%22actions.service.project%22%3A%22${SERVICE_PROJECT}%22%2C%22actions.service.name%22%3A%22${SERVICE_NAME}%22%2C%22actions.package.version%22%3A%22${PROJECT_VERSION}%22%7D&offset=0&limit=1" \
+            "${BROKER_URL}/v1/intention/search?where=%7B%22actions.action%22%3A%22package-build%22%2C%22actions.service.project%22%3A%22${SERVICE_PROJECT}%22%2C%22actions.service.name%22%3A%22${SERVICE_NAME}%22%2C%22actions.package.buildVersion%22%3A%22${github.sha}%22%7D&offset=0&limit=1" \
             -H 'accept: application/json' \
             -H 'Authorization: Bearer '"${BROKER_JWT}"'' \
             -d '')
-          echo "build_number=$(echo ${RESPONSE} | jq -r '.data[].actions[].package.buildNumber')" >> $GITHUB_OUTPUT
+          echo "project_version=$(echo ${RESPONSE} | jq -r '.data[].actions[].package.version')" >> $GITHUB_OUTPUT
           echo "build_guid=$(echo ${RESPONSE} | jq -r '.data[].id')" >> $GITHUB_OUTPUT
+          echo "build_number=$(echo ${RESPONSE} | jq -r '.data[].actions[].package.buildNumber')" >> $GITHUB_OUTPUT
         env:
           BROKER_URL: https://nr-broker.apps.silver.devops.gov.bc.ca
           BROKER_JWT: ${{ secrets.BROKER_JWT }}
           SERVICE_PROJECT: ${{ env.SERVICE_PROJECT }}
           SERVICE_NAME: ${{ env.SERVICE_NAME }}
-          PROJECT_VERSION: ${{ steps.set-project-version.outputs.project_version }}  
+
+  deploy-tag:
+    name: Deploy release version
+    id: deploy-tag
+    if: ${{ startsWith(github.ref, 'refs/tags/') }}
+    runs-on: ubuntu-latest
+    steps:
+      - name: Set build number and build guid (intention)
+        run: |
+          TAG=${{ github.ref_name }}
+          PROJECT_VERSION=${TAG#v}
+          RESPONSE=$(curl -s -X 'POST' \
+            "${BROKER_URL}/v1/intention/search?where=%7B%22actions.action%22%3A%22package-build%22%2C%22actions.service.project%22%3A%22${SERVICE_PROJECT}%22%2C%22actions.service.name%22%3A%22${SERVICE_NAME}%22%2C%22actions.package.version%22%3A%22${PROJECT_VERSION}%22%7D&offset=0&limit=1" \
+            -H 'accept: application/json' \
+            -H 'Authorization: Bearer '"${BROKER_JWT}"'' \
+            -d '')
+          echo "project_version=${PROJECT_VERSION}" >> $GITHUB_OUTPUT
+          echo "build_guid=$(echo ${RESPONSE} | jq -r '.data[].id')" >> $GITHUB_OUTPUT
+          echo "build_number=$(echo ${RESPONSE} | jq -r '.data[].actions[].package.buildNumber')" >> $GITHUB_OUTPUT
+        env:
+          BROKER_URL: https://nr-broker.apps.silver.devops.gov.bc.ca
+          BROKER_JWT: ${{ secrets.BROKER_JWT }}
+          SERVICE_PROJECT: ${{ env.SERVICE_PROJECT }}
+          SERVICE_NAME: ${{ env.SERVICE_NAME }}
+  submit-job:
+    name: Submit job
+    if: |
+      always() &&
+      ((needs.deploy-snapshot.result == 'success' && needs.deploy-tag.result == 'skipped') ||
+      (needs.deploy-snapshot.result == 'skipped' && needs.deploy-tag.result == 'success'))
+    needs: [deploy-snapshot, deploy-tag]
+    runs-on: ubuntu-latest
       - name: Submit a job to Jenkins
         run: |
           curl \
           --data-urlencode "token=${{ secrets.JENKINS_TOKEN }}" \
           --data-urlencode "githubToken=${{ secrets.GITHUB_TOKEN }}" \
-          --data-urlencode "artifactoryBuildNumber=${{ steps.set-build-guid-number.outputs.build_number }}" \
-          --data-urlencode "cdVersion=${{ steps.set-project-version.outputs.project_version }}" \
+          --data-urlencode "artifactoryBuildNumber=${{ env.BUILD_NUMBER }}" \
+          --data-urlencode "cdVersion=${{ env.PROJECT_VERSION }}" \
           --data-urlencode "gitBranch=main" \
-          --data-urlencode "intentionId=${{ steps.set-build-guid-number.outputs.build_guid }}" \
+          --data-urlencode "intentionId=${{ env.BUILD_GUID }}" \
           --data-urlencode "gitTag=${{ github.ref_name }}" \
           -H "Connection: close" \
           ${{ env.URL }}/${{ env.JOB }}
+        env:
+          PROJECT_VERSION: ${{ jobs.deploy-snapshot.outputs.project_version || jobs.deploy-tag.outputs.project_version }}
+          BUILD_GUID: ${{ jobs.deploy-snapshot.outputs.build_guid || jobs.deploy-tag.outputs.build_guid }}
+          BUILD_NUMBER: ${{ jobs.deploy-snapshot.outputs.build_number || jobs.deploy-tag.outputs.build_number }}
       # The automatically generated GitHub token will expire when the workflow ends. We need to wait so the job has time to clone the repo.
       - name: Sleep for 30 seconds
         run: sleep 30s

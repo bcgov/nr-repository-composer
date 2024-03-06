@@ -67,6 +67,7 @@ jobs:
       (needs.deploy-snapshot.result == 'skipped' && needs.deploy-tag.result == 'success'))
     needs: [deploy-snapshot, deploy-tag]
     runs-on: ubuntu-latest
+    steps:
       - name: Submit a job to Jenkins
         run: |
           curl \

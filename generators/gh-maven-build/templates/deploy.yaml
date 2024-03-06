@@ -18,6 +18,9 @@ jobs:
     name: Build
     if: ${{ ! startsWith(github.ref, 'refs/tags/') }}
     uses: ./.github/workflows/build.yaml
+    permissions:
+      contents: read
+      packages: write
     secrets: inherit
 
   deploy-build:

@@ -89,9 +89,9 @@ jobs:
           -H "Connection: close" \
           ${{ env.URL }}/${{ env.JOB }}
         env:
-          PROJECT_VERSION: ${{ jobs.deploy-snapshot.outputs.project_version || jobs.deploy-tag.outputs.project_version }}
-          BUILD_GUID: ${{ jobs.deploy-snapshot.outputs.build_guid || jobs.deploy-tag.outputs.build_guid }}
-          BUILD_NUMBER: ${{ jobs.deploy-snapshot.outputs.build_number || jobs.deploy-tag.outputs.build_number }}
+          PROJECT_VERSION: ${{ needs.deploy-snapshot.outputs.project_version || needs.deploy-tag.outputs.project_version }}
+          BUILD_GUID: ${{ needs.deploy-snapshot.outputs.build_guid || needs.deploy-tag.outputs.build_guid }}
+          BUILD_NUMBER: ${{ needs.deploy-snapshot.outputs.build_number || needs.deploy-tag.outputs.build_number }}
       # The automatically generated GitHub token will expire when the workflow ends. We need to wait so the job has time to clone the repo.
       - name: Sleep for 30 seconds
         run: sleep 30s

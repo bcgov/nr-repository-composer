@@ -16,14 +16,18 @@ env:
 jobs:
   deploy-snapshot:
     name: Deploy development version
-    id: deploy-snapshot
     if: ${{ ! startsWith(github.ref, 'refs/tags/') }}
     runs-on: ubuntu-latest
+    outputs:
+      project_version: ${{ steps.set-snapshot-output.outputs.project_version }}
+      build_guid: ${{ steps.set-snapshot-output.outputs.build_guid }}
+      build_number: ${{ steps.set-snapshot-output.outputs.build_number }}
     steps:
       - name: Set build number and build guid (intention)
+        id: set-snapshot-output
         run: |
           RESPONSE=$(curl -s -X 'POST' \
-            "${BROKER_URL}/v1/intention/search?where=%7B%22actions.action%22%3A%22package-build%22%2C%22actions.service.project%22%3A%22${SERVICE_PROJECT}%22%2C%22actions.service.name%22%3A%22${SERVICE_NAME}%22%2C%22actions.package.buildVersion%22%3A%22${github.sha}%22%7D&offset=0&limit=1" \
+            "${BROKER_URL}/v1/intention/search?where=%7B%22actions.action%22%3A%22package-build%22%2C%22actions.service.project%22%3A%22${SERVICE_PROJECT}%22%2C%22actions.service.name%22%3A%22${SERVICE_NAME}%22%2C%22actions.package.buildVersion%22%3A%22${GITHUB_SHA}%22%7D&offset=0&limit=1" \
             -H 'accept: application/json' \
             -H 'Authorization: Bearer '"${BROKER_JWT}"'' \
             -d '')
@@ -35,14 +39,19 @@ jobs:
           BROKER_JWT: ${{ secrets.BROKER_JWT }}
           SERVICE_PROJECT: ${{ env.SERVICE_PROJECT }}
           SERVICE_NAME: ${{ env.SERVICE_NAME }}
-
+          GITHUB_SHA: ${{ github.sha }}
   deploy-tag:
     name: Deploy release version
     id: deploy-tag
     if: ${{ startsWith(github.ref, 'refs/tags/') }}
     runs-on: ubuntu-latest
+    outputs:
+      project_version: ${{ steps.set-tag-output.outputs.project_version }}
+      build_guid: ${{ steps.set-tag-output.outputs.build_guid }}
+      build_number: ${{ steps.set-tag-output.outputs.build_number }}
     steps:
       - name: Set build number and build guid (intention)
+        id: set-tag-output
         run: |
           TAG=${{ github.ref_name }}
           PROJECT_VERSION=${TAG#v}
@@ -67,6 +76,7 @@ jobs:
       (needs.deploy-snapshot.result == 'skipped' && needs.deploy-tag.result == 'success'))
     needs: [deploy-snapshot, deploy-tag]
     runs-on: ubuntu-latest
+    steps:
       - name: Submit a job to Jenkins
         run: |
           curl \

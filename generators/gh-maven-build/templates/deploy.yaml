@@ -83,9 +83,9 @@ jobs:
           --data-urlencode "githubToken=${{ secrets.GITHUB_TOKEN }}" \
           --data-urlencode "artifactoryBuildNumber=${{ env.BUILD_NUMBER }}" \
           --data-urlencode "cdVersion=${{ env.PROJECT_VERSION }}" \
-          --data-urlencode "gitBranch=main" \
+          --data-urlencode "gitBranch=${{ github.ref_name }}" \
           --data-urlencode "intentionId=${{ env.BUILD_GUID }}" \
-          --data-urlencode "gitTag=${{ github.ref_name }}" \
+          --data-urlencode "gitTag=${{ (startsWith(github.ref, 'refs/tags/') && github.ref_name) || '' }}" \
           -H "Connection: close" \
           ${{ env.URL }}/${{ env.JOB }}
         env:

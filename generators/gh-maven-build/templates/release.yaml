@@ -40,9 +40,9 @@ jobs:
         shell: bash
         run: |
           TAG=${{ github.ref_name }}
-          VERSION=${TAG#v} 
+          VERSION=${TAG#v}
           echo "VERSION=${VERSION}" >> $GITHUB_ENV
-          mvn versions:set -DnewVersion=${VERSION} --file <%= pomRoot %>pom.xml    
+          mvn versions:set -DnewVersion=${VERSION} --file <%= pomRoot %>pom.xml
       - name: Set build output parameters
         id: set-build-output-parameters
         run: |
@@ -65,14 +65,6 @@ jobs:
           broker_jwt: ${{ secrets.BROKER_JWT }}
           intention_path: intention.json
           quickstart: true
-      - name: Start configure action
-        uses: bcgov-nr/action-broker-action-start@v1
-        with:
-          action_token: ${{ env.ACTION_TOKEN_CONFIGURE }}      
-      - name: Vault login
-        uses: bcgov-nr/action-broker-vault-login@v1
-        with:
-          action_token: ${{ env.ACTION_TOKEN_LOGIN }}
       - name: Set intention ID for deployment job
         id: set-intention-id
         run: |

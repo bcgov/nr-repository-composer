@@ -172,7 +172,7 @@ jobs:
           ARTIFACT_NAME: ${{ steps.set-build-info.outputs.artifact_name }}
           ARTIFACT_TYPE: ${{ steps.set-build-info.outputs.artifact_type }}
           BUILD_TOKEN: ${{ env.ACTION_TOKEN_BUILD }}
-<% } -%>      
+<% } -%>
       - name: Close intention
         uses: bcgov-nr/action-broker-intention-close@v1
         with:

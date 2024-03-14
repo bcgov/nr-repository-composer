@@ -1,17 +1,6 @@
 name: Build
 
 on:
-  pull_request:
-    branches:
-      - main
-  workflow_call:
-    outputs:
-      branch:
-        value: ${{ jobs.build.outputs.branch }}
-      project_version:
-        value: ${{ jobs.build.outputs.project_version }}
-      intention_id:
-        value: ${{ jobs.build.outputs.intention_id }}
   workflow_dispatch:
 
 concurrency:

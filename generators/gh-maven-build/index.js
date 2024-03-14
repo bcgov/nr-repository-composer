@@ -114,6 +114,18 @@ export default class extends Generator {
   // Generate GitHub workflows and NR Broker intention files
   writing() {
     this.fs.copyTpl(
+      this.templatePath('build-release.yaml'),
+      this.destinationPath('.github/workflows/build-release.yaml'),
+      {
+        projectName: this.props.projectName,
+        serviceName: this.props.serviceName,
+        artifactoryProject: this.props.artifactoryProject,
+        pomRoot: this.props.pomRoot,
+        unitTestsPath: this.props.unitTestsPath,
+        gitHubPackages: this.props.gitHubPackages,
+      },
+    );
+    this.fs.copyTpl(
       this.templatePath('build.yaml'),
       this.destinationPath('.github/workflows/build.yaml'),
       {

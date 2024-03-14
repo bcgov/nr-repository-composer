@@ -52,7 +52,7 @@ jobs:
           java-version: '8'
           distribution: 'temurin'
           cache: maven
-<% if !(gitHubPackages) { -%>
+<% if (!gitHubPackages) { -%>
           server-id: artifactory
           server-username: ARTIFACTORY_USERNAME
           server-password: ARTIFACTORY_PASSWORD    
@@ -138,8 +138,7 @@ jobs:
           PROJECT_VERSION: ${{ steps.set-build-output-parameters.outputs.project_version }}
           PACKAGE_TYPE: ${{ steps.set-build-output-parameters.outputs.package_type }}
           BUILD_TOKEN: ${{ env.ACTION_TOKEN_BUILD }}
-<% } -%>
-<% if !(gitHubPackages) { -%>
+<% } else { -%>
         run: mvn --batch-mode -Dmaven.test.skip=true -Partifactory deploy --file <%= pomRoot %>pom.xml
         env:
           ARTIFACTORY_USERNAME: ${{ secrets.ARTIFACTORY_USERNAME }}

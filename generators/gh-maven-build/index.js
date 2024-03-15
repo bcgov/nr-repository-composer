@@ -114,8 +114,8 @@ export default class extends Generator {
   // Generate GitHub workflows and NR Broker intention files
   writing() {
     this.fs.copyTpl(
-      this.templatePath('build.yaml'),
-      this.destinationPath('.github/workflows/build.yaml'),
+      this.templatePath('build-release.yaml'),
+      this.destinationPath('.github/workflows/build-release.yaml'),
       {
         projectName: this.props.projectName,
         serviceName: this.props.serviceName,
@@ -136,15 +136,6 @@ export default class extends Generator {
     this.fs.copyTpl(
       this.templatePath('build-intention.sh'),
       this.destinationPath('.github/workflows/build-intention.sh'),
-    );
-    this.fs.copyTpl(
-      this.templatePath('release.yaml'),
-      this.destinationPath('.github/workflows/release.yaml'),
-      {
-        projectName: this.props.projectName,
-        serviceName: this.props.serviceName,
-        pomRoot: this.props.pomRoot,
-      },
     );
     if (this.props.deployOnPrem) {
       this.fs.copyTpl(

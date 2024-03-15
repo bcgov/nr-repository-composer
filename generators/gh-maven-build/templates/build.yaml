@@ -55,18 +55,15 @@ jobs:
           java-version: '8'
           distribution: 'temurin'
           cache: maven
-          server-id: artifactory
-          server-username: ARTIFACTORY_USERNAME
-          server-password: ARTIFACTORY_PASSWORD
       - name: Set branch
         id: set-branch
         run: |
           if [[ ${{ startsWith(github.ref, 'refs/heads/') }} = true ]]; then
             echo "branch=${{ github.ref_name }}" >> "$GITHUB_OUTPUT"
-          fi          
+          fi
           if [[ ${{ startsWith(github.ref, 'refs/pull/') }} = true ]]; then
             echo "branch=${{ github.head_ref }}" >> "$GITHUB_OUTPUT"
-          fi      
+          fi
       - name: Set build output parameters
         id: set-build-output-parameters
         run: |
@@ -76,6 +73,7 @@ jobs:
       - name: Build intention
         run: sh ./.github/workflows/build-intention.sh
         env:
+          EVENT_REASON: Build ${{ github.ref_name }}
           GITHUB_REPOSITORY: ${{ github.repository}}
           GITHUB_RUN_ID: ${{ github.run_id}}
           SERVICE_PROJECT: ${{ env.SERVICE_PROJECT }}
@@ -89,14 +87,6 @@ jobs:
           broker_jwt: ${{ secrets.BROKER_JWT }}
           intention_path: intention.json
           quickstart: true
-      - name: Start configure action
-        uses: bcgov-nr/action-broker-action-start@v1
-        with:
-          action_token: ${{ env.ACTION_TOKEN_CONFIGURE }}      
-      - name: Vault login
-        uses: bcgov-nr/action-broker-vault-login@v1
-        with:
-          action_token: ${{ env.ACTION_TOKEN_LOGIN }}
       - name: Set intention ID for deployment job
         id: set-intention-id
         run: |

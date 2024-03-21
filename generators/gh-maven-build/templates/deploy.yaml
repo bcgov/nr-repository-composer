@@ -161,14 +161,11 @@ jobs:
           curl \
           --data-urlencode "token=${{ secrets.JENKINS_TOKEN }}" \
           --data-urlencode "githubToken=${{ secrets.GITHUB_TOKEN }}" \
-          --data-urlencode "artifactoryBuildNumber=${{ env.BUILD_NUMBER }}" \
           --data-urlencode "artifactName=${ARTIFACT_NAME}" \
           --data-urlencode "artifactSha256=${ARTIFACT_SHA256}" \
           --data-urlencode "projectVersion=${PROJECT_VERSION}" \
           --data-urlencode "gitBranch=${{ github.ref_name }}" \
-          --data-urlencode "cdVersion=${{ env.PROJECT_VERSION }}" \
-          --data-urlencode "gitBranch=${{ github.ref_name }}" \
-          --data-urlencode "intentionId=${{ env.BUILD_GUID }}" \
+          --data-urlencode "intentionId=${BUILD_GUID}" \
           --data-urlencode "gitTag=${{ (startsWith(github.ref, 'refs/tags/') && github.ref_name) || '' }}" \
           --data-urlencode "configBranch=${{ inputs.config_branch || '' }}" \
           --data-urlencode "downloadUrl=${DOWNLOAD_URL}" \

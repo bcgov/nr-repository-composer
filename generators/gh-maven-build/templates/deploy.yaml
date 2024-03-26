@@ -70,6 +70,7 @@ jobs:
           cache: maven
       - name: Set download URL
         id: set-download-url
+<% if (gitHubPackages) { -%>
         run: |
           sudo apt-get -qq install libxml2-utils
           GROUP_ID=$(mvn help:evaluate -Dexpression=project.groupId -q -DforceStdout --file <%= pomRoot %>pom.xml)
@@ -83,6 +84,18 @@ jobs:
           DOWNLOAD_URL="${PACKAGE_REPO}/${GROUP_ID_PATH}/${SERVICE_NAME}/${PROJECT_VERSION}/${ARTIFACT_NAME}"
           echo "${DOWNLOAD_URL}"
           echo "download_url=$(echo ${DOWNLOAD_URL})" >> $GITHUB_OUTPUT
+<% } else { -%>
+        run: |
+          sudo apt-get -qq install libxml2-utils
+          GROUP_ID=$(mvn help:evaluate -Dexpression=project.groupId -q -DforceStdout --file <%= pomRoot %>pom.xml)
+          GROUP_ID_PATH="${GROUP_ID//.//}"
+          PACKAGE_TYPE=$(mvn help:evaluate -Dexpression=project.packaging -q -DforceStdout --file <%= pomRoot %>pom.xml)
+          SNAPSHOT_VERSION=$(mvn help:evaluate -Dexpression=project.version -q -DforceStdout --file <%= pomRoot %>pom.xml)
+          ARTIFACT_NAME="${SERVICE_NAME}-${SNAPSHOT_VERSION}.${PACKAGE_TYPE}"
+          DOWNLOAD_URL="${PACKAGE_REPO}/${GROUP_ID_PATH}/${SERVICE_NAME}/${PROJECT_VERSION}/${ARTIFACT_NAME}"
+          echo "${DOWNLOAD_URL}"
+          echo "download_url=$(echo ${DOWNLOAD_URL})" >> $GITHUB_OUTPUT
+<% } -%>
         env:
           SERVICE_NAME: ${{ env.SERVICE_NAME }}
           PROJECT_VERSION: ${{ steps.set-build-output.outputs.project_version }}

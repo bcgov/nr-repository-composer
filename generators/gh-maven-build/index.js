@@ -94,7 +94,7 @@ export default class extends Generator {
       {
         type: 'input',
         name: 'gitHubOwnerPack',
-        message: 'GitHub Owner with repo path (bcgov-nr-labs/edqa-war):',
+        message: 'GitHub Owner with repo path (eg. bcgov-nr-labs/edqa-war):',
         default: 'bcgov-nr-labs/edqa-war',
         store: true,
         when: (answers) => answers.gitHubPackages,

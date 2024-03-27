@@ -57,7 +57,7 @@ export default class extends Generator {
     this.log(chalk.bold('Prompts'));
     this.log('');
 
-    const prompts = [
+    const answers = await this.prompt([
       {
         type: 'input',
         name: 'projectName',
@@ -68,13 +68,6 @@ export default class extends Generator {
         type: 'input',
         name: 'serviceName',
         message: 'Service:',
-        store: true,
-      },
-      {
-        type: 'input',
-        name: 'artifactoryProject',
-        message: 'Artifactory:',
-        default: 'cc20',
         store: true,
       },
       {
@@ -99,16 +92,39 @@ export default class extends Generator {
         store: true,
       },
       {
+        type: 'input',
+        name: 'gitHubOwnerPack',
+        message: 'GitHub Owner with repo path (eg. bcgov-nr-labs/edqa-war):',
+        default: 'bcgov-nr-labs/edqa-war',
+        store: true,
+        when: (answers) => answers.gitHubPackages,
+      },
+      {
+        type: 'input',
+        name: 'artifactoryProject',
+        message: 'Artifactory:',
+        default: 'cc20',
+        store: true,
+        when: (answers) => !answers.gitHubPackages,
+      },
+      {
+        type: 'input',
+        name: 'artifactoryPackageType',
+        message: 'Artifactory Package Type (maven, ivy, npm):',
+        default: 'maven',
+        store: true,
+        when: (answers) => !answers.gitHubPackages,
+      },
+      {
         type: 'confirm',
         name: 'deployOnPrem',
         message: 'Deploy on-prem?',
         default: false,
         store: true,
       },
-    ];
+    ]);
 
-    const props = await this.prompt(prompts);
-    this.props = props;
+    this.props = answers;
   }
 
   // Generate GitHub workflows and NR Broker intention files
@@ -123,6 +139,8 @@ export default class extends Generator {
         pomRoot: this.props.pomRoot,
         unitTestsPath: this.props.unitTestsPath,
         gitHubPackages: this.props.gitHubPackages,
+        artifactoryPackageType: this.props.artifactoryPackageType,
+        gitHubOwnerPack: this.props.gitHubOwnerPack,
       },
     );
     this.fs.copyTpl(
@@ -144,6 +162,11 @@ export default class extends Generator {
         {
           projectName: this.props.projectName,
           serviceName: this.props.serviceName,
+          artifactoryProject: this.props.artifactoryProject,
+          pomRoot: this.props.pomRoot,
+          gitHubPackages: this.props.gitHubPackages,
+          artifactoryPackageType: this.props.artifactoryPackageType,
+          gitHubOwnerPack: this.props.gitHubOwnerPack,
         },
       );
       this.fs.copyTpl(

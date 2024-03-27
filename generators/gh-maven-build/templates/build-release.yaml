@@ -108,7 +108,7 @@ jobs:
         run: |
           ARTIFACT_NAME="${ARTIFACT_ID}-${PROJECT_VERSION}.${PACKAGE_TYPE}"
           mvn --batch-mode -Dmaven.test.skip=true -Pgithub deploy --file <%= pomRoot %>pom.xml
-          echo "artifact_sha256=$(sha256sum target/${ARTIFACT_NAME} | awk '{ print $1 }')" >> $GITHUB_OUTPUT
+          echo "artifact_sha256=$(sha256sum <%= pomRoot %>target/${ARTIFACT_NAME} | awk '{ print $1 }')" >> $GITHUB_OUTPUT
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
           PROJECT_VERSION: ${{ steps.set-build-output-parameters.outputs.project_version }}

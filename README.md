@@ -1,6 +1,6 @@
-# NR Pipeline Template
+# NR Repository Composer
 
-NR Pipeline Template provides convenient way to launch generators to scaffold applications using NRIDS tooling and deployment pipelines. The generators are created using [Yeoman](http://yeoman.io) and packaged into a docker container for running on a developer's machine.
+NR Repository Composer provides convenient way to launch generators to scaffold applications using NRIDS tooling and deployment pipelines. The generators are created using [Yeoman](http://yeoman.io) and packaged into a docker container for running on a developer's machine.
 
 # Prerequisites
 

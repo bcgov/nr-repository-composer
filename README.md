@@ -1,12 +1,12 @@
-# NR Pipeline Template
+# NR Repository Composer
 
-NR Pipeline Template provides convenient way to launch generators to scaffold applications using NRIDS tooling and deployment pipelines. The generators are created using [Yeoman](http://yeoman.io) and packaged into a docker container for running on a developer's machine.
+NR Repository Composer provides convenient way to launch generators to scaffold applications using NRIDS tooling and deployment pipelines. The generators are created using [Yeoman](http://yeoman.io) and packaged into a docker container for running on a developer's machine.
 
 # Prerequisites
 
 ## Podman or Docker
 
-The generators are easiest to run by installing Podman or Docker so that you can use the prebuilt container (ghcr.io/bcgov-nr/nr-pipeline-template).
+The generators are easiest to run by installing Podman or Docker so that you can use the prebuilt container (ghcr.io/bcgov-nr/nr-repository-composer).
 
 * [Podman](https://podman.io)
 * [Docker](https://www.docker.com)
@@ -22,7 +22,7 @@ The generator will output a file saving your answers. This is useful if you want
 This command will run the 'gh-maven-build' generator:
 
 ```
-podman run --rm -it -v ${PWD}:/src --userns keep-id ghcr.io/bcgov-nr/nr-pipeline-template:latest -- nr-repository-composer:gh-maven-build
+podman run --rm -it -v ${PWD}:/src --userns keep-id ghcr.io/bcgov-nr/nr-repository-composer:latest -- nr-repository-composer:gh-maven-build
 ```
 
 Note: You can run the command with or without the generator specified.

@@ -51,7 +51,7 @@ jobs:
           artifact_checksum=$(echo ${RESPONSE} | jq -r '.data[].actions[].artifacts[].checksum')
           echo "artifact_sha256=${artifact_checksum#sha256:}" >> $GITHUB_OUTPUT
         env:
-          BROKER_URL: https://nr-broker.apps.silver.devops.gov.bc.ca
+          BROKER_URL: https://broker.io.nrs.gov.bc.ca
           BROKER_JWT: ${{ secrets.BROKER_JWT }}
           SERVICE_PROJECT: ${{ env.SERVICE_PROJECT }}
           SERVICE_NAME: ${{ env.SERVICE_NAME }}
@@ -129,7 +129,7 @@ jobs:
           artifact_checksum=$(echo ${RESPONSE} | jq -r '.data[].actions[].artifacts[].checksum')
           echo "artifact_sha256=${artifact_checksum#sha256:}" >> $GITHUB_OUTPUT
         env:
-          BROKER_URL: https://nr-broker.apps.silver.devops.gov.bc.ca
+          BROKER_URL: https://broker.io.nrs.gov.bc.ca
           BROKER_JWT: ${{ secrets.BROKER_JWT }}
           SERVICE_PROJECT: ${{ env.SERVICE_PROJECT }}
           SERVICE_NAME: ${{ env.SERVICE_NAME }}
@@ -170,6 +170,7 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - name: Submit a job to Jenkins
+<% if (gitHubPackages) { -%>
         run: |
           curl \
           --data-urlencode "token=${{ secrets.JENKINS_TOKEN }}" \
@@ -182,8 +183,26 @@ jobs:
           --data-urlencode "gitTag=${{ (startsWith(github.ref, 'refs/tags/') && github.ref_name) || '' }}" \
           --data-urlencode "configBranch=${{ inputs.config_branch || '' }}" \
           --data-urlencode "downloadUrl=${DOWNLOAD_URL}" \
+          --data-urlencode "downloadType=GITHUB" \
           -H "Connection: close" \
           ${{ env.URL }}/${{ env.JOB }}
+<% } else { -%>
+        run: |
+          curl \
+          --data-urlencode "token=${{ secrets.JENKINS_TOKEN }}" \
+          --data-urlencode "githubToken=${{ secrets.GITHUB_TOKEN }}" \
+          --data-urlencode "artifactName=${ARTIFACT_NAME}" \
+          --data-urlencode "artifactSha256=${ARTIFACT_SHA256}" \
+          --data-urlencode "projectVersion=${PROJECT_VERSION}" \
+          --data-urlencode "gitBranch=${{ github.ref_name }}" \
+          --data-urlencode "intentionId=${BUILD_GUID}" \
+          --data-urlencode "gitTag=${{ (startsWith(github.ref, 'refs/tags/') && github.ref_name) || '' }}" \
+          --data-urlencode "configBranch=${{ inputs.config_branch || '' }}" \
+          --data-urlencode "downloadUrl=${DOWNLOAD_URL}" \
+          --data-urlencode "downloadType=ARTIFACTORY" \
+          -H "Connection: close" \
+          ${{ env.URL }}/${{ env.JOB }}
+<% } -%>
         env:
           PROJECT_VERSION: ${{ needs.deploy-build.outputs.project_version || needs.deploy-tag.outputs.project_version }}
           BUILD_GUID: ${{ needs.deploy-build.outputs.build_guid || needs.deploy-tag.outputs.build_guid }}

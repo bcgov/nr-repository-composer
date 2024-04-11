@@ -4,7 +4,7 @@ on:
   workflow_dispatch:
     inputs:
       config_branch:
-        description: 'A branch used for testing configuration changes'
+        description: 'Use branch for testing configuration changes'
         required: false
         type: string
 

@@ -1,0 +1,83 @@
+---
+- name: <%= projectName %>/<%= serviceName %>
+  hosts: "{{ tomcat_server_hosts }}"
+  collections:
+    - polaris.deploy
+  vars_files:
+    - "vars/all.yaml"
+    - "vars/{{env_vars}}.yaml"
+
+  roles:
+    # Establish the port number
+    - name: port_manager
+      become: yes
+      become_user: 'wwwadm'
+
+    # prepare the installation environment by creating the necessary folders
+    - name: cd_prepare
+
+    # individual JDK installation
+    - name: jdk
+      vars:
+        jdk_version:
+          type: 'openjdk'
+          major_version: 8
+          url: '{{ artifactory_url }}/ext-binaries-local/openjdk/java-se-8u40-ri.tar.gz'
+          filename: 'java-se-8u40-ri.tar.gz'
+          checksum: 'sha1:606984531e3eeddba6be5ac626a229ef283c5de0'
+          cacerts_path: 'jre/lib/security/cacerts'
+        use_proxy: false
+
+    # create a self signed certificate to allow for HTTPS 
+    - name: self_signed_cert
+
+    # install & configure the Tomcat container
+    - name: tomcat
+
+    # deploy the webapp
+    - name: webapp
+      vars:
+        webapp_war:
+          context: "{{ context }}"
+          jndi_resources:
+            - "{{ webade_bootstrap_jdbc }}"          
+        webapp_root_log_level: "{{ log_level_root | default('INFO') }}"
+        proxy_env: "{{ env_vars }}"
+
+    # create a WebADE connection jar for the container
+    - name: webade_connection_jar
+      vars:
+        webade_install_dir: "{{ cd_app_install }}/webapps/{{ alt_app_dir_name }}/WEB-INF/lib"
+        webade_datastore: "ca.bc.gov.webade.mof.MOFOrganizationDatastore"
+      become: yes
+      become_user: "{{ install_user }}"
+
+  tasks:
+    - name: configure nonstandard files
+      template:
+        src: "{{ playbook_dir }}/templates/{{ item.src }}"
+        dest: "{{ item.dest }}"
+        mode: 0775
+      become: yes
+      become_user: "{{ install_user }}"
+      with_items:
+        - {
+            src: "web.xml.j2",
+            dest: "{{ cd_app_install }}/webapps/{{ context }}/WEB-INF/web.xml"
+          }
+        - {
+            src: "JMSConfig.xml.j2",
+            dest: "{{ cd_app_install }}/webapps/{{ context }}/WEB-INF/classes/JMSConfig.xml"
+          }
+        - {
+            src: "tasks.xml.j2",
+            dest: "{{ cd_app_install }}/webapps/{{ context }}/WEB-INF/classes/tasks.xml"
+          }
+
+    - name: "set version {{ pd_prop_project_version }} as current"
+      file:
+        path: "{{ cd_app_home }}/current"
+        src: "{{ cd_app_install }}"
+        state: link
+      become: yes
+      become_user: "{{ install_user }}"

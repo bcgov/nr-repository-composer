@@ -52,6 +52,11 @@ export default class extends Generator {
           "The path to where your pom file is located relative to the repository's root",
         ),
     );
+    this.log(
+      '  ' +
+        chalk.bold('GitHub Owner with repo path:    ') +
+        chalk.dim('The Github owner with repo path (eg. bcgov-nr/edqa-war) '),
+    );
     this.log('');
 
     this.log(chalk.bold('Prompts'));
@@ -94,8 +99,8 @@ export default class extends Generator {
       {
         type: 'input',
         name: 'gitHubOwnerPack',
-        message: 'GitHub Owner with repo path (eg. bcgov-nr-labs/edqa-war):',
-        default: 'bcgov-nr-labs/edqa-war',
+        message: 'GitHub Owner with repo path (eg. bcgov-nr/edqa-war):',
+        default: 'bcgov-nr/edqa-war',
         store: true,
         when: (answers) => answers.gitHubPackages,
       },
@@ -121,6 +126,14 @@ export default class extends Generator {
         message: 'Deploy on-prem?',
         default: false,
         store: true,
+      },
+      {
+        type: 'input',
+        name: 'playbookPath',
+        message: 'Playbook path:(./playbooks/)',
+        default: './playbooks/',
+        store: true,
+        when: (answers) => answers.deployOnPrem,
       },
     ]);
 
@@ -178,6 +191,32 @@ export default class extends Generator {
         },
       );
     }
+    if (this.props.deployOnPrem) {
+      this.log('writing - turbo');
+      this.composeWith('../playbook-build', {
+        arguments: ['edqa', 'edqa-war', 'playbooks/'],
+      });
+      /*
+      this.composeWith('../playbook-build', {
+        arguments: [
+          this.props.projectName,
+          this.props.serviceName,
+          this.props.playbookPath,
+        ],
+      });*/
+    }
+
+    /*
+
+      this.composeWith({
+        Generator: playbooGenerator,
+        path: '../playbook-build',
+      });
+      this.composeWith(path.resolve(__dirname, '../playbook-build/index.js'), {
+        projectName: this.props.projectName,
+        serviceName: this.props.serviceName,
+        playbookPath: this.props.playbookPath,
+      });*/
 
     this.config.save();
   }

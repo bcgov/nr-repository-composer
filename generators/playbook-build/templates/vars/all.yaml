@@ -1,30 +1,28 @@
-ssh_user: "{{ lookup('ansible.builtin.env', 'PODMAN_CD_USER')  }}"
-ssh_pass: "{{ lookup('ansible.builtin.env', 'PODMAN_CD_PASS')  }}"
-ansible_user: "{{ lookup('ansible.builtin.env', 'PODMAN_CD_USER')  }}"
-ansible_become_password: "{{ lookup('ansible.builtin.env', 'PODMAN_CD_PASS')  }}"
+# Ansible connection properties
+ssh_user: "{{ lookup('ansible.builtin.env', 'PODMAN_CD_USER') }}"
+ssh_pass: "{{ lookup('ansible.builtin.env', 'PODMAN_CD_PASS') }}"
+ansible_user: "{{ lookup('ansible.builtin.env', 'PODMAN_CD_USER') }}"
+ansible_become_password: "{{ lookup('ansible.builtin.env', 'PODMAN_CD_PASS') }}"
 ansible_ssh_extra_args: "-o StrictHostKeyChecking=no"
-cd_project: "<%= projectCapName %>"
-cd_component: "<%= serviceName %>"
+
+# General properties
+pd_prop_project_name: "<%= projectNameUpperCase %>"
+pd_prop_service_name: "<%= serviceName %>"
 pd_prop_project_version: "{{ lookup('ansible.builtin.env', 'PODMAN_PROJECT_VERSION') }}"
-context: "ext#<%= projectName %>"
-cd_apps_home: "/apps_ux"
-cd_apps_data: "/apps_data"
-cd_apps_logs: "{{ cd_apps_home  }}/logs"
-artifact: "{{ hostvars.localhost.modules['<%= serviceName %>'].artifacts['<%= serviceName %>-war.war'] }}"
-tomcat_https_port: "{{ portmanager_assignments[ansible_host] }}"
-context_list: []
-portmanager_debug: False
-tomcat_version_number: "8.5.51"
-log_level_root: "INFO"
-install_user: "wwwadm"
-run_user: "wwwsvr"
-cd_app_home: "/apps_ux/<%= projectCapName %>/<%= serviceName %>"
-cd_app_install: "{{ cd_app_home  }}/{{ pd_prop_project_version }}"
-alt_app_dir_name: ext_<%= projectName %>
 pd_prop_artifact_name: "{{ lookup('ansible.builtin.env', 'PODMAN_ARTIFACT_NAME') }}"
 pd_prop_artifact_sha256: "{{ lookup('ansible.builtin.env', 'PODMAN_ARTIFACT_SHA256') }}"
-cd_app_service: "/apps_ux/s6_services/<%= serviceName %>"
+pd_prop_build_number: "{{ lookup('ansible.builtin.env', 'PODMAN_BUILD_NUMBER') }}"
+pd_prop_project_version_run: "{{ pd_prop_project_version }}-{{ pd_prop_build_number }}"
 
-cfg_webapp_version: "{{ pd_prop_project_version }}"
-cfg_app_main_db: "ca.bc.gov.mof"
-cfg_object_base: "/ext/<%= projectName %>"
+# Properties for creating directories
+pd_prop_project_home: "/apps_ux/<%= projectNameUpperCase %>"
+pd_prop_service_home: "/apps_ux/<%= projectNameUpperCase %>/<%= serviceName %>"
+pd_prop_service_install_directory: "/apps_ux/<%= projectNameUpperCase %>/<%= serviceName %>/{{ pd_prop_project_version_run }}"
+pd_prop_service_current_version: "/apps_ux/<%= projectNameUpperCase %>/<%= serviceName %>/current"
+pd_prop_service_data: "/apps_data/<%= projectNameUpperCase %>/<%= serviceName %>"
+pd_prop_service_logs: "/apps_ux/logs/<%= projectNameUpperCase %>/<%= serviceName %>"
+pd_prop_service_s6_path: "/apps_ux/s6_services/<%= serviceName %>"
+
+# Tomcat properties
+
+# Webapp properties

@@ -14,45 +14,40 @@ export default class extends Generator {
     this.argument('projectName', {
       type: String,
       required: true,
-      //default: 'edqa',
       description: 'Project Name',
     });
-    this.argument('servceName', {
+    this.argument('serviceName', {
       type: String,
       required: true,
-      // default: 'edqa-war',
       description: 'Service Name',
     });
     this.argument('playbookPath', {
       type: String,
       required: true,
-      //default: 'playbooks/',
       description: 'Playbook Path',
     });
   }
 
   // Generate GitHub workflows and NR Broker intention files
   writing() {
-    this.log('writing - playbook files');
+    this.log('Generating playbook files');
     this.fs.copyTpl(
       this.templatePath('playbook.yaml'),
-      this.destinationPath('playbooks/playbook.yaml'),
-      {
-        projectName: 'edqa',
-        serviceName: 'edqa-war',
-      },
-    );
-    /*
-    this.fs.copy(
-      this.templatePath('templates/vars/**'),
-      this.destinationPath('playbooks/vars'),
+      this.destinationPath(`${this.options.playbookPath}/playbook.yaml`),
       {
         projectName: this.options.projectName,
         serviceName: this.options.serviceName,
-        projectCapName: this.options.projectName.toUpperCase(),
       },
     );
-    */
+    this.fs.copyTpl(
+      this.templatePath('vars/**'),
+      this.destinationPath(`${this.options.playbookPath}/vars`),
+      {
+        projectName: this.options.projectName,
+        serviceName: this.options.serviceName,
+        projectNameUpperCase: this.options.projectName.toUpperCase(),
+      },
+    );
     this.config.save();
   }
 }

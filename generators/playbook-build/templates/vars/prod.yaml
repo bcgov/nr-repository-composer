@@ -5,4 +5,4 @@
 # webade_max_connections: 10
 # webade_db_user: "{{ lookup('ansible.builtin.env', 'PODMAN_webade_username') }}"
 # webade_db_pass: "{{ lookup('ansible.builtin.env', 'PODMAN_webade_password') }}"
-# webade_env: DEV
+# webade_env: PROD

@@ -20,7 +20,7 @@ env:
   SERVICE_NAME: <%= serviceName %>
 
 jobs:
-<% if (unitTestsPath) { -%>  
+<% if (unitTestsPath) { -%>
   test:
     name: Test
     if: ${{ ! startsWith(github.ref, 'refs/tags/v') }}
@@ -39,7 +39,7 @@ jobs:
     outputs:
       project_version: ${{ steps.set-build-output-parameters.outputs.project_version }}
       intention_id: ${{ steps.set-intention-id.outputs.intention_id }}
-      branch: $${{ steps.set-branch.outputs.branch }} 
+      branch: $${{ steps.set-branch.outputs.branch }}
     steps:
       - name: Checkout repository
         uses: actions/checkout@v4
@@ -54,7 +54,7 @@ jobs:
           distribution: 'temurin'
           cache: maven
       - name: Set branch
-        id: set-branch        
+        id: set-branch
         if: ${{ ! startsWith(github.ref, 'refs/tags/v') }}
         run: |
           if [[ ${{ startsWith(github.ref, 'refs/heads/') }} = true ]]; then
@@ -63,7 +63,7 @@ jobs:
           if [[ ${{ startsWith(github.ref, 'refs/pull/') }} = true ]]; then
             echo "branch=${{ github.head_ref }}" >> "$GITHUB_OUTPUT"
           fi
-      - name: Update pom.xml        
+      - name: Update pom.xml
         id: update-repo
         if: ${{ startsWith(github.ref, 'refs/tags/v') }}
         shell: bash
@@ -79,17 +79,18 @@ jobs:
           echo "artifact_id=$(mvn help:evaluate -Dexpression=project.artifactId -q -DforceStdout --file <%= pomRoot %>pom.xml)" >> $GITHUB_OUTPUT
           echo "package_type=$(mvn help:evaluate -Dexpression=project.packaging -q -DforceStdout --file <%= pomRoot %>pom.xml)" >> $GITHUB_OUTPUT
           echo "git_commit=$(git rev-parse --verify HEAD)" >> $GITHUB_OUTPUT
+          echo "build_guid=uuid::$(uuidgen)" >> $GITHUB_OUTPUT
       - name: Build intention
         run: sh ./.github/workflows/build-intention.sh
         env:
           EVENT_REASON: Build ${{ github.ref_name }}
           GITHUB_REPOSITORY: ${{ github.repository}}
           GITHUB_RUN_ID: ${{ github.run_id}}
-          SERVICE_PROJECT: ${{ env.SERVICE_PROJECT }}
-          SERVICE_NAME: ${{ env.SERVICE_NAME }}
-          PROJECT_VERSION: ${{ steps.set-build-output-parameters.outputs.project_version }}
-          GIT_COMMIT: ${{ steps.set-build-output-parameters.outputs.git_commit }}
-          BUILD_NUMBER: ${{ github.run_number }}
+          PACKAGE_BUILD_GUID:  ${{ steps.set-build-output-parameters.outputs.build_guid }}
+          PACKAGE_BUILD_NUMBER: ${{ github.run_number }}
+          PACKAGE_BUILD_VERSION: ${{ steps.set-build-output-parameters.outputs.git_commit }}
+          PACKAGE_TYPE: ${{ steps.set-build-output-parameters.outputs.package_type }}
+          PACKAGE_VERSION: ${{ steps.set-build-output-parameters.outputs.project_version }}
       - name: Open intention
         uses: bcgov-nr/action-broker-intention-open@v2
         with:
@@ -116,16 +117,12 @@ jobs:
           PACKAGE_TYPE: ${{ steps.set-build-output-parameters.outputs.package_type }}
       - name: Send build info
         run: |
-          ARTIFACT_NAME="${ARTIFACT_ID}-${PROJECT_VERSION}.${PACKAGE_TYPE}"
-          curl -s POST ${{ env.BROKER_URL }}/v1/intention/action/artifact \
+          curl -s POST ${{ env.BROKER_URL }}/v1/intention/action/patch \
               -H 'Content-Type: application/json' \
               -H 'X-Broker-Token: '"${BUILD_TOKEN}"'' \
-              -d '{"checksum": "sha256:'${ARTIFACT_SHA256}'", "name": "'${ARTIFACT_NAME}'", "type": "'${PACKAGE_TYPE}'" }'
+              -d '{"package":{"checksum": "sha256:'${ARTIFACT_SHA256}'"}}'
         env:
           ARTIFACT_SHA256: ${{ steps.publish-artifact.outputs.artifact_sha256 }}
-          ARTIFACT_ID: ${{ steps.set-build-output-parameters.outputs.artifact_id }}
-          PROJECT_VERSION: ${{ steps.set-build-output-parameters.outputs.project_version }}
-          PACKAGE_TYPE: ${{ steps.set-build-output-parameters.outputs.package_type }}
           BUILD_TOKEN: ${{ env.ACTION_TOKEN_BUILD }}
 <% } else { -%>
         run: mvn --batch-mode -Dmaven.test.skip=true -Partifactory deploy --file <%= pomRoot %>pom.xml
@@ -152,18 +149,15 @@ jobs:
           ARTIFACT_ID: ${{ steps.set-build-output-parameters.outputs.artifact_id }}
       - name: Send build info
         run: |
-          curl -s POST ${{ env.BROKER_URL }}/v1/intention/action/artifact \
+          curl -s POST ${{ env.BROKER_URL }}/v1/intention/action/patch \
               -H 'Content-Type: application/json' \
               -H 'X-Broker-Token: '"${BUILD_TOKEN}"'' \
-              -d '{"checksum": "sha256:'${ARTIFACT_SHA256}'", "name": "'${ARTIFACT_NAME}'", "type": "'${ARTIFACT_TYPE}'" }'
+              -d '{"package":{"checksum": "sha256:'${ARTIFACT_SHA256}'"}}'
         env:
           ARTIFACT_SHA256: ${{ steps.set-build-info.outputs.artifact_sha256 }}
-          ARTIFACT_NAME: ${{ steps.set-build-info.outputs.artifact_name }}
-          ARTIFACT_TYPE: ${{ steps.set-build-info.outputs.artifact_type }}
           BUILD_TOKEN: ${{ env.ACTION_TOKEN_BUILD }}
 <% } -%>
       - name: Close intention
         uses: bcgov-nr/action-broker-intention-close@v1
         with:
           intention_token: ${{ env.INTENTION_TOKEN }}
- 

@@ -5,9 +5,9 @@ echo "===> Create Intention"
 cat ./.github/workflows/build-intention.json | jq "\
     .event.reason=\"${EVENT_REASON}\" | \
     .event.url=\"https://github.com/${GITHUB_REPOSITORY}/actions/runs/${GITHUB_RUN_ID}\" | \
-    (.actions[] | select(.id == \"build\") .service.project) |= \"${SERVICE_PROJECT}\" | \
-    (.actions[] | select(.id == \"build\") .service.name) |= \"${SERVICE_NAME}\" | \
-    (.actions[] | select(.id == \"build\") .package.version) |= \"${PROJECT_VERSION}\" | \
-    (.actions[] | select(.id == \"build\") .package.buildVersion) |= \"${GIT_COMMIT}\" | \
-    (.actions[] | select(.id == \"build\") .package.buildNumber) |= ${BUILD_NUMBER} \
+    (.actions[] | select(.id == \"build\") .package.version) |= \"${PACKAGE_VERSION}\" | \
+    (.actions[] | select(.id == \"build\") .package.buildGuid) |= \"${PACKAGE_BUILD_GUID}\" | \
+    (.actions[] | select(.id == \"build\") .package.buildVersion) |= \"${PACKAGE_BUILD_VERSION}\" | \
+    (.actions[] | select(.id == \"build\") .package.type) |= \"${PACKAGE_TYPE}\" | \
+    (.actions[] | select(.id == \"build\") .package.buildNumber) |= ${PACKAGE_BUILD_NUMBER} \
     " > intention.json

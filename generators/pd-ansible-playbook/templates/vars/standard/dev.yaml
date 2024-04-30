@@ -1,0 +1,7 @@
+# Use this file for properties specific to the development (integration, delivery) environment
+<% if (addWebadeConfig === 'true') { -%>
+webade_jdbc_url: "{{ lookup('ansible.builtin.env', 'PODMAN_webade_jdbc_url') }}"
+webade_db_user: "{{ lookup('ansible.builtin.env', 'PODMAN_webade_username') }}"
+webade_db_pass: "{{ lookup('ansible.builtin.env', 'PODMAN_webade_password') }}"
+webade_env: DEV
+<% } -%>

@@ -1,0 +1,74 @@
+---
+- name: <%= projectName %>/<%= serviceName %>
+  hosts: tomcat-servers
+  collections:
+    - polaris.deploy
+  vars_files:
+    - "vars/standard/all.yaml"
+    - "vars/standard/{{env_vars}}.yaml"
+    - "vars/custom/all.yaml"
+    - "vars/custom/{{env_vars}}.yaml"
+
+  roles:
+    # Establish the port number
+    - name: port_manager
+
+    # prepare the installation environment by creating the necessary folders
+    - name: create_project_directories
+
+    # individual JDK installation
+    - name: jdk
+      vars:
+        jdk_version:
+          type: 'openjdk'
+          major_version: 8
+          url: '{{ artifactory_url }}/ext-binaries-local/openjdk/java-se-8u40-ri.tar.gz'
+          filename: 'java-se-8u40-ri.tar.gz'
+          checksum: 'sha1:606984531e3eeddba6be5ac626a229ef283c5de0'
+          cacerts_path: 'jre/lib/security/cacerts'
+        use_proxy: false
+
+    # create a self signed certificate to allow for HTTPS
+    - name: self_signed_cert
+
+    # install & configure the Tomcat container
+    - name: tomcat
+
+    # deploy the webapp
+    - name: webapp
+      vars:
+        webapp_war:
+          context: "{{ context }}"
+        proxy_env: "{{ env_vars }}"
+
+    # create a WebADE connection jar for the container
+    - name: webade_connection_jar
+      # Uncomment the following line if using the MOF Webade datastore
+      # vars:
+      #   webade_datastore: "ca.bc.gov.webade.mof.MOFOrganizationDatastore"
+      become: yes
+      become_user: "{{ install_user }}"
+
+  tasks:
+    # The following task is an example for adding custom webapp configuration files
+    # You can modify it according to your needs or remove it if custom configuration is not needed
+    - name: configure nonstandard files
+      template:
+        src: "{{ playbook_dir }}/templates/{{ item.src }}"
+        dest: "{{ item.dest }}"
+        mode: "0775"
+      become: yes
+      become_user: "{{ install_user }}"
+      with_items:
+        - {
+            src: "web.xml.j2",
+            dest: "{{ pd_prop_service_install_directory }}/webapps/{{ alt_app_dir_name or context }}/WEB-INF/web.xml"
+          }
+        - {
+            src: "JMSConfig.xml.j2",
+            dest: "{{ pd_prop_service_install_directory }}/webapps/{{ alt_app_dir_name or context }}/WEB-INF/classes/JMSConfig.xml"
+          }
+        - {
+            src: "tasks.xml.j2",
+            dest: "{{ pd_prop_service_install_directory }}/webapps/{{ alt_app_dir_name or context }}/WEB-INF/classes/tasks.xml"
+          }

@@ -1,3 +1,4 @@
+# The following properties are required by all services
 # Ansible connection properties
 ssh_user: "{{ lookup('ansible.builtin.env', 'PODMAN_CD_USER') }}"
 ssh_pass: "{{ lookup('ansible.builtin.env', 'PODMAN_CD_PASS') }}"
@@ -14,15 +15,15 @@ pd_prop_artifact_sha256: "{{ lookup('ansible.builtin.env', 'PODMAN_ARTIFACT_SHA2
 pd_prop_build_number: "{{ lookup('ansible.builtin.env', 'PODMAN_BUILD_NUMBER') }}"
 pd_prop_project_version_run: "{{ pd_prop_project_version }}-{{ pd_prop_build_number }}"
 
-# Properties for creating directories
-pd_prop_project_home: "/apps_ux/<%= projectNameUpperCase %>"
-pd_prop_service_home: "/apps_ux/<%= projectNameUpperCase %>/<%= serviceName %>"
-pd_prop_service_install_directory: "/apps_ux/<%= projectNameUpperCase %>/<%= serviceName %>/{{ pd_prop_project_version_run }}"
-pd_prop_service_current_version: "/apps_ux/<%= projectNameUpperCase %>/<%= serviceName %>/current"
-pd_prop_service_data: "/apps_data/<%= projectNameUpperCase %>/<%= serviceName %>"
-pd_prop_service_logs: "/apps_ux/logs/<%= projectNameUpperCase %>/<%= serviceName %>"
-pd_prop_service_s6_path: "/apps_ux/s6_services/<%= serviceName %>"
+# The following properties are custom to each particular service
+context: <%= tomcatContext %>
+<% if (altAppDirName) { -%>
+alt_app_dir_name: <%= altAppDirName %>
+<% } -%>
 
-# Tomcat properties
+# By default, the Tomcat port is set dynamically by using the port_manager role
+# If you need to set a static port, replace the dynamic port assignment value with your static value
+tomcat_https_port: "{{ portmanager_assignments[ansible_host] }}"
 
-# Webapp properties
+# If you need to use a particular version of Tomcat, set the version here
+tomcat_version_number: "8.5.51"

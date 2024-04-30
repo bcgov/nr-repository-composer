@@ -4,7 +4,7 @@ import yosay from 'yosay';
 import chalk from 'chalk';
 
 /**
- * Generate the CI workflow and NR Broker intention files needed Java/Tomcat Maven builds in GitHub
+ * Generate the CI workflow and NR Broker intention files needed for Java/Tomcat Maven builds in GitHub
  */
 export default class extends Generator {
   async prompting() {
@@ -92,14 +92,14 @@ export default class extends Generator {
       {
         type: 'confirm',
         name: 'gitHubPackages',
-        message: 'Publish to GitHub Packages?',
+        message: 'Publish to GitHub Packages:',
         default: false,
         store: true,
       },
       {
         type: 'input',
         name: 'gitHubOwnerPack',
-        message: 'GitHub Owner with repo path (e.g. bcgov-nr/edqa-war):',
+        message: 'GitHub Owner with repo path (e.g. bcgov-nr/results-war):',
         store: true,
         when: (answers) => answers.gitHubPackages,
       },
@@ -122,18 +122,48 @@ export default class extends Generator {
       {
         type: 'confirm',
         name: 'deployOnPrem',
-        message: 'Deploy on-prem?',
+        message: 'Deploy on-prem:',
         default: false,
         store: true,
       },
       {
         type: 'input',
         name: 'playbookPath',
-        message: 'Playbook path: (playbooks)',
+        message: 'Playbook path:',
         default: 'playbooks',
         store: true,
         when: (answers) => answers.deployOnPrem,
       },
+      {
+        type: 'input',
+        name: 'tomcatContext',
+        message: 'Tomcat Context (e.g. ext#results):',
+        store: true,
+        when: (answers) => answers.deployOnPrem,
+      },
+      {
+        type: 'confirm',
+        name: 'useAltAppDirName',
+        message: 'Use alternative webapp directory:',
+        default: false,
+        store: true,
+        when: (answers) => answers.deployOnPrem,
+      },
+      {
+        type: 'input',
+        name: 'altAppDirName',
+        message: 'Alternative webapp directory name:',
+        store: true,
+        when: (answers) => answers.useAltAppDirName,
+      },
+      {
+        type: 'confirm',
+        name: 'addWebadeConfig',
+        message: 'Add Webade configuration:',
+        default: false,
+        store: true,
+        when: (answers) => answers.deployOnPrem,
+      }
     ]);
 
     this.props = answers;
@@ -189,8 +219,11 @@ export default class extends Generator {
           serviceName: this.props.serviceName,
         },
       );
-      const playbook_args = [this.props.projectName, this.props.serviceName, this.props.playbookPath]
-      this.composeWith('nr-repository-composer:playbook-build', playbook_args)
+      const playbook_args = [this.props.projectName, this.props.serviceName, this.props.playbookPath,
+        this.props.tomcatContext, this.props.altAppDirName
+      ]
+      const playbook_options = { addWebadeConfig: this.props.addWebadeConfig, altAppDirName: this.props.altAppDirName }
+      this.composeWith('nr-repository-composer:pd-ansible-playbook', playbook_args, playbook_options)
     }
 
     this.config.save();

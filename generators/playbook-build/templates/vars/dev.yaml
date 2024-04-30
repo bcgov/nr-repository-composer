@@ -1,8 +1,0 @@
-# Webade connection properties
-# webade_jdbc_url: "{{ lookup('ansible.builtin.env', 'PODMAN_webade_jdbc_url') }}"
-# webade_datastore: "ca.bc.gov.webade.mof.MOFOrganizationDatastore"
-# webade_min_connections: 0
-# webade_max_connections: 10
-# webade_db_user: "{{ lookup('ansible.builtin.env', 'PODMAN_webade_username') }}"
-# webade_db_pass: "{{ lookup('ansible.builtin.env', 'PODMAN_webade_password') }}"
-# webade_env: DEV

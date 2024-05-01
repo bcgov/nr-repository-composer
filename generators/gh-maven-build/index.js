@@ -3,7 +3,7 @@ import * as fs from 'fs';
 import Generator from 'yeoman-generator';
 import yosay from 'yosay';
 import chalk from 'chalk';
-import { parseDocument } from 'yaml';
+import { Document, parseDocument } from 'yaml';
 import {
   BACKSTAGE_FILENAME,
   pathToProps,
@@ -21,12 +21,13 @@ export default class extends Generator {
     if (fs.existsSync(backstagePath)) {
       const backstageYaml = fs.readFileSync(backstagePath, 'utf8');
       this.backstageDoc = parseDocument(backstageYaml);
+    } else {
+      this.backstageDoc = new Document();
     }
   }
 
   async prompting() {
     this.answers = extractFromYaml(this.backstageDoc, pathToProps);
-    console.log(this.answers);
 
     this.log(
       yosay(

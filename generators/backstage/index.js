@@ -4,6 +4,7 @@ import Generator from 'yeoman-generator';
 import yosay from 'yosay';
 import { parseDocument } from 'yaml';
 import {
+  Document,
   BACKSTAGE_FILENAME,
   pathToProps,
   extractFromYaml,
@@ -20,6 +21,8 @@ export default class extends Generator {
     if (fs.existsSync(backstagePath)) {
       const backstageYaml = fs.readFileSync(backstagePath, 'utf8');
       this.backstageDoc = parseDocument(backstageYaml);
+    } else {
+      this.backstageDoc = new Document();
     }
   }
 

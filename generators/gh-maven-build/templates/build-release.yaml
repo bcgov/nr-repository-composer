@@ -149,7 +149,7 @@ jobs:
           ARTIFACT_ID: ${{ steps.set-build-output-parameters.outputs.artifact_id }}
       - name: Send build info
         run: |
-          curl -s POST ${{ env.BROKER_URL }}/v1/intention/action/patch \
+          curl -s -X POST ${{ env.BROKER_URL }}/v1/intention/action/patch \
               -H 'Content-Type: application/json' \
               -H 'X-Broker-Token: '"${BUILD_TOKEN}"'' \
               -d '{"package":{"checksum": "sha256:'${ARTIFACT_SHA256}'"}}'

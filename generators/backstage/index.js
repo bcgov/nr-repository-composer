@@ -52,17 +52,17 @@ export default class extends Generator {
       {
         type: 'input',
         name: 'type',
-        message: 'Type:',
+        message: 'Type (service, website, library):',
       },
       {
-        type: 'lifecycle',
-        name: 'type',
+        type: 'input',
+        name: 'lifecycle',
         message: 'Lifecycle:',
       },
       {
-        type: 'owner',
-        name: 'team',
-        message: 'Team:',
+        type: 'input',
+        name: 'owner',
+        message: 'Owner:',
       },
     ].map(generateSetDefaultFromDoc(this.answers));
 

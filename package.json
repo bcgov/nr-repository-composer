@@ -17,6 +17,7 @@
     "test": "jest"
   },
   "dependencies": {
+    "yaml": "^2.4.2",
     "yeoman-generator": "^7.1.1",
     "yosay": "^3.0.0"
   },

@@ -1,76 +1,83 @@
 'use strict';
+import * as fs from 'fs';
 import Generator from 'yeoman-generator';
 import yosay from 'yosay';
-import chalk from 'chalk';
+import { parseDocument } from 'yaml';
+import {
+  BACKSTAGE_FILENAME,
+  pathToProps,
+  extractFromYaml,
+  generateSetDefaultFromDoc,
+  writePropToPath,
+} from '../util/yaml.js';
 
 /**
  * Generate a basic backstage file
  */
 export default class extends Generator {
+  async initializing() {
+    const backstagePath = this.destinationPath(BACKSTAGE_FILENAME);
+    if (fs.existsSync(backstagePath)) {
+      const backstageYaml = fs.readFileSync(backstagePath, 'utf8');
+      this.backstageDoc = parseDocument(backstageYaml);
+    }
+  }
+
   async prompting() {
+    this.answers = extractFromYaml(this.backstageDoc, pathToProps);
+
     this.log(yosay('Welcome to the backstage file generator!'));
-
-    this.log(chalk.bold('Usage'));
-    this.log('');
-    this.log(
-      '  ' +
-        chalk.bold('Project:     ') +
-        chalk.dim(
-          'Lowercase kebab-case name that uniquely identifies the project',
-        ),
-    );
-    this.log('               ' + chalk.dim('Example: super-project'));
-    this.log(
-      '  ' +
-        chalk.bold('Service:     ') +
-        chalk.dim(
-          'Lowercase kebab-case name that uniquely indentifies the service',
-        ),
-    );
-    this.log(
-      '               ' +
-        chalk.dim(
-          'Should start with project, have an optional descriptor and end with an artifact identifier',
-        ),
-    );
-    this.log(
-      '               ' + chalk.dim('Example: super-project-backend-war'),
-    );
-    this.log('');
-
-    this.log(chalk.bold('Prompts'));
-    this.log('');
 
     const prompts = [
       {
         type: 'input',
         name: 'projectName',
         message: 'Project:',
-        store: true,
       },
       {
         type: 'input',
         name: 'serviceName',
         message: 'Service:',
-        store: true,
       },
-    ];
+      {
+        type: 'input',
+        name: 'description',
+        message: 'Description:',
+      },
+      {
+        type: 'input',
+        name: 'title',
+        message: 'Title:',
+      },
+      {
+        type: 'input',
+        name: 'type',
+        message: 'Type:',
+      },
+      {
+        type: 'lifecycle',
+        name: 'type',
+        message: 'Lifecycle:',
+      },
+      {
+        type: 'owner',
+        name: 'team',
+        message: 'Team:',
+      },
+    ].map(generateSetDefaultFromDoc(this.answers));
 
-    const props = await this.prompt(prompts);
-    this.props = props;
+    this.answers = await this.prompt(prompts);
   }
 
-  // Generate GitHub workflows and NR Broker intention files
-  writing() {
-    this.fs.copyTpl(
-      this.templatePath('app-config.yaml'),
-      this.destinationPath('app-config.yaml'),
-      {
-        projectName: this.props.projectName,
-        serviceName: this.props.serviceName,
-      },
-    );
+  writingBackstage() {
+    writePropToPath(this.backstageDoc, pathToProps, this.answers);
 
-    this.config.save();
+    this.backstageDoc.setIn(['apiVersion'], 'backstage.io/v1alpha1');
+    this.backstageDoc.setIn(['kind'], 'Component');
+
+    this.fs.write(
+      this.destinationPath(BACKSTAGE_FILENAME),
+      this.backstageDoc.toString(),
+    );
   }
 }

@@ -1,13 +1,33 @@
 'use strict';
+import * as fs from 'fs';
 import Generator from 'yeoman-generator';
 import yosay from 'yosay';
 import chalk from 'chalk';
+import { parseDocument } from 'yaml';
+import {
+  BACKSTAGE_FILENAME,
+  pathToProps,
+  extractFromYaml,
+  generateSetAnswerPropPredicate,
+  writePropToPath,
+} from '../util/yaml.js';
 
 /**
  * Generate the CI workflow and NR Broker intention files needed for Java/Tomcat Maven builds in GitHub
  */
 export default class extends Generator {
+  async initializing() {
+    const backstagePath = this.destinationPath(BACKSTAGE_FILENAME);
+    if (fs.existsSync(backstagePath)) {
+      const backstageYaml = fs.readFileSync(backstagePath, 'utf8');
+      this.backstageDoc = parseDocument(backstageYaml);
+    }
+  }
+
   async prompting() {
+    this.answers = extractFromYaml(this.backstageDoc, pathToProps);
+    console.log(this.answers);
+
     this.log(
       yosay(
         'Welcome to the GitHub workflow and NR Broker intention file generator!',
@@ -62,170 +82,210 @@ export default class extends Generator {
     this.log(chalk.bold('Prompts'));
     this.log('');
 
-    const answers = await this.prompt([
+    const backstageAnswer = await this.prompt([
       {
-        type: 'input',
-        name: 'projectName',
-        message: 'Project:',
+        type: 'checkbox',
+        name: 'skip',
+        message: `Do not prompt for values set in ${BACKSTAGE_FILENAME}:`,
+        choices: ['yes', 'no'],
+        default: 'yes',
         store: true,
       },
-      {
-        type: 'input',
-        name: 'serviceName',
-        message: 'Service:',
-        store: true,
-      },
-      {
-        type: 'input',
-        name: 'pomRoot',
-        message: 'Pom root:',
-        default: './',
-        store: true,
-      },
-      {
-        type: 'input',
-        name: 'unitTestsPath',
-        message: 'Path to unit tests (./.github/workflows/test.yaml):',
-        default: '',
-        store: true,
-      },
-      {
-        type: 'confirm',
-        name: 'gitHubPackages',
-        message: 'Publish to GitHub Packages:',
-        default: false,
-        store: true,
-      },
-      {
-        type: 'input',
-        name: 'gitHubOwnerPack',
-        message: 'GitHub Owner with repo path (e.g. bcgov-nr/results-war):',
-        store: true,
-        when: (answers) => answers.gitHubPackages,
-      },
-      {
-        type: 'input',
-        name: 'artifactoryProject',
-        message: 'Artifactory:',
-        default: 'cc20',
-        store: true,
-        when: (answers) => !answers.gitHubPackages,
-      },
-      {
-        type: 'input',
-        name: 'artifactoryPackageType',
-        message: 'Artifactory Package Type (maven, ivy, npm):',
-        default: 'maven',
-        store: true,
-        when: (answers) => !answers.gitHubPackages,
-      },
-      {
-        type: 'confirm',
-        name: 'deployOnPrem',
-        message: 'Deploy on-prem:',
-        default: false,
-        store: true,
-      },
-      {
-        type: 'input',
-        name: 'playbookPath',
-        message: 'Playbook path:',
-        default: 'playbooks',
-        store: true,
-        when: (answers) => answers.deployOnPrem,
-      },
-      {
-        type: 'input',
-        name: 'tomcatContext',
-        message: 'Tomcat Context (e.g. ext#results):',
-        store: true,
-        when: (answers) => answers.deployOnPrem,
-      },
-      {
-        type: 'confirm',
-        name: 'useAltAppDirName',
-        message: 'Use alternative webapp directory:',
-        default: false,
-        store: true,
-        when: (answers) => answers.deployOnPrem,
-      },
-      {
-        type: 'input',
-        name: 'altAppDirName',
-        message: 'Alternative webapp directory name:',
-        store: true,
-        when: (answers) => answers.useAltAppDirName,
-      },
-      {
-        type: 'confirm',
-        name: 'addWebadeConfig',
-        message: 'Add Webade configuration:',
-        default: false,
-        store: true,
-        when: (answers) => answers.deployOnPrem,
-      }
     ]);
 
-    this.props = answers;
+    this.answers = {
+      ...this.answers,
+      ...(await this.prompt(
+        [
+          {
+            type: 'input',
+            name: 'projectName',
+            message: 'Project:',
+            store: true,
+          },
+          {
+            type: 'input',
+            name: 'serviceName',
+            message: 'Service:',
+            store: true,
+          },
+          {
+            type: 'input',
+            name: 'pomRoot',
+            message: 'Pom root:',
+            default: './',
+            store: true,
+          },
+          {
+            type: 'input',
+            name: 'unitTestsPath',
+            message: 'Path to unit tests (./.github/workflows/test.yaml):',
+            default: '',
+            store: true,
+          },
+          {
+            type: 'confirm',
+            name: 'gitHubPackages',
+            message: 'Publish to GitHub Packages:',
+            default: false,
+            store: true,
+          },
+          {
+            type: 'input',
+            name: 'gitHubOwnerPack',
+            message: 'GitHub Owner with repo path (e.g. bcgov-nr/results-war):',
+            store: true,
+            when: (answers) => answers.gitHubPackages,
+          },
+          {
+            type: 'input',
+            name: 'artifactoryProject',
+            message: 'Artifactory:',
+            default: 'cc20',
+            store: true,
+            when: (answers) => !answers.gitHubPackages,
+          },
+          {
+            type: 'input',
+            name: 'artifactoryPackageType',
+            message: 'Artifactory Package Type (maven, ivy, npm):',
+            default: 'maven',
+            store: true,
+            when: (answers) => !answers.gitHubPackages,
+          },
+          {
+            type: 'confirm',
+            name: 'deployOnPrem',
+            message: 'Deploy on-prem:',
+            default: false,
+            store: true,
+          },
+          {
+            type: 'input',
+            name: 'playbookPath',
+            message: 'Playbook path:',
+            default: 'playbooks',
+            store: true,
+            when: (answers) => answers.deployOnPrem,
+          },
+          {
+            type: 'input',
+            name: 'tomcatContext',
+            message: 'Tomcat Context (e.g. ext#results):',
+            store: true,
+            when: (answers) => answers.deployOnPrem,
+          },
+          {
+            type: 'confirm',
+            name: 'useAltAppDirName',
+            message: 'Use alternative webapp directory:',
+            default: false,
+            store: true,
+            when: (answers) => answers.deployOnPrem,
+          },
+          {
+            type: 'input',
+            name: 'altAppDirName',
+            message: 'Alternative webapp directory name:',
+            store: true,
+            when: (answers) => answers.useAltAppDirName,
+          },
+          {
+            type: 'confirm',
+            name: 'addWebadeConfig',
+            message: 'Add Webade configuration:',
+            default: false,
+            store: true,
+            when: (answers) => answers.deployOnPrem,
+          },
+        ].filter(
+          generateSetAnswerPropPredicate(
+            this.answers,
+            backstageAnswer.skip === 'yes',
+          ),
+        ),
+      )),
+    };
+  }
+
+  async configuring() {
+    // this.config.save();
   }
 
   // Generate GitHub workflows and NR Broker intention files
-  writing() {
+  writingWorkflow() {
     this.fs.copyTpl(
       this.templatePath('build-release.yaml'),
       this.destinationPath('.github/workflows/build-release.yaml'),
       {
-        projectName: this.props.projectName,
-        serviceName: this.props.serviceName,
-        artifactoryProject: this.props.artifactoryProject,
-        pomRoot: this.props.pomRoot,
-        unitTestsPath: this.props.unitTestsPath,
-        gitHubPackages: this.props.gitHubPackages,
-        artifactoryPackageType: this.props.artifactoryPackageType,
-        gitHubOwnerPack: this.props.gitHubOwnerPack,
+        projectName: this.answers.projectName,
+        serviceName: this.answers.serviceName,
+        artifactoryProject: this.answers.artifactoryProject,
+        pomRoot: this.answers.pomRoot,
+        unitTestsPath: this.answers.unitTestsPath,
+        gitHubPackages: this.answers.gitHubPackages,
+        artifactoryPackageType: this.answers.artifactoryPackageType,
+        gitHubOwnerPack: this.answers.gitHubOwnerPack,
       },
     );
     this.fs.copyTpl(
       this.templatePath('build-intention.json'),
       this.destinationPath('.github/workflows/build-intention.json'),
       {
-        projectName: this.props.projectName,
-        serviceName: this.props.serviceName,
+        projectName: this.answers.projectName,
+        serviceName: this.answers.serviceName,
       },
     );
     this.fs.copyTpl(
       this.templatePath('build-intention.sh'),
       this.destinationPath('.github/workflows/build-intention.sh'),
     );
-    if (this.props.deployOnPrem) {
+    if (this.answers.deployOnPrem) {
       this.fs.copyTpl(
         this.templatePath('deploy.yaml'),
         this.destinationPath('.github/workflows/deploy.yaml'),
         {
-          projectName: this.props.projectName,
-          serviceName: this.props.serviceName,
-          artifactoryProject: this.props.artifactoryProject,
-          pomRoot: this.props.pomRoot,
-          gitHubPackages: this.props.gitHubPackages,
-          artifactoryPackageType: this.props.artifactoryPackageType,
-          gitHubOwnerPack: this.props.gitHubOwnerPack,
+          projectName: this.answers.projectName,
+          serviceName: this.answers.serviceName,
+          artifactoryProject: this.answers.artifactoryProject,
+          pomRoot: this.answers.pomRoot,
+          gitHubPackages: this.answers.gitHubPackages,
+          artifactoryPackageType: this.answers.artifactoryPackageType,
+          gitHubOwnerPack: this.answers.gitHubOwnerPack,
         },
       );
       this.fs.copyTpl(
         this.templatePath('deployment-intention.json'),
         this.destinationPath('.jenkins/deployment-intention.json'),
         {
-          projectName: this.props.projectName,
-          serviceName: this.props.serviceName,
+          projectName: this.answers.projectName,
+          serviceName: this.answers.serviceName,
         },
       );
-      const playbook_args = [this.props.projectName, this.props.serviceName, this.props.playbookPath,
-        this.props.tomcatContext, this.props.altAppDirName
-      ]
-      const playbook_options = { addWebadeConfig: this.props.addWebadeConfig, altAppDirName: this.props.altAppDirName }
-      this.composeWith('nr-repository-composer:pd-ansible-playbook', playbook_args, playbook_options)
+      const playbook_args = [
+        this.answers.projectName,
+        this.answers.serviceName,
+        this.answers.playbookPath,
+        this.answers.tomcatContext,
+        this.answers.altAppDirName,
+      ];
+      const playbook_options = {
+        addWebadeConfig: this.answers.addWebadeConfig,
+        altAppDirName: this.answers.altAppDirName,
+      };
+      this.composeWith(
+        'nr-repository-composer:pd-ansible-playbook',
+        playbook_args,
+        playbook_options,
+      );
     }
+  }
 
-    this.config.save();
+  writingBackstage() {
+    writePropToPath(this.backstageDoc, pathToProps, this.answers);
+    this.fs.write(
+      this.destinationPath(BACKSTAGE_FILENAME),
+      this.backstageDoc.toString(),
+    );
   }
 }

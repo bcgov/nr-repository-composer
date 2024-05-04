@@ -62,13 +62,5 @@
       with_items:
         - {
             src: "web.xml.j2",
-            dest: "{{ pd_prop_service_install_directory }}/webapps/{{ alt_app_dir_name or context }}/WEB-INF/web.xml"
-          }
-        - {
-            src: "JMSConfig.xml.j2",
-            dest: "{{ pd_prop_service_install_directory }}/webapps/{{ alt_app_dir_name or context }}/WEB-INF/classes/JMSConfig.xml"
-          }
-        - {
-            src: "tasks.xml.j2",
-            dest: "{{ pd_prop_service_install_directory }}/webapps/{{ alt_app_dir_name or context }}/WEB-INF/classes/tasks.xml"
+            dest: "{{ apps_home }}/{{ pd_prop_project_name }}/{{ pd_prop_service_name }}/{{ pd_prop_service_install_directory }}/webapps/{{ alt_app_dir_name | default(context) }}/WEB-INF/web.xml"
           }

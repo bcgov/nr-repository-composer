@@ -24,6 +24,3 @@ alt_app_dir_name: <%= altAppDirName %>
 # By default, the Tomcat port is set dynamically by using the port_manager role
 # If you need to set a static port, replace the dynamic port assignment value with your static value
 tomcat_https_port: "{{ portmanager_assignments[ansible_host] }}"
-
-# If you need to use a particular version of Tomcat, set the version here
-tomcat_version_number: "8.5.51"

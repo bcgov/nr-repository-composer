@@ -1,1 +1,7 @@
 # Use this file for custom variables related to your webapp
+# This is optional. The default is the latest.
+# tomcat_major_version: "8"
+
+# This is optional. The default is the latest of the major version.
+# If you need to use a particular version of Tomcat, set the version here.
+# tomcat_version_number: "8.5.51"

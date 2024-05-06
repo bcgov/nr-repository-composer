@@ -68,7 +68,6 @@ export default class extends Generator {
     // Initialize empty files that can be used for custom variables
     // Skip copying templates if any custom files already exist
     const varsFiles = fs.readdirSync(this.templatePath('vars/custom'));
-    console.log(varsFiles);
     for (const file of varsFiles) {
       if (!fs.existsSync(this.destinationPath(`${this.options.playbookPath}/vars/custom/${file}`))) {
         this.fs.copyTpl(

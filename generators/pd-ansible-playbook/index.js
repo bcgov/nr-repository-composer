@@ -45,7 +45,11 @@ export default class extends Generator {
   // Generate GitHub workflows and NR Broker intention files
   writing() {
     this.log('Generating playbook files');
-    if (!fs.existsSync(this.destinationPath(`${this.options.playbookPath}/playbook.yaml`))) {
+    if (
+      !fs.existsSync(
+        this.destinationPath(`${this.options.playbookPath}/playbook.yaml`),
+      )
+    ) {
       this.fs.copyTpl(
         this.templatePath('playbook.yaml'),
         this.destinationPath(`${this.options.playbookPath}/playbook.yaml`),
@@ -71,10 +75,18 @@ export default class extends Generator {
     // Skip copying templates if any custom files already exist
     const varsFiles = fs.readdirSync(this.templatePath('vars/custom'));
     for (const file of varsFiles) {
-      if (!fs.existsSync(this.destinationPath(`${this.options.playbookPath}/vars/custom/${file}`))) {
+      if (
+        !fs.existsSync(
+          this.destinationPath(
+            `${this.options.playbookPath}/vars/custom/${file}`,
+          ),
+        )
+      ) {
         this.fs.copyTpl(
           this.templatePath(`vars/custom/${file}`),
-          this.destinationPath(`${this.options.playbookPath}/vars/custom/${file}`),
+          this.destinationPath(
+            `${this.options.playbookPath}/vars/custom/${file}`,
+          ),
           {},
         );
       }

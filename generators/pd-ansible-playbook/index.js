@@ -45,14 +45,16 @@ export default class extends Generator {
   // Generate GitHub workflows and NR Broker intention files
   writing() {
     this.log('Generating playbook files');
-    this.fs.copyTpl(
-      this.templatePath('playbook.yaml'),
-      this.destinationPath(`${this.options.playbookPath}/playbook.yaml`),
-      {
-        projectName: this.options.projectName,
-        serviceName: this.options.serviceName,
-      },
-    );
+    if (!fs.existsSync(this.destinationPath(`${this.options.playbookPath}/playbook.yaml`))) {
+      this.fs.copyTpl(
+        this.templatePath('playbook.yaml'),
+        this.destinationPath(`${this.options.playbookPath}/playbook.yaml`),
+        {
+          projectName: this.options.projectName,
+          serviceName: this.options.serviceName,
+        },
+      );
+    }
     this.fs.copyTpl(
       this.templatePath('vars/standard/**'),
       this.destinationPath(`${this.options.playbookPath}/vars/standard`),

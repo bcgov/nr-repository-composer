@@ -18,7 +18,7 @@
         "version": "",
         "buildVersion": "",
         "buildNumber": 0,
-        "name": "<%= serviceName %>.war",
+        "name": "<%= serviceName %>",
         "type": "war"
       }
     }

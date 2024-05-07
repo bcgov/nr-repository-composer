@@ -16,6 +16,16 @@ import {
  * Generate the CI workflow and NR Broker intention files needed for Java/Tomcat Maven builds in GitHub
  */
 export default class extends Generator {
+  constructor(args, opts) {
+    super(args, opts);
+
+    this.option('promptless', {
+      type: String,
+      required: false,
+      description: 'Run headless with no user prompts',
+    });
+  }
+
   async initializing() {
     const backstagePath = this.destinationPath(BACKSTAGE_FILENAME);
     if (fs.existsSync(backstagePath)) {
@@ -27,72 +37,80 @@ export default class extends Generator {
   }
 
   async prompting() {
+    const promptless = !!this.options.promptless;
     this.answers = extractFromYaml(this.backstageDoc, pathToProps);
+    console.log(this.answers);
 
-    this.log(
-      yosay(
-        'Welcome to the GitHub workflow and NR Broker intention file generator!',
-      ),
-    );
+    if (!promptless) {
+      this.log(
+        yosay(
+          'Welcome to the GitHub workflow and NR Broker intention file generator!',
+        ),
+      );
 
-    this.log(chalk.bold('Usage'));
-    this.log('');
-    this.log(
-      '  ' +
-        chalk.bold('Project:     ') +
-        chalk.dim(
-          'Lowercase kebab-case name that uniquely identifies the project',
-        ),
-    );
-    this.log('               ' + chalk.dim('Example: super-project'));
-    this.log(
-      '  ' +
-        chalk.bold('Service:     ') +
-        chalk.dim(
-          'Lowercase kebab-case name that uniquely indentifies the service',
-        ),
-    );
-    this.log(
-      '               ' +
-        chalk.dim(
-          'Should start with project, have an optional descriptor and end with an artifact identifier',
-        ),
-    );
-    this.log(
-      '               ' + chalk.dim('Example: super-project-backend-war'),
-    );
-    this.log(
-      '  ' +
-        chalk.bold('Artifactory: ') +
-        chalk.dim('The OCP Artifactory namespace this will be published to'),
-    );
-    this.log(
-      '  ' +
-        chalk.bold('Pom root:    ') +
-        chalk.dim(
-          "The path to where your pom file is located relative to the repository's root",
-        ),
-    );
-    this.log(
-      '  ' +
-        chalk.bold('GitHub Owner with repo path:    ') +
-        chalk.dim('The Github owner with repo path (e.g. bcgov-nr/edqa-war) '),
-    );
-    this.log('');
+      this.log(chalk.bold('Usage'));
+      this.log('');
+      this.log(
+        '  ' +
+          chalk.bold('Project:     ') +
+          chalk.dim(
+            'Lowercase kebab-case name that uniquely identifies the project',
+          ),
+      );
+      this.log('               ' + chalk.dim('Example: super-project'));
+      this.log(
+        '  ' +
+          chalk.bold('Service:     ') +
+          chalk.dim(
+            'Lowercase kebab-case name that uniquely indentifies the service',
+          ),
+      );
+      this.log(
+        '               ' +
+          chalk.dim(
+            'Should start with project, have an optional descriptor and end with an artifact identifier',
+          ),
+      );
+      this.log(
+        '               ' + chalk.dim('Example: super-project-backend-war'),
+      );
+      this.log(
+        '  ' +
+          chalk.bold('Artifactory: ') +
+          chalk.dim('The OCP Artifactory namespace this will be published to'),
+      );
+      this.log(
+        '  ' +
+          chalk.bold('Pom root:    ') +
+          chalk.dim(
+            "The path to where your pom file is located relative to the repository's root",
+          ),
+      );
+      this.log(
+        '  ' +
+          chalk.bold('GitHub Owner with repo path:    ') +
+          chalk.dim(
+            'The Github owner with repo path (e.g. bcgov-nr/edqa-war) ',
+          ),
+      );
+      this.log('');
 
-    this.log(chalk.bold('Prompts'));
-    this.log('');
+      this.log(chalk.bold('Prompts'));
+      this.log('');
+    }
 
-    const backstageAnswer = await this.prompt([
-      {
-        type: 'checkbox',
-        name: 'skip',
-        message: `Do not prompt for values set in ${BACKSTAGE_FILENAME}:`,
-        choices: ['yes', 'no'],
-        default: 'yes',
-        store: true,
-      },
-    ]);
+    const backstageAnswer = promptless
+      ? { skip: true }
+      : await this.prompt([
+          {
+            type: 'checkbox',
+            name: 'skip',
+            message: `Do not prompt for values set in ${BACKSTAGE_FILENAME}:`,
+            choices: ['yes', 'no'],
+            default: 'yes',
+            store: true,
+          },
+        ]);
 
     this.answers = {
       ...this.answers,

@@ -71,7 +71,7 @@ The generator, gh-maven-build, generates the CI workflow and NR Broker intention
 
 The generated files will appear in your .github/workflows and .jenkins directories.
 
-The option `--promptless` can be used with this command to attempt to run it without prompting for responses. It will attempt to only used information stored in your `app-config.yaml`. This option can be combined with `--force` which will let Yoeman automatically overwrite any existing files.
+The option `--promptless` can be used with this command to attempt to run it without prompting for responses. It will attempt to only use information stored in your `app-config.yaml`. This option can be combined with `--force` which will let Yoeman automatically overwrite any existing files.
 
 # Developing Generators
 

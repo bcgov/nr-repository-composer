@@ -63,7 +63,7 @@ All generators are built to be rerun multiple times.
 
 ### Backstage: backstage
 
-The generator, backstage, generates a app-config.yaml catelogue file.
+The generator, backstage, generates a `app-config.yaml` catalogue file.
 
 ### Github Maven Build: gh-maven-build
 

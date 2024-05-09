@@ -1,6 +1,6 @@
 ---
 - name: <%= projectName %>/<%= serviceName %>
-  hosts: tomcat-servers
+  hosts: "{{ tomcat_server_hosts }}"
   collections:
     - polaris.deploy
   vars_files:
@@ -39,6 +39,7 @@
       vars:
         webapp_war:
           context: "{{ context }}"
+        webapp_root_log_level: "{{ log_level_root | default('INFO') }}"
         proxy_env: "{{ env_vars }}"
 
     # create a WebADE connection jar for the container

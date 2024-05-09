@@ -1,1 +1,3 @@
 # Use this file for custom variables related to your webapp
+# tomcat_server_hosts: tomcat-servers-fusilli
+log_level_root: DEBUG

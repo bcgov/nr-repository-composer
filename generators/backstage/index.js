@@ -2,15 +2,18 @@
 import * as fs from 'fs';
 import Generator from 'yeoman-generator';
 import yosay from 'yosay';
-import { parseDocument } from 'yaml';
+import { Document, parseDocument } from 'yaml';
 import {
-  Document,
   BACKSTAGE_FILENAME,
   pathToProps,
   extractFromYaml,
   generateSetDefaultFromDoc,
   writePropToPath,
 } from '../util/yaml.js';
+import {
+  extractGitHubSlug,
+  getGitRepoOriginUrl,
+} from '../util/git.js';
 
 /**
  * Generate a basic backstage file
@@ -30,6 +33,9 @@ export default class extends Generator {
     this.answers = extractFromYaml(this.backstageDoc, pathToProps);
 
     this.log(yosay('Welcome to the backstage file generator!'));
+
+    // Attempt to read origin url
+    const repoOrigin = getGitRepoOriginUrl();
 
     const prompts = [
       {
@@ -60,12 +66,18 @@ export default class extends Generator {
       {
         type: 'input',
         name: 'lifecycle',
-        message: 'Lifecycle:',
+        message: 'Lifecycle (experimental, production, deprecated):',
       },
       {
         type: 'input',
         name: 'owner',
         message: 'Owner:',
+      },
+      {
+        type: 'input',
+        name: 'githubProjectSlug',
+        message: 'GitHub Slug (<organization or owner>/<repository>):',
+        default: extractGitHubSlug(repoOrigin) ?? '',
       },
     ].map(generateSetDefaultFromDoc(this.answers));
 

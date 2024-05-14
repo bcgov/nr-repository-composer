@@ -12,6 +12,16 @@ export const pathToProps = [
     path: ['metadata', 'annotations', 'playbook.io.nrs.gov.bc.ca/pomRoot'],
     prop: 'pomRoot',
   },
+  // Github
+  {
+    path: [
+      'metadata',
+      'annotations',
+      'github.com/project-slug',
+    ],
+    prop: 'githubProjectSlug',
+  },
+  // Playbook
   {
     path: [
       'metadata',

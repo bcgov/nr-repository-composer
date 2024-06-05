@@ -162,6 +162,7 @@ jobs:
           intention_token: ${{ env.INTENTION_TOKEN }}
   message:
     name: Message
+    runs-on: ubuntu-latest
     needs: build-release
     steps:
       - name: Pull request

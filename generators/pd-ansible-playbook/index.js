@@ -1,8 +1,9 @@
 'use strict';
 import Generator from 'yeoman-generator';
+// eslint-disable-next-line no-unused-vars
 import yosay from 'yosay';
+// eslint-disable-next-line no-unused-vars
 import chalk from 'chalk';
-import path from 'path';
 import * as fs from 'node:fs';
 
 /**

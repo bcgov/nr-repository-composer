@@ -1,6 +1,6 @@
 # NR Repository Composer
 
-NR Repository Composer is a set of generators for installing and updating NRIDS tooling. It can scaffold NRIDS applications hosted on GitHub with a deployment pipeline, catalogue files (Backstage) and more.
+The NR Repository Composer is a suite of generators for installing and updating NRIDS tooling. It can scaffold NRIDS applications using GitHub Actions for building and deploying them, add catalog files (Backstage), and more.
 
 The generators are created using [Yeoman](http://yeoman.io). For distribution, it is packaged into a container image for running on a developer's machine using Docker or Podman.
 
@@ -15,7 +15,7 @@ You will need to install one of the following. Either can run the composer using
 * [Podman](https://podman.io)
 * [Docker](https://www.docker.com)
 
-It is recommended that users running Windows install the command locally or use Podman. Docker has a known issue with modifying file permissions correctly on a mounted volumes. As such, the example commands will not work.
+It is recommended that users running Windows install and run the command using node or use Podman. Docker has a known issue with modifying file permissions correctly on a mounted volumes. The tool needs to set the permission on things like bash scripts. As such, the commands will not run correctly on Windows with Docker.
 
 ## Run using a local install
 
@@ -75,7 +75,7 @@ The generated files will appear in your .github/workflows and .jenkins directori
 
 ## Command Options
 
-### Skip promps (--promptless)
+### Skip prompts (--promptless)
 
 The option `--promptless` can be used with a number of generators to attempt to run it without prompting for responses. It will attempt to only use information stored in your `app-config.yaml`.
 
@@ -94,7 +94,7 @@ The following are expected to be installed.
 
 ## Building the image
 
-The Dockerfile can be built by running './build.sh'. The image will be tagged as 'nr-repository-composer' locally.
+The Dockerfile can be built by running './build.sh'. The local image will be tagged as 'nr-repository-composer'.
 
 # License
 

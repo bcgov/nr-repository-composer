@@ -10,10 +10,7 @@ import {
   generateSetDefaultFromDoc,
   writePropToPath,
 } from '../util/yaml.js';
-import {
-  extractGitHubSlug,
-  getGitRepoOriginUrl,
-} from '../util/git.js';
+import { extractGitHubSlug, getGitRepoOriginUrl } from '../util/git.js';
 
 /**
  * Generate a basic backstage file

@@ -14,11 +14,7 @@ export const pathToProps = [
   },
   // Github
   {
-    path: [
-      'metadata',
-      'annotations',
-      'github.com/project-slug',
-    ],
+    path: ['metadata', 'annotations', 'github.com/project-slug'],
     prop: 'githubProjectSlug',
   },
   // Playbook

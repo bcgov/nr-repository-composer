@@ -76,6 +76,13 @@ export default class extends Generator {
       );
       this.log(
         '  ' +
+          chalk.bold('Client ID:   ') +
+          chalk.dim(
+            'The client id of the Broker account to use. Leave blank to use manually set BROKER_JWT secret.',
+          ),
+      );
+      this.log(
+        '  ' +
           chalk.bold('Artifactory: ') +
           chalk.dim('The OCP Artifactory namespace this will be published to'),
       );
@@ -126,6 +133,13 @@ export default class extends Generator {
             type: 'input',
             name: 'serviceName',
             message: 'Service:',
+            store: true,
+          },
+          {
+            type: 'input',
+            name: 'clientId',
+            message: 'Client ID:',
+            default: '',
             store: true,
           },
           {
@@ -233,12 +247,19 @@ export default class extends Generator {
 
   // Generate GitHub workflows and NR Broker intention files
   writingWorkflow() {
+    const brokerJwt = this.answers.clientId.trim()
+      ? `broker-jwt:${this.answers.clientId.trim()}`.replace(
+          /[^a-zA-Z0-9_]/g,
+          '_',
+        )
+      : 'BROKER_JWT';
     this.fs.copyTpl(
       this.templatePath('build-release.yaml'),
       this.destinationPath('.github/workflows/build-release.yaml'),
       {
         projectName: this.answers.projectName,
         serviceName: this.answers.serviceName,
+        brokerJwt,
         artifactoryProject: this.answers.artifactoryProject,
         pomRoot: this.answers.pomRoot,
         unitTestsPath: this.answers.unitTestsPath,
@@ -266,6 +287,7 @@ export default class extends Generator {
         {
           projectName: this.answers.projectName,
           serviceName: this.answers.serviceName,
+          brokerJwt,
           artifactoryProject: this.answers.artifactoryProject,
           pomRoot: this.answers.pomRoot,
           gitHubPackages: this.answers.gitHubPackages,

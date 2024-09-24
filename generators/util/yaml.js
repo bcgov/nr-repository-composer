@@ -98,6 +98,10 @@ export const pathToProps = [
     ],
     prop: 'addWebadeConfig',
   },
+  {
+    path: ['metadata', 'annotations', 'playbook.io.nrs.gov.bc.ca/clientId'],
+    prop: 'clientId',
+  },
 ];
 
 export function extractFromYaml(doc, pathToProps) {

@@ -280,6 +280,10 @@ export default class extends Generator {
       this.templatePath('build-intention.sh'),
       this.destinationPath('.github/workflows/build-intention.sh'),
     );
+    this.fs.copyTpl(
+      this.templatePath('check-token.yaml'),
+      this.destinationPath('.github/workflows/check-token.yaml'),
+    );
     if (this.answers.deployOnPrem) {
       this.fs.copyTpl(
         this.templatePath('deploy.yaml'),

@@ -88,9 +88,9 @@ export default class extends Generator {
       );
       this.log(
         '  ' +
-          chalk.bold('Pom root:    ') +
+          chalk.bold('Root:    ') +
           chalk.dim(
-            "The path to where your pom file is located relative to the repository's root",
+            "The path to where your build is located relative to the repository's root",
           ),
       );
       this.log(
@@ -140,13 +140,6 @@ export default class extends Generator {
             name: 'clientId',
             message: 'Client ID:',
             default: '',
-            store: true,
-          },
-          {
-            type: 'input',
-            name: 'pomRoot',
-            message: 'Pom root:',
-            default: './',
             store: true,
           },
           {

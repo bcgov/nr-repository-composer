@@ -15,13 +15,13 @@ You will need to install one of the following. Either can run the composer using
 * [Podman](https://podman.io)
 * [Docker](https://www.docker.com)
 
-It is recommended that users running Windows install and run the command using node or use Podman. Docker has a known issue with modifying file permissions correctly on a mounted volumes. The tool needs to set the permission on things like bash scripts. As such, the commands will not run correctly on Windows with Docker.
+It is recommended that Windows users install and run the command using Node.js or Podman. Docker has a known issue with correctly modifying file permissions on mounted volumes. Since the tool needs to set permissions for files like bash scripts, commands will not execute properly on Windows when using Docker.
 
 ## Run using a local install
 
 You will need to install node and clone this repository. You can checkout a version tag (vx.x.x) to run a specific release.
 
-* [Node 20](https://nodejs.org/en)
+* [Node 22](https://nodejs.org/en)
 
 The tool is build using [Yeoman](http://yeoman.io) which is a JavaScript library. You do not need to install Yoeman.
 
@@ -70,6 +70,12 @@ Other generators will ask to read from this file to skip prompts that ask for in
 ### Github Maven Build: gh-maven-build
 
 The generator, gh-maven-build, generates the CI workflow and NR Broker intention files for building Java/Tomcat with Maven in GitHub.
+
+The generated files will appear in your .github/workflows and .jenkins directories.
+
+### Github Node.js Build: gh-nodejs-build
+
+The generator, gh-nodejs-build, generates the CI workflow and NR Broker intention files for building Node.js in GitHub. The workflow assume that your `package.json` has a `build` command and your build places the files in `./dist`.
 
 The generated files will appear in your .github/workflows and .jenkins directories.
 

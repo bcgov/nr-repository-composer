@@ -102,7 +102,7 @@ jobs:
           broker_jwt: ${{ secrets.<%= brokerJwt %> }}
           intention_path: intention.json
           quickstart: true
-      - name: Set intention ID for deployment job
+      - name: Echo intention ID for deploy job
         id: set-intention-id
         run: |
           echo "intention_id=${INTENTION_ID}" >> $GITHUB_OUTPUT
@@ -163,6 +163,13 @@ jobs:
           BUILD_TOKEN: ${{ env.ACTION_TOKEN_BUILD }}
 <% } -%>
       - name: Close intention
-        uses: bcgov-nr/action-broker-intention-close@v1
+        if: ${{ success() && env.INTENTION_TOKEN != '' }}
+        uses: bcgov-nr/action-broker-intention-close@v3
         with:
           intention_token: ${{ env.INTENTION_TOKEN }}
+      - name: Close intention (Failure)
+        if: ${{ failure() && env.INTENTION_TOKEN != '' }}
+        uses: bcgov-nr/action-broker-intention-close@v3
+        with:
+          intention_token: ${{ env.INTENTION_TOKEN }}
+          outcome: failure

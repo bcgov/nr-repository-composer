@@ -42,9 +42,9 @@ jobs:
       contents: read
       packages: write
     outputs:
-      project_version: ${{ steps.set-build-output-parameters.outputs.project_version }}
+      project_version: ${{ steps.set-version.outputs.project_version }}
       intention_id: ${{ steps.set-intention-id.outputs.intention_id }}
-      branch: $${{ steps.set-branch.outputs.branch }}
+      branch: $${{ steps.set-version.outputs.branch }}
     steps:
       - name: Checkout repository
         uses: actions/checkout@v4
@@ -59,20 +59,28 @@ jobs:
         with:
           node-version: 22
           cache: 'npm'
-      - name: Set branch
-        id: set-branch
-        if: ${{ ! startsWith(github.ref, 'refs/tags/v') }}
+      - name: Set version
+        id: set-version
         run: |
           if [[ ${{ startsWith(github.ref, 'refs/heads/') }} = true ]]; then
-            echo "branch=${{ github.ref_name }}" >> "$GITHUB_OUTPUT"
+            version=$(cat package.json | jq -r '.version')
+            echo "project_version=$version-${{ github.ref_name }}" >> "$GITHUB_OUTPUT"
+            echo "tag=${{ github.ref_name }}" >> "$GITHUB_OUTPUT"
           fi
           if [[ ${{ startsWith(github.ref, 'refs/pull/') }} = true ]]; then
-            echo "branch=${{ github.head_ref }}" >> "$GITHUB_OUTPUT"
+            version=$(cat package.json | jq -r '.version')
+            echo "project_version=$version-${{ github.ref_name }}" >> "$GITHUB_OUTPUT"
+            echo "tag=${{ github.ref_name }}" >> "$GITHUB_OUTPUT"
+          fi
+          if [[ ${{ startsWith(github.ref, 'refs/tags/v') }} = true ]]; then
+            echo "tag=${{ github.ref_name }}" >> "$GITHUB_OUTPUT"
+            TAG=${{ github.ref_name }}
+            version="${TAG#v}"
+            echo "project_version=$version" >> $GITHUB_OUTPUT
           fi
       - name: Set build output parameters
         id: set-build-output-parameters
         run: |
-          echo "project_version=1.0.0" >> $GITHUB_OUTPUT
           echo "git_commit=$(git rev-parse --verify HEAD)" >> $GITHUB_OUTPUT
           echo "build_guid=uuid::$(uuidgen)" >> $GITHUB_OUTPUT
       - name: Build intention
@@ -84,14 +92,14 @@ jobs:
           PACKAGE_BUILD_GUID:  ${{ steps.set-build-output-parameters.outputs.build_guid }}
           PACKAGE_BUILD_NUMBER: ${{ github.run_number }}
           PACKAGE_BUILD_VERSION: ${{ steps.set-build-output-parameters.outputs.git_commit }}
-          PACKAGE_VERSION: ${{ steps.set-build-output-parameters.outputs.project_version }}
+          PACKAGE_VERSION: ${{ steps.set-version.outputs.project_version }}
       - name: Open intention
         uses: bcgov-nr/action-broker-intention-open@v2
         with:
           broker_jwt: ${{ secrets.<%= brokerJwt %> }}
           intention_path: intention.json
           quickstart: true
-      - name: Set intention ID for deployment job
+      - name: Echo intention ID for deploy job
         id: set-intention-id
         run: |
           echo "intention_id=${INTENTION_ID}" >> $GITHUB_OUTPUT
@@ -102,23 +110,33 @@ jobs:
       - name: Build artifact
         run: npm run build --if-present
       - name: Push build
+        id: publish-artifact
         run: |
-          oras push ghcr.io/${{ github.repository_owner }}/${{ github.repository}}:${PROJECT_VERSION} dist
-          MANIFEST=$(oras manifest fetch ghcr.io/${{ github.repository_owner }}/${{ github.repository}}:${PROJECT_VERSION})
-          echo "artifact_sha256=$(echo $MANIFEST | jq -r '.layers[0].digest')" >> $GITHUB_OUTPUT
+          oras login ghcr.io -u ${{ github.actor }} --password-stdin <<< ${{ secrets.GITHUB_TOKEN }}
+          oras push ghcr.io/${{ github.repository }}/package:${PROJECT_TAG} dist
+          MANIFEST=$(oras manifest fetch ghcr.io/${{ github.repository}}/package:${PROJECT_TAG})
+          echo "artifact_sha256=$(echo $MANIFEST | jq -r '.layers[1].digest')" >> $GITHUB_OUTPUT
+          echo "artifact_size=$(echo $MANIFEST | jq -r '.layers[1].size')" >> $GITHUB_OUTPUT
         env:
-          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-          PROJECT_VERSION: ${{ steps.set-build-output-parameters.outputs.project_version }}
+          PROJECT_TAG: ${{ steps.set-version.outputs.tag }}
       - name: Send build info
         run: |
           curl -s POST ${{ env.BROKER_URL }}/v1/intention/action/patch \
               -H 'Content-Type: application/json' \
               -H 'X-Broker-Token: '"${BUILD_TOKEN}"'' \
-              -d '{"package":{"checksum": "sha256:'${ARTIFACT_SHA256}'"}}'
+              -d '{"package":{"checksum": "sha256:'${ARTIFACT_SHA256}'", "size": '${ARTIFACT_SIZE}'}}'
         env:
           ARTIFACT_SHA256: ${{ steps.publish-artifact.outputs.artifact_sha256 }}
+          ARTIFACT_SIZE: ${{ steps.publish-artifact.outputs.artifact_size }}
           BUILD_TOKEN: ${{ env.ACTION_TOKEN_BUILD }}
       - name: Close intention
-        uses: bcgov-nr/action-broker-intention-close@v1
+        if: ${{ success() && env.INTENTION_TOKEN != '' }}
+        uses: bcgov-nr/action-broker-intention-close@v3
         with:
           intention_token: ${{ env.INTENTION_TOKEN }}
+      - name: Close intention (Failure)
+        if: ${{ failure() && env.INTENTION_TOKEN != '' }}
+        uses: bcgov-nr/action-broker-intention-close@v3
+        with:
+          intention_token: ${{ env.INTENTION_TOKEN }}
+          outcome: failure

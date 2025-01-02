@@ -1,0 +1,143 @@
+name: Build and release
+
+on:
+  push:
+    tags:
+      - 'v*'
+  pull_request:
+    branches:
+      - main
+  workflow_dispatch:
+
+concurrency:
+  group: ci-${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
+env:
+  BROKER_URL: https://broker.io.nrs.gov.bc.ca
+  BROKER_JWT: ${{ secrets.<%= brokerJwt %> }}
+  SERVICE_PROJECT: <%= projectName %>
+  SERVICE_NAME: <%= serviceName %>
+
+jobs:
+  check_token_expiration:
+    uses: ./.github/workflows/check-token.yaml
+    secrets:
+      token: ${{ secrets.<%= brokerJwt %> }}
+<% if (unitTestsPath) { -%>
+  test:
+    name: Test
+    if: ${{ ! startsWith(github.ref, 'refs/tags/v') }}
+    uses: <%= unitTestsPath %>
+<% } -%>
+  build-release:
+    name: Build and release
+    runs-on: ubuntu-latest
+<% if (unitTestsPath) { -%>
+    needs: [check_token_expiration, test]
+<% } else { -%>
+    needs: check_token_expiration
+<% } -%>
+    permissions:
+      contents: read
+      packages: write
+    outputs:
+      project_version: ${{ steps.set-version.outputs.project_version }}
+      intention_id: ${{ steps.set-intention-id.outputs.intention_id }}
+      branch: $${{ steps.set-version.outputs.branch }}
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+        with:
+            fetch-depth: 0
+            fetch-tags: true
+            ref: ${{ github.ref }}
+      - name: Setup ORAS
+        uses: oras-project/setup-oras@v1
+      - name: Set up Node
+        uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: 'npm'
+      - name: Set version
+        id: set-version
+        run: |
+          if [[ ${{ startsWith(github.ref, 'refs/heads/') }} = true ]]; then
+            version=$(cat package.json | jq -r '.version')
+            echo "project_version=$version-${{ github.ref_name }}" >> "$GITHUB_OUTPUT"
+            echo "tag=${{ github.ref_name }}" >> "$GITHUB_OUTPUT"
+          fi
+          if [[ ${{ startsWith(github.ref, 'refs/pull/') }} = true ]]; then
+            version=$(cat package.json | jq -r '.version')
+            echo "project_version=$version-${{ github.ref_name }}" >> "$GITHUB_OUTPUT"
+            echo "tag=${{ github.ref_name }}" >> "$GITHUB_OUTPUT"
+          fi
+          if [[ ${{ startsWith(github.ref, 'refs/tags/v') }} = true ]]; then
+            echo "tag=${{ github.ref_name }}" >> "$GITHUB_OUTPUT"
+            TAG=${{ github.ref_name }}
+            version="${TAG#v}"
+            echo "project_version=$version" >> $GITHUB_OUTPUT
+          fi
+      - name: Set build output parameters
+        id: set-build-output-parameters
+        run: |
+          echo "git_commit=$(git rev-parse --verify HEAD)" >> $GITHUB_OUTPUT
+          echo "build_guid=uuid::$(uuidgen)" >> $GITHUB_OUTPUT
+      - name: Build intention
+        run: sh ./.github/workflows/build-intention.sh
+        env:
+          EVENT_REASON: Build ${{ github.ref_name }}
+          GITHUB_REPOSITORY: ${{ github.repository}}
+          GITHUB_RUN_ID: ${{ github.run_id}}
+          PACKAGE_BUILD_GUID:  ${{ steps.set-build-output-parameters.outputs.build_guid }}
+          PACKAGE_BUILD_NUMBER: ${{ github.run_number }}
+          PACKAGE_BUILD_VERSION: ${{ steps.set-build-output-parameters.outputs.git_commit }}
+          PACKAGE_VERSION: ${{ steps.set-version.outputs.project_version }}
+      - name: Open intention
+        uses: bcgov-nr/action-broker-intention-open@v2
+        with:
+          broker_jwt: ${{ secrets.<%= brokerJwt %> }}
+          intention_path: intention.json
+          quickstart: true
+      - name: Echo intention ID for deploy job
+        id: set-intention-id
+        run: |
+          echo "intention_id=${INTENTION_ID}" >> $GITHUB_OUTPUT
+        env:
+          INTENTION_ID: ${{ env.INTENTION_ID }}
+      - name: npm ci
+        run: npm ci
+      - name: Build artifact
+        run: npm run build --if-present
+      - name: Push build
+        id: publish-artifact
+        run: |
+          oras login ghcr.io -u ${{ github.actor }} --password-stdin <<< ${{ secrets.GITHUB_TOKEN }}
+          oras push --export-manifest manifest.json ghcr.io/${{ github.repository }}/package:${PROJECT_TAG} dist node_modules package.json package-lock.json
+          MANIFEST=$(cat ./manifest.json)
+          echo $MANIFEST
+          echo "artifact_sha256=$(echo $MANIFEST | jq -r '.layers[] | select(.annotations["org.opencontainers.image.title"] == "dist") | .digest')" >> $GITHUB_OUTPUT
+          echo "artifact_size=$(echo $MANIFEST | jq -r '.layers | map(.size) | add')" >> $GITHUB_OUTPUT
+        env:
+          PROJECT_TAG: ${{ steps.set-version.outputs.tag }}
+      - name: Send build info
+        run: |
+          curl -s POST ${{ env.BROKER_URL }}/v1/intention/action/patch \
+              -H 'Content-Type: application/json' \
+              -H 'X-Broker-Token: '"${BUILD_TOKEN}"'' \
+              -d '{"package":{"checksum": "sha256:'${ARTIFACT_SHA256}'", "size": '${ARTIFACT_SIZE}'}}'
+        env:
+          ARTIFACT_SHA256: ${{ steps.publish-artifact.outputs.artifact_sha256 }}
+          ARTIFACT_SIZE: ${{ steps.publish-artifact.outputs.artifact_size }}
+          BUILD_TOKEN: ${{ env.ACTION_TOKEN_BUILD }}
+      - name: Close intention
+        if: ${{ success() && env.INTENTION_TOKEN != '' }}
+        uses: bcgov-nr/action-broker-intention-close@v3
+        with:
+          intention_token: ${{ env.INTENTION_TOKEN }}
+      - name: Close intention (Failure)
+        if: ${{ failure() && env.INTENTION_TOKEN != '' }}
+        uses: bcgov-nr/action-broker-intention-close@v3
+        with:
+          intention_token: ${{ env.INTENTION_TOKEN }}
+          outcome: failure

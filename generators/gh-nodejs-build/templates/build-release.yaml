@@ -113,10 +113,11 @@ jobs:
         id: publish-artifact
         run: |
           oras login ghcr.io -u ${{ github.actor }} --password-stdin <<< ${{ secrets.GITHUB_TOKEN }}
-          oras push ghcr.io/${{ github.repository }}/package:${PROJECT_TAG} dist
-          MANIFEST=$(oras manifest fetch ghcr.io/${{ github.repository}}/package:${PROJECT_TAG})
-          echo "artifact_sha256=$(echo $MANIFEST | jq -r '.layers[1].digest')" >> $GITHUB_OUTPUT
-          echo "artifact_size=$(echo $MANIFEST | jq -r '.layers[1].size')" >> $GITHUB_OUTPUT
+          oras push --export-manifest manifest.json ghcr.io/${{ github.repository }}/package:${PROJECT_TAG} dist node_modules package.json package-lock.json
+          MANIFEST=$(cat ./manifest.json)
+          echo $MANIFEST
+          echo "artifact_sha256=$(echo $MANIFEST | jq -r '.layers[] | select(.annotations["org.opencontainers.image.title"] == "dist") | .digest')" >> $GITHUB_OUTPUT
+          echo "artifact_size=$(echo $MANIFEST | jq -r '.layers | map(.size) | add')" >> $GITHUB_OUTPUT
         env:
           PROJECT_TAG: ${{ steps.set-version.outputs.tag }}
       - name: Send build info

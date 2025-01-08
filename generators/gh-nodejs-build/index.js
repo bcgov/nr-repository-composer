@@ -110,12 +110,10 @@ export default class extends Generator {
       ? { skip: true }
       : await this.prompt([
           {
-            type: 'checkbox',
+            type: 'confirm',
             name: 'skip',
             message: `Skip prompts for values found in Backstage file (${BACKSTAGE_FILENAME}):`,
-            choices: ['yes', 'no'],
-            default: 'yes',
-            store: true,
+            default: true,
           },
         ]);
 
@@ -127,40 +125,40 @@ export default class extends Generator {
             type: 'input',
             name: 'projectName',
             message: 'Project:',
-            store: true,
           },
           {
             type: 'input',
             name: 'serviceName',
             message: 'Service:',
-            store: true,
+          },
+          {
+            type: 'input',
+            name: 'license',
+            default: 'Apache-2.0',
+            message: 'License (SPDX):',
           },
           {
             type: 'input',
             name: 'clientId',
             message: 'Client ID:',
             default: '',
-            store: true,
           },
           {
             type: 'input',
             name: 'unitTestsPath',
             message: 'Path to unit tests (./.github/workflows/test.yaml):',
             default: '',
-            store: true,
           },
           {
             type: 'confirm',
             name: 'gitHubPackages',
             message: 'Publish to GitHub Packages:',
             default: false,
-            store: true,
           },
           {
             type: 'input',
             name: 'gitHubOwnerPack',
             message: 'GitHub Owner with repo path (e.g. bcgov-nr/results-war):',
-            store: true,
             when: (answers) => answers.gitHubPackages,
           },
           {
@@ -168,7 +166,6 @@ export default class extends Generator {
             name: 'artifactoryProject',
             message: 'Artifactory:',
             default: 'cc20',
-            store: true,
             when: (answers) => !answers.gitHubPackages,
           },
           {
@@ -176,7 +173,6 @@ export default class extends Generator {
             name: 'artifactoryPackageType',
             message: 'Artifactory Package Type (maven, ivy, npm):',
             default: 'maven',
-            store: true,
             when: (answers) => !answers.gitHubPackages,
           },
           {
@@ -184,21 +180,18 @@ export default class extends Generator {
             name: 'deployOnPrem',
             message: 'Deploy on-prem:',
             default: false,
-            store: true,
           },
           {
             type: 'input',
             name: 'playbookPath',
             message: 'Playbook path:',
             default: 'playbooks',
-            store: true,
             when: (answers) => answers.deployOnPrem,
           },
           {
             type: 'input',
             name: 'tomcatContext',
             message: 'Tomcat Context (e.g. ext#results):',
-            store: true,
             when: (answers) => answers.deployOnPrem,
           },
           {
@@ -206,14 +199,12 @@ export default class extends Generator {
             name: 'useAltAppDirName',
             message: 'Use alternative webapp directory:',
             default: false,
-            store: true,
             when: (answers) => answers.deployOnPrem,
           },
           {
             type: 'input',
             name: 'altAppDirName',
             message: 'Alternative webapp directory name:',
-            store: true,
             when: (answers) => answers.useAltAppDirName,
           },
           {
@@ -221,15 +212,18 @@ export default class extends Generator {
             name: 'addWebadeConfig',
             message: 'Add Webade configuration:',
             default: false,
-            store: true,
             when: (answers) => answers.deployOnPrem,
           },
-        ].filter(
-          generateSetAnswerPropPredicate(
-            this.answers,
-            backstageAnswer.skip === 'yes',
-          ),
-        ),
+        ]
+          .filter(
+            generateSetAnswerPropPredicate(this.answers, !backstageAnswer.skip),
+          )
+          .map((question) => {
+            if (this.answers[question?.name]) {
+              question.default = this.answers[question.name];
+            }
+            return question;
+          }),
       )),
     };
   }
@@ -267,6 +261,7 @@ export default class extends Generator {
       {
         projectName: this.answers.projectName,
         serviceName: this.answers.serviceName,
+        license: this.answers.license,
       },
     );
     this.fs.copyTpl(

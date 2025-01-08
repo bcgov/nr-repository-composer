@@ -15,11 +15,13 @@
         "environment": "tools"
       },
       "package": {
+        "architecture": "jvm",
         "version": "",
         "buildVersion": "",
         "buildNumber": 0,
         "name": "<%= serviceName %>",
-        "type": "war"
+        "type": "war",
+        "license": "<%= license %>"
       }
     }
   ],

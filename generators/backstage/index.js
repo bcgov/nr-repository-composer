@@ -7,7 +7,7 @@ import {
   BACKSTAGE_FILENAME,
   pathToProps,
   extractFromYaml,
-  generateSetDefaultFromDoc,
+  generateSetAnswerPropPredicate,
   writePropToPath,
 } from '../util/yaml.js';
 import { extractGitHubSlug, getGitRepoOriginUrl } from '../util/git.js';
@@ -27,6 +27,7 @@ export default class extends Generator {
   }
 
   async prompting() {
+    const promptless = !!this.options.promptless;
     this.answers = extractFromYaml(this.backstageDoc, pathToProps);
 
     this.log(yosay('Welcome to the backstage file generator!'));
@@ -34,51 +35,80 @@ export default class extends Generator {
     // Attempt to read origin url
     const repoOrigin = getGitRepoOriginUrl();
 
-    const prompts = [
-      {
-        type: 'input',
-        name: 'projectName',
-        message: 'Project:',
-      },
-      {
-        type: 'input',
-        name: 'serviceName',
-        message: 'Service:',
-      },
-      {
-        type: 'input',
-        name: 'description',
-        message: 'Description:',
-      },
-      {
-        type: 'input',
-        name: 'title',
-        message: 'Title:',
-      },
-      {
-        type: 'input',
-        name: 'type',
-        message: 'Type (service, website, library):',
-      },
-      {
-        type: 'input',
-        name: 'lifecycle',
-        message: 'Lifecycle (experimental, production, deprecated):',
-      },
-      {
-        type: 'input',
-        name: 'owner',
-        message: 'Owner:',
-      },
-      {
-        type: 'input',
-        name: 'githubProjectSlug',
-        message: 'GitHub Slug (<organization or owner>/<repository>):',
-        default: extractGitHubSlug(repoOrigin) ?? '',
-      },
-    ].map(generateSetDefaultFromDoc(this.answers));
+    const backstageAnswer = promptless
+      ? { skip: true }
+      : await this.prompt([
+          {
+            type: 'confirm',
+            name: 'skip',
+            message: `Skip prompts for values found in Backstage file (${BACKSTAGE_FILENAME}):`,
+            default: true,
+          },
+        ]);
 
-    this.answers = await this.prompt(prompts);
+    this.answers = {
+      ...this.answers,
+      ...(await this.prompt(
+        [
+          {
+            type: 'input',
+            name: 'projectName',
+            message: 'Project:',
+          },
+          {
+            type: 'input',
+            name: 'serviceName',
+            message: 'Service:',
+          },
+          {
+            type: 'input',
+            name: 'description',
+            message: 'Description:',
+          },
+          {
+            type: 'input',
+            name: 'title',
+            message: 'Title:',
+          },
+          {
+            type: 'input',
+            name: 'type',
+            message: 'Type (service, website, library):',
+          },
+          {
+            type: 'input',
+            name: 'lifecycle',
+            message: 'Lifecycle (experimental, production, deprecated):',
+          },
+          {
+            type: 'input',
+            name: 'license',
+            default: 'Apache-2.0',
+            message: 'License (SPDX):',
+          },
+          {
+            type: 'input',
+            name: 'owner',
+            message: 'Owner:',
+          },
+          {
+            type: 'input',
+            name: 'githubProjectSlug',
+            message: 'GitHub Slug (<organization or owner>/<repository>):',
+            default: extractGitHubSlug(repoOrigin) ?? '',
+          },
+        ]
+          .filter(
+            generateSetAnswerPropPredicate(this.answers, !backstageAnswer.skip),
+          )
+          .map((question) => {
+            if (this.answers[question?.name]) {
+              question.default = this.answers[question.name];
+            }
+            return question;
+          }),
+      )),
+    };
   }
 
   writingBackstage() {

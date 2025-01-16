@@ -151,32 +151,6 @@ export default class extends Generator {
           },
           {
             type: 'confirm',
-            name: 'gitHubPackages',
-            message: 'Publish to GitHub Packages:',
-            default: false,
-          },
-          {
-            type: 'input',
-            name: 'gitHubOwnerPack',
-            message: 'GitHub Owner with repo path (e.g. bcgov-nr/results-war):',
-            when: (answers) => answers.gitHubPackages,
-          },
-          {
-            type: 'input',
-            name: 'artifactoryProject',
-            message: 'Artifactory:',
-            default: 'cc20',
-            when: (answers) => !answers.gitHubPackages,
-          },
-          {
-            type: 'input',
-            name: 'artifactoryPackageType',
-            message: 'Artifactory Package Type (maven, ivy, npm):',
-            default: 'maven',
-            when: (answers) => !answers.gitHubPackages,
-          },
-          {
-            type: 'confirm',
             name: 'deployOnPrem',
             message: 'Deploy on-prem:',
             default: false,
@@ -186,32 +160,6 @@ export default class extends Generator {
             name: 'playbookPath',
             message: 'Playbook path:',
             default: 'playbooks',
-            when: (answers) => answers.deployOnPrem,
-          },
-          {
-            type: 'input',
-            name: 'tomcatContext',
-            message: 'Tomcat Context (e.g. ext#results):',
-            when: (answers) => answers.deployOnPrem,
-          },
-          {
-            type: 'confirm',
-            name: 'useAltAppDirName',
-            message: 'Use alternative webapp directory:',
-            default: false,
-            when: (answers) => answers.deployOnPrem,
-          },
-          {
-            type: 'input',
-            name: 'altAppDirName',
-            message: 'Alternative webapp directory name:',
-            when: (answers) => answers.useAltAppDirName,
-          },
-          {
-            type: 'confirm',
-            name: 'addWebadeConfig',
-            message: 'Add Webade configuration:',
-            default: false,
             when: (answers) => answers.deployOnPrem,
           },
         ]
@@ -247,12 +195,7 @@ export default class extends Generator {
         projectName: this.answers.projectName,
         serviceName: this.answers.serviceName,
         brokerJwt,
-        artifactoryProject: this.answers.artifactoryProject,
-        pomRoot: this.answers.pomRoot,
         unitTestsPath: this.answers.unitTestsPath,
-        gitHubPackages: this.answers.gitHubPackages,
-        artifactoryPackageType: this.answers.artifactoryPackageType,
-        gitHubOwnerPack: this.answers.gitHubOwnerPack,
       },
     );
     this.fs.copyTpl(
@@ -280,11 +223,6 @@ export default class extends Generator {
           projectName: this.answers.projectName,
           serviceName: this.answers.serviceName,
           brokerJwt,
-          artifactoryProject: this.answers.artifactoryProject,
-          pomRoot: this.answers.pomRoot,
-          gitHubPackages: this.answers.gitHubPackages,
-          artifactoryPackageType: this.answers.artifactoryPackageType,
-          gitHubOwnerPack: this.answers.gitHubOwnerPack,
         },
       );
       this.fs.copyTpl(
@@ -295,22 +233,17 @@ export default class extends Generator {
           serviceName: this.answers.serviceName,
         },
       );
-      const playbook_args = [
-        this.answers.projectName,
-        this.answers.serviceName,
-        this.answers.playbookPath,
-        this.answers.tomcatContext,
-        this.answers.altAppDirName,
-      ];
-      const playbook_options = {
-        addWebadeConfig: this.answers.addWebadeConfig,
-        altAppDirName: this.answers.altAppDirName,
-      };
-      this.composeWith(
-        'nr-repository-composer:pd-ansible-playbook',
-        playbook_args,
-        playbook_options,
-      );
+      // const playbook_args = [
+      //   this.answers.projectName,
+      //   this.answers.serviceName,
+      //   this.answers.playbookPath,
+      // ];
+      // const playbook_options = {};
+      // this.composeWith(
+      //   'nr-repository-composer:pd-ansible-playbook',
+      //   playbook_args,
+      //   playbook_options,
+      // );
     }
   }
 

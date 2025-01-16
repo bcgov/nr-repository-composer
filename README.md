@@ -36,7 +36,7 @@ npm link
 
 First, open a terminal and change the current working directory to the root of the checked out repository that you wish to scaffold. It is recommended that you run the generators only on a clean repository.
 
-The generators will output a file to save your answers and will update any `app-config.yaml` catalogue file. This is useful if you want to rerun the generator in the future to take advantage of any updated workflows.
+The generators will output a file to save your answers and will update any `catalog-info.yaml` catalogue file. This is useful if you want to rerun the generator in the future to take advantage of any updated workflows.
 
 The example command will run the 'gh-maven-build' generator. This creates or updates the files for building and deploying a Maven (Java) application.
 
@@ -63,7 +63,7 @@ All generators are built to be rerun multiple times.
 
 ### Backstage: backstage
 
-The generator, backstage, generates a `app-config.yaml` catalogue file. It will prompt you for various information about your application.
+The generator, backstage, generates a `catalog-info.yaml` catalogue file. It will prompt you for various information about your application.
 
 Other generators will ask to read from this file to skip prompts that ask for information stored in this file.
 
@@ -83,7 +83,7 @@ The generated files will appear in your .github/workflows and .jenkins directori
 
 ### Skip prompts (--promptless)
 
-The option `--promptless` can be used with a number of generators to attempt to run it without prompting for responses. It will attempt to only use information stored in your `app-config.yaml`.
+The option `--promptless` can be used with a number of generators to attempt to run it without prompting for responses. It will attempt to only use information stored in your `catalog-info.yaml`.
 
 ### Force changes (--force)
 

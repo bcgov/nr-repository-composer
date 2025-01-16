@@ -1,4 +1,4 @@
-export const BACKSTAGE_FILENAME = 'app-config.yaml';
+export const BACKSTAGE_FILENAME = 'catalog-info.yaml';
 
 export const pathToProps = [
   { path: ['spec', 'system'], prop: 'projectName' },

@@ -190,22 +190,6 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - name: Submit a job to Jenkins
-<% if (gitHubPackages) { -%>
-        run: |
-          curl \
-          --data-urlencode "token=${{ secrets.JENKINS_TOKEN }}" \
-          --data-urlencode "githubToken=${{ secrets.GITHUB_TOKEN }}" \
-          --data-urlencode "artifactSha256=${ARTIFACT_SHA256}" \
-          --data-urlencode "projectVersion=${PROJECT_VERSION}" \
-          --data-urlencode "gitBranch=${{ github.ref_name }}" \
-          --data-urlencode "intentionId=${BUILD_GUID}" \
-          --data-urlencode "gitTag=${{ (startsWith(github.ref, 'refs/tags/') && github.ref_name) || '' }}" \
-          --data-urlencode "configBranch=${{ inputs.config_branch || '' }}" \
-          --data-urlencode "downloadUrl=${DOWNLOAD_URL}" \
-          --data-urlencode "downloadType=GITHUB" \
-          -H "Connection: close" \
-          ${{ env.URL }}/${{ env.JOB }}
-<% } else { -%>
         run: |
           curl \
           --data-urlencode "token=${{ secrets.JENKINS_TOKEN }}" \
@@ -218,10 +202,9 @@ jobs:
           --data-urlencode "gitTag=${{ (startsWith(github.ref, 'refs/tags/') && github.ref_name) || '' }}" \
           --data-urlencode "configBranch=${{ inputs.config_branch || '' }}" \
           --data-urlencode "downloadUrl=${DOWNLOAD_URL}" \
-          --data-urlencode "downloadType=ARTIFACTORY" \
+          --data-urlencode "downloadType=<% if (gitHubPackages) { -%>GITHUB<% } else { -%>ARTIFACTORY<% } -%>" \
           -H "Connection: close" \
           ${{ env.URL }}/${{ env.JOB }}
-<% } -%>
         env:
           PROJECT_VERSION: ${{ needs.deploy-build.outputs.project_version || needs.deploy-tag.outputs.project_version }}
           BUILD_GUID: ${{ needs.deploy-build.outputs.build_guid || needs.deploy-tag.outputs.build_guid }}

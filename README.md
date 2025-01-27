@@ -10,7 +10,7 @@ There are two ways to run the composer.
 
 ## Run using a container image
 
-You will need to install one of the following. Either can run the composer using the prebuilt container (ghcr.io/bcgov-nr/nr-repository-composer).
+You will need to install one of the following. Either can run the composer using the prebuilt container (ghcr.io/bcgov/nr-repository-composer).
 
 * [Podman](https://podman.io)
 * [Docker](https://www.docker.com)
@@ -43,10 +43,10 @@ The example command will run the 'gh-maven-build' generator. This creates or upd
 ### Container
 
 ```
-podman run --rm -it -v ${PWD}:/src --userns keep-id ghcr.io/bcgov-nr/nr-repository-composer:latest -- nr-repository-composer:gh-maven-build
+podman run --rm -it -v ${PWD}:/src --userns keep-id ghcr.io/bcgov/nr-repository-composer:latest -- nr-repository-composer:gh-maven-build
 ```
 ```
-docker run --rm -it -v ${PWD}:/src ghcr.io/bcgov-nr/nr-repository-composer:latest -- nr-repository-composer:gh-maven-build
+docker run --rm -it -v ${PWD}:/src ghcr.io/bcgov/nr-repository-composer:latest -- nr-repository-composer:gh-maven-build
 ```
 
 The examples map the current working directory to the '/src' directory inside of the container image. The generator container image uses '/src' as its working directory and will read and write files at that location.

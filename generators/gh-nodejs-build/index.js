@@ -7,6 +7,7 @@ import { Document, parseDocument } from 'yaml';
 import {
   BACKSTAGE_FILENAME,
   pathToProps,
+  addGeneratorToDoc,
   extractFromYaml,
   generateSetAnswerPropPredicate,
   writePropToPath,
@@ -249,6 +250,7 @@ export default class extends Generator {
 
   writingBackstage() {
     writePropToPath(this.backstageDoc, pathToProps, this.answers);
+    addGeneratorToDoc(this.backstageDoc, 'gh-nodejs-build');
     this.fs.write(
       this.destinationPath(BACKSTAGE_FILENAME),
       this.backstageDoc.toString(),

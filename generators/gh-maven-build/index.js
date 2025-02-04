@@ -7,6 +7,7 @@ import { Document, parseDocument } from 'yaml';
 import {
   BACKSTAGE_FILENAME,
   pathToProps,
+  addGeneratorToDoc,
   extractFromYaml,
   generateSetAnswerPropPredicate,
   writePropToPath,
@@ -234,11 +235,6 @@ export default class extends Generator {
       )),
     };
   }
-
-  async configuring() {
-    // this.config.save();
-  }
-
   // Generate GitHub workflows and NR Broker intention files
   writingWorkflow() {
     const brokerJwt = this.answers.clientId.trim()
@@ -323,6 +319,7 @@ export default class extends Generator {
 
   writingBackstage() {
     writePropToPath(this.backstageDoc, pathToProps, this.answers);
+    addGeneratorToDoc(this.backstageDoc, 'gh-maven-build');
     this.fs.write(
       this.destinationPath(BACKSTAGE_FILENAME),
       this.backstageDoc.toString(),

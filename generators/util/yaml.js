@@ -1,4 +1,9 @@
 export const BACKSTAGE_FILENAME = 'catalog-info.yaml';
+export const BACKSTAGE_GENERATOR_PATH = [
+  'metadata',
+  'annotations',
+  'composer.io.nrs.gov.bc.ca/generators',
+];
 
 export const pathToProps = [
   { path: ['spec', 'system'], prop: 'projectName' },
@@ -107,6 +112,35 @@ export const pathToProps = [
     path: ['metadata', 'annotations', 'playbook.io.nrs.gov.bc.ca/clientId'],
     prop: 'clientId',
   },
+  // Migrations
+  {
+    path: ['metadata', 'annotations', 'migration.io.nrs.gov.bc.ca/schemaName'],
+    prop: 'schemaName',
+  },
+  {
+    path: [
+      'metadata',
+      'annotations',
+      'migration.io.nrs.gov.bc.ca/schemaMigrationTool',
+    ],
+    prop: 'schemaMigrationTool',
+  },
+  {
+    path: [
+      'metadata',
+      'annotations',
+      'migration.io.nrs.gov.bc.ca/schemaMigrationType',
+    ],
+    prop: 'schemaMigrationType',
+  },
+  {
+    path: [
+      'metadata',
+      'annotations',
+      'migration.io.nrs.gov.bc.ca/schemaMigrationBasePath',
+    ],
+    prop: 'schemaMigrationBasePath',
+  },
 ];
 
 export function extractFromYaml(doc, pathToProps) {
@@ -122,6 +156,20 @@ export function extractFromYaml(doc, pathToProps) {
   }
 
   return answers;
+}
+
+export function addGeneratorToDoc(doc, generator) {
+  if (doc.hasIn(BACKSTAGE_GENERATOR_PATH)) {
+    const generators = doc.getIn(BACKSTAGE_GENERATOR_PATH).split(',');
+    console.log(generators);
+    console.log(generators.indexOf(generator));
+    if (generators.indexOf(generator) === -1) {
+      generators.push(generator);
+      doc.setIn(BACKSTAGE_GENERATOR_PATH, generators.join(','));
+    }
+  } else {
+    doc.setIn(BACKSTAGE_GENERATOR_PATH, generator);
+  }
 }
 
 export function generateSetAnswerPropPredicate(answers, skip) {

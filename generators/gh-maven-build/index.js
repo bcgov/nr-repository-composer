@@ -97,7 +97,7 @@ export default class extends Generator {
       this.log(
         '  ' +
           chalk.bold('GitHub Owner with repo path:    ') +
-          chalk.dim('The Github owner with repo path (e.g. bcgov-c/edqa-war) '),
+          chalk.dim('The Github owner with repo path (e.g. bcgov-c/nr-edqa) '),
       );
       this.log('');
 
@@ -164,7 +164,7 @@ export default class extends Generator {
           {
             type: 'input',
             name: 'gitHubOwnerPack',
-            message: 'GitHub Owner with repo path (e.g. bcgov-c/results-war):',
+            message: 'GitHub Owner with repo path (e.g. bcgov-c/nr-results):',
             when: (answers) => answers.gitHubPackages,
           },
           {

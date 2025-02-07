@@ -62,15 +62,18 @@ jobs:
       - name: Set version
         id: set-version
         run: |
+          REF_NAME="${{ github.ref_name }}"
+          SAFE_REF_NAME=$(echo "$REF_NAME" | tr '/' '-')
+
           if [[ ${{ startsWith(github.ref, 'refs/heads/') }} = true ]]; then
             version=$(cat package.json | jq -r '.version')
-            echo "project_version=$version-${{ github.ref_name }}" >> "$GITHUB_OUTPUT"
-            echo "tag=${{ github.ref_name }}" >> "$GITHUB_OUTPUT"
+            echo "project_version=$version-${SAFE_REF_NAME}" >> "$GITHUB_OUTPUT"
+            echo "tag=${SAFE_REF_NAME}" >> "$GITHUB_OUTPUT"
           fi
           if [[ ${{ startsWith(github.ref, 'refs/pull/') }} = true ]]; then
             version=$(cat package.json | jq -r '.version')
-            echo "project_version=$version-${{ github.ref_name }}" >> "$GITHUB_OUTPUT"
-            echo "tag=${{ github.ref_name }}" >> "$GITHUB_OUTPUT"
+            echo "project_version=$version-${SAFE_REF_NAME}" >> "$GITHUB_OUTPUT"
+            echo "tag=${SAFE_REF_NAME}" >> "$GITHUB_OUTPUT"
           fi
           if [[ ${{ startsWith(github.ref, 'refs/tags/v') }} = true ]]; then
             echo "tag=${{ github.ref_name }}" >> "$GITHUB_OUTPUT"

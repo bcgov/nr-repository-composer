@@ -2,19 +2,19 @@
 import * as fs from 'fs';
 import Generator from 'yeoman-generator';
 import yosay from 'yosay';
+import chalk from 'chalk';
 import { Document, parseDocument } from 'yaml';
 import {
   BACKSTAGE_FILENAME,
   pathToProps,
-  addGeneratorToDoc,
   extractFromYaml,
   generateSetAnswerPropPredicate,
   writePropToPath,
+  addGeneratorToDoc,
 } from '../util/yaml.js';
-import { extractGitHubSlug, getGitRepoOriginUrl } from '../util/git.js';
 
 /**
- * Generate a basic backstage file
+ * Generate a database directory
  */
 export default class extends Generator {
   async initializing() {
@@ -31,10 +31,24 @@ export default class extends Generator {
     const promptless = !!this.options.promptless;
     this.answers = extractFromYaml(this.backstageDoc, pathToProps);
 
-    this.log(yosay('Welcome to the backstage file generator!'));
+    if (!promptless) {
+      this.log(yosay('Welcome to the database generator!'));
 
-    // Attempt to read origin url
-    const repoOrigin = getGitRepoOriginUrl();
+      this.log(chalk.bold('Usage'));
+      this.log('');
+      this.log(
+        '  ' +
+          chalk.bold('Schema(s):     ') +
+          chalk.dim('Comma-separated list of schemas to manage in this repos'),
+      );
+      this.log(
+        '  ' +
+          chalk.bold('Tool:     ') +
+          chalk.dim(
+            'If a supported tool is choosen, additional guidelines provided',
+          ),
+      );
+    }
 
     const backstageAnswer = promptless
       ? { skip: true }
@@ -53,50 +67,26 @@ export default class extends Generator {
         [
           {
             type: 'input',
-            name: 'projectName',
-            message: 'Project:',
+            name: 'schemaName',
+            message: 'Schema(s):',
           },
           {
             type: 'input',
-            name: 'serviceName',
-            message: 'Service:',
+            name: 'schemaMigrationTool',
+            default: 'flyway',
+            message: 'Tool (manual, flyway, liquibase):',
           },
           {
             type: 'input',
-            name: 'description',
-            message: 'Description:',
+            name: 'schemaMigrationType',
+            default: '',
+            message: 'Type (oracle, mongodb, postgressql, etc.):',
           },
           {
             type: 'input',
-            name: 'title',
-            message: 'Title:',
-          },
-          {
-            type: 'input',
-            name: 'type',
-            message: 'Type (service, website, library):',
-          },
-          {
-            type: 'input',
-            name: 'lifecycle',
-            message: 'Lifecycle (experimental, production, deprecated):',
-          },
-          {
-            type: 'input',
-            name: 'license',
-            default: 'Apache-2.0',
-            message: 'License (SPDX):',
-          },
-          {
-            type: 'input',
-            name: 'owner',
-            message: 'Owner:',
-          },
-          {
-            type: 'input',
-            name: 'githubProjectSlug',
-            message: 'GitHub Slug (<organization or owner>/<repository>):',
-            default: extractGitHubSlug(repoOrigin) ?? '',
+            name: 'schemaMigrationBasePath',
+            default: '',
+            message: 'Base path:',
           },
         ]
           .filter(
@@ -112,13 +102,26 @@ export default class extends Generator {
     };
   }
 
+  writingDatabase() {
+    this.fs.copyTpl(
+      this.templatePath('README.md'),
+      this.destinationPath('migrations/README.md'),
+      {
+        projectName: this.answers.projectName,
+        serviceName: this.answers.serviceName,
+        schemaMigrationTool: this.answers.schemaMigrationTool,
+      },
+    );
+    this.fs.copyTpl(
+      this.templatePath('util/'),
+      this.destinationPath('migrations/util/setenv-prod.sh'),
+      {},
+    );
+  }
+
   writingBackstage() {
     writePropToPath(this.backstageDoc, pathToProps, this.answers);
-
-    this.backstageDoc.setIn(['apiVersion'], 'backstage.io/v1alpha1');
-    this.backstageDoc.setIn(['kind'], 'Component');
-    addGeneratorToDoc(this.backstageDoc, 'backstage');
-
+    addGeneratorToDoc(this.backstageDoc, 'migrations');
     this.fs.write(
       this.destinationPath(BACKSTAGE_FILENAME),
       this.backstageDoc.toString(),

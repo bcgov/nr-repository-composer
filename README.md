@@ -61,23 +61,34 @@ npx yo nr-repository-composer:gh-maven-build
 
 All generators are built to be rerun multiple times.
 
+| Generator | Platform | Deploy to | Technologies |
+| ----------- | ----------- | ----------- | ----------- |
+| backstage | All | - | Backstage |
+| gh-maven-build | GitHub | Bring your own or on-premise | Java, GitHub Actions |
+| gh-nodejs-build | GitHub | Bring your own or on-premise | NodeJS, GitHub Actions |
+| migrations | All | - | FlyWay, Liquibase |
+
 ### Backstage: backstage
 
-The generator, backstage, generates a `catalog-info.yaml` catalogue file. It will prompt you for various information about your application.
+This generates a `catalog-info.yaml` catalogue file. It will prompt you for various information about your application.
 
 Other generators will ask to read from this file to skip prompts that ask for information stored in this file.
 
 ### Github Maven Build: gh-maven-build
 
-The generator, gh-maven-build, generates the CI workflow and NR Broker intention files for building Java/Tomcat with Maven in GitHub.
+This generates the CI workflow and NR Broker intention files for building Java/Tomcat with Maven in GitHub.
 
 The generated files will appear in your .github/workflows and .jenkins directories.
 
 ### Github Node.js Build: gh-nodejs-build
 
-The generator, gh-nodejs-build, generates the CI workflow and NR Broker intention files for building Node.js in GitHub. The workflow assume that your `package.json` has a `build` command and your build places the files in `./dist`.
+This generates the CI workflow and NR Broker intention files for building Node.js in GitHub. The workflow assume that your `package.json` has a `build` command and your build places the files in `./dist`.
 
 The generated files will appear in your .github/workflows and .jenkins directories.
+
+### DB Migrations: migrations
+
+This assists in creating a standard layout of folders and files related to database migrations. This is a catch-all generator that supports manual and automated processes that incrementally alter your database.
 
 ## Command Options
 
@@ -95,7 +106,7 @@ The option `--force` will allow Yoeman to automatically overwrite any existing f
 
 The following are expected to be installed.
 
-* node (v20)
+* node (v22+)
 * podman
 
 ## Building the image

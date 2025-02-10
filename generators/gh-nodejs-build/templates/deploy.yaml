@@ -1,0 +1,174 @@
+name: Deploy
+
+on:
+  workflow_dispatch:
+    inputs:
+      config_branch:
+        description: 'Use branch for testing configuration changes'
+        required: false
+        type: string
+
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
+env:
+  SERVICE_PROJECT: <%= projectName %>
+  SERVICE_NAME: <%= serviceName %>
+  JOB: buildByToken/buildWithParameters?job=<%= projectName %>/<%= serviceName %>
+  URL: https://cd.io.nrs.gov.bc.ca
+  PACKAGE_REPO: ghcr.io/${{ github.repository }}/package
+
+jobs:
+  check_token_expiration:
+    uses: ./.github/workflows/check-token.yaml
+    secrets:
+      token: ${{ secrets.<%= brokerJwt %> }}
+  deploy-build:
+    name: Deploy development version
+    if: ${{ ! startsWith(github.ref, 'refs/tags/') }}
+    runs-on: ubuntu-latest
+    needs: check_token_expiration
+    outputs:
+      project_version: ${{ steps.set-build-output.outputs.project_version }}
+      build_guid: ${{ steps.set-build-output.outputs.build_guid }}
+      build_number: ${{ steps.set-build-output.outputs.build_number }}
+      artifact_name: ${{ steps.set-build-output.outputs.artifact_name }}
+      artifact_sha256: ${{ steps.set-build-output.outputs.artifact_sha256 }}
+      download_url: ${{ steps.set-download-url.outputs.download_url }}
+    steps:
+      - name: Set build output
+        id: set-build-output
+        run: |
+          RESPONSE=$(curl -s -X 'POST' \
+            "${BROKER_URL}/v1/intention/search?where=%7B%22actions.action%22%3A%22package-build%22%2C%22actions.service.project%22%3A%22${SERVICE_PROJECT}%22%2C%22actions.service.name%22%3A%22${SERVICE_NAME}%22%2C%22actions.package.buildVersion%22%3A%22${GITHUB_SHA}%22%7D&offset=0&limit=1" \
+            -H 'accept: application/json' \
+            -H 'Authorization: Bearer '"${BROKER_JWT}"'' \
+            -d '')
+          if echo "$RESPONSE" | jq -e '.statusCode == 401' > /dev/null; then
+            echo "Status code is 401. This indicates an authorization error."
+            echo "Please check if your Broker Token is valid. Teams can generate a new one in Broker if needed."
+            echo "Link: https://broker.io.nrs.gov.bc.ca/browse/brokerAccount"
+            echo "Exiting..."
+            exit 1
+          fi
+          echo "project_version=$(echo ${RESPONSE} | jq -r '.data[].actions[].package.version')" >> $GITHUB_OUTPUT
+          echo "build_guid=$(echo ${RESPONSE} | jq -r '.data[].id')" >> $GITHUB_OUTPUT
+          echo "build_number=$(echo ${RESPONSE} | jq -r '.data[].actions[].package.buildNumber')" >> $GITHUB_OUTPUT
+          echo "artifact_name=$(echo ${RESPONSE} | jq -r '.data[].actions[].artifacts[].name')" >> $GITHUB_OUTPUT
+          artifact_checksum=$(echo ${RESPONSE} | jq -r '.data[].actions[].artifacts[].checksum')
+          echo "artifact_sha256=${artifact_checksum#sha256:}" >> $GITHUB_OUTPUT
+        env:
+          BROKER_URL: https://broker.io.nrs.gov.bc.ca
+          BROKER_JWT: ${{ secrets.<%= brokerJwt %> }}
+          SERVICE_PROJECT: ${{ env.SERVICE_PROJECT }}
+          SERVICE_NAME: ${{ env.SERVICE_NAME }}
+          GITHUB_SHA: ${{ github.sha }}
+      - name: Checkout repository
+        uses: actions/checkout@v4
+        with:
+            fetch-depth: 0
+            fetch-tags: true
+            ref: ${{ github.ref }}
+      - name: Set nodejs package download URL
+        id: set-download-url
+        run: |
+          SAFE_PACKAGE_TAG=$(echo "$PACKAGE_TAG" | tr '/' '-')
+          DOWNLOAD_URL="${PACKAGE_REPO}:${SAFE_PACKAGE_TAG}"
+          echo "${DOWNLOAD_URL}"
+          echo "download_url=$(echo ${DOWNLOAD_URL})" >> $GITHUB_OUTPUT
+        env:
+          PACKAGE_TAG: ${{ github.ref_name }}
+          PACKAGE_REPO: ${{ env.PACKAGE_REPO }}
+  deploy-tag:
+    name: Deploy release version
+    if: ${{ startsWith(github.ref, 'refs/tags/') }}
+    runs-on: ubuntu-latest
+    needs: check_token_expiration
+    outputs:
+      project_version: ${{ steps.set-tag-output.outputs.project_version }}
+      build_guid: ${{ steps.set-tag-output.outputs.build_guid }}
+      build_number: ${{ steps.set-tag-output.outputs.build_number }}
+      artifact_name: ${{ steps.set-tag-output.outputs.artifact_name }}
+      artifact_sha256: ${{ steps.set-tag-output.outputs.artifact_sha256 }}
+      download_url: ${{ steps.set-download-url.outputs.download_url }}
+    steps:
+      - name: Set tag output
+        id: set-tag-output
+        run: |
+          TAG=${{ github.ref_name }}
+          PROJECT_VERSION=${TAG#v}
+          RESPONSE=$(curl -s -X 'POST' \
+            "${BROKER_URL}/v1/intention/search?where=%7B%22actions.action%22%3A%22package-build%22%2C%22actions.service.project%22%3A%22${SERVICE_PROJECT}%22%2C%22actions.service.name%22%3A%22${SERVICE_NAME}%22%2C%22actions.package.version%22%3A%22${PROJECT_VERSION}%22%7D&offset=0&limit=1" \
+            -H 'accept: application/json' \
+            -H 'Authorization: Bearer '"${BROKER_JWT}"'' \
+            -d '')
+          if echo "$RESPONSE" | jq -e '.statusCode == 401' > /dev/null; then
+            echo "Status code is 401. This indicates an authorization error."
+            echo "Please check if your Broker Token is valid. Teams can generate a new one in Broker if needed."
+            echo "Link: https://broker.io.nrs.gov.bc.ca/browse/brokerAccount"
+            echo "Exiting..."
+            exit 1
+          fi
+          echo "project_version=${PROJECT_VERSION}" >> $GITHUB_OUTPUT
+          echo "build_guid=$(echo ${RESPONSE} | jq -r '.data[].id')" >> $GITHUB_OUTPUT
+          echo "build_number=$(echo ${RESPONSE} | jq -r '.data[].actions[].package.buildNumber')" >> $GITHUB_OUTPUT
+          echo "artifact_name=$(echo ${RESPONSE} | jq -r '.data[].actions[].artifacts[].name')" >> $GITHUB_OUTPUT
+          artifact_checksum=$(echo ${RESPONSE} | jq -r '.data[].actions[].artifacts[].checksum')
+          echo "artifact_sha256=${artifact_checksum#sha256:}" >> $GITHUB_OUTPUT
+        env:
+          BROKER_URL: https://broker.io.nrs.gov.bc.ca
+          BROKER_JWT: ${{ secrets.<%= brokerJwt %> }}
+          SERVICE_PROJECT: ${{ env.SERVICE_PROJECT }}
+          SERVICE_NAME: ${{ env.SERVICE_NAME }}
+      - name: Checkout repository
+        uses: actions/checkout@v4
+        with:
+            fetch-depth: 0
+            fetch-tags: true
+            ref: ${{ github.ref }}
+      - name: Set download URL
+        id: set-download-url
+        run: |
+          DOWNLOAD_URL="${PACKAGE_REPO}:${PACKAGE_TAG}"
+          echo "${DOWNLOAD_URL}"
+          echo "download_url=$(echo ${DOWNLOAD_URL})" >> $GITHUB_OUTPUT
+        env:
+          PACKAGE_TAG: ${{ steps.set-tag-output.outputs.project_version }}
+          PACKAGE_REPO: ${{ env.PACKAGE_REPO }}
+  submit-job:
+    name: Submit job
+    if: |
+      always() &&
+      ((needs.deploy-build.result == 'success' && needs.deploy-tag.result == 'skipped') ||
+      (needs.deploy-build.result == 'skipped' && needs.deploy-tag.result == 'success'))
+    needs: [deploy-build, deploy-tag]
+    runs-on: ubuntu-latest
+    steps:
+      - name: Submit a job to Jenkins
+        run: |
+          curl \
+          --data-urlencode "token=${{ secrets.JENKINS_TOKEN }}" \
+          --data-urlencode "githubToken=${{ secrets.GITHUB_TOKEN }}" \
+          --data-urlencode "brokerJwt=${{ secrets.<%= brokerJwt %> }}" \
+          --data-urlencode "artifactSha256=${ARTIFACT_SHA256}" \
+          --data-urlencode "projectVersion=${PROJECT_VERSION}" \
+          --data-urlencode "gitBranch=${{ github.ref_name }}" \
+          --data-urlencode "intentionId=${BUILD_GUID}" \
+          --data-urlencode "gitTag=${{ (startsWith(github.ref, 'refs/tags/') && github.ref_name) || '' }}" \
+          --data-urlencode "configBranch=${{ inputs.config_branch || '' }}" \
+          --data-urlencode "downloadUrl=${DOWNLOAD_URL}" \
+          --data-urlencode "downloadType=OCI" \
+          -H "Connection: close" \
+          ${{ env.URL }}/${{ env.JOB }}
+        env:
+          PROJECT_VERSION: ${{ needs.deploy-build.outputs.project_version || needs.deploy-tag.outputs.project_version }}
+          BUILD_GUID: ${{ needs.deploy-build.outputs.build_guid || needs.deploy-tag.outputs.build_guid }}
+          BUILD_NUMBER: ${{ needs.deploy-build.outputs.build_number || needs.deploy-tag.outputs.build_number }}
+          ARTIFACT_SHA256: ${{ needs.deploy-build.outputs.artifact_sha256 || needs.deploy-tag.outputs.artifact_sha256 }}
+          DOWNLOAD_URL: ${{ needs.deploy-build.outputs.download_url || needs.deploy-tag.outputs.download_url }}
+      # The automatically generated GitHub token will expire when the workflow ends. We need to wait so the job has time to clone the repo
+      # and download the package
+      - name: Sleep
+        run: sleep 90s
+        shell: bash

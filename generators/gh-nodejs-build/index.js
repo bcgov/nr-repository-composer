@@ -89,18 +89,19 @@ export default class extends Generator {
       );
       this.log(
         '  ' +
-          chalk.bold('Root:    ') +
-          chalk.dim(
-            "The path to where your build is located relative to the repository's root",
-          ),
-      );
-      this.log(
-        '  ' +
-          chalk.bold('GitHub Owner with repo path:    ') +
+          chalk.bold('GitHub Owner with repo path: ') +
           chalk.dim(
             'The Github owner with repo path (e.g. bcgov-nr/edqa-war) ',
           ),
       );
+      this.log(
+        '  ' +
+          chalk.bold('Published files/folders: ') +
+          chalk.dim(
+            'A space separated list with the first used as the overall checksum.',
+          ),
+      );
+
       this.log('');
 
       this.log(chalk.bold('Prompts'));
@@ -151,6 +152,12 @@ export default class extends Generator {
             default: '',
           },
           {
+            type: 'input',
+            name: 'publishArtifactSuffix',
+            message: 'Published files/folders:',
+            default: 'dist node_modules package.json package-lock.json',
+          },
+          {
             type: 'confirm',
             name: 'deployOnPrem',
             message: 'Deploy on-prem:',
@@ -197,6 +204,7 @@ export default class extends Generator {
         serviceName: this.answers.serviceName,
         brokerJwt,
         unitTestsPath: this.answers.unitTestsPath,
+        publishArtifactSuffix: this.answers.publishArtifactSuffix,
       },
     );
     this.fs.copyTpl(
@@ -234,17 +242,6 @@ export default class extends Generator {
           serviceName: this.answers.serviceName,
         },
       );
-      // const playbook_args = [
-      //   this.answers.projectName,
-      //   this.answers.serviceName,
-      //   this.answers.playbookPath,
-      // ];
-      // const playbook_options = {};
-      // this.composeWith(
-      //   'nr-repository-composer:pd-ansible-playbook',
-      //   playbook_args,
-      //   playbook_options,
-      // );
     }
   }
 

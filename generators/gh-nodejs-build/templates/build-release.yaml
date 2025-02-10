@@ -116,7 +116,7 @@ jobs:
         id: publish-artifact
         run: |
           oras login ghcr.io -u ${{ github.actor }} --password-stdin <<< ${{ secrets.GITHUB_TOKEN }}
-          oras push --export-manifest manifest.json ghcr.io/${{ github.repository }}/package:${PROJECT_TAG} dist node_modules package.json package-lock.json
+          oras push --export-manifest manifest.json ghcr.io/${{ github.repository }}/package:${PROJECT_TAG} <%= publishArtifactSuffix %>
           MANIFEST=$(cat ./manifest.json)
           echo $MANIFEST
           echo "artifact_sha256=$(echo $MANIFEST | jq -r '.layers[] | select(.annotations["org.opencontainers.image.title"] == "dist") | .digest')" >> $GITHUB_OUTPUT

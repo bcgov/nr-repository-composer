@@ -10,32 +10,23 @@
     - "vars/custom/{{env_vars}}.yaml"
 
   roles:
-    # Establish the port number
-    - name: port_manager
-
     # prepare the installation environment by creating the necessary folders
-    - name: create_project_directories
+    - role: create_project_directories
+
+    # Establish the port number
+    - role: port_manager
 
     # individual JDK installation
-    - name: jdk
-      vars:
-        jdk_version:
-          type: 'openjdk'
-          major_version: 8
-          url: '{{ artifactory_url }}/ext-binaries-local/openjdk/java-se-8u40-ri.tar.gz'
-          filename: 'java-se-8u40-ri.tar.gz'
-          checksum: 'sha1:606984531e3eeddba6be5ac626a229ef283c5de0'
-          cacerts_path: 'jre/lib/security/cacerts'
-        use_proxy: false
+    - role: jdk
 
     # create a self signed certificate to allow for HTTPS
-    - name: self_signed_cert
+    - role: self_signed_cert
 
     # install & configure the Tomcat container
-    - name: tomcat
+    - role: tomcat
 
     # deploy the webapp
-    - name: webapp
+    - role: webapp
       vars:
         webapp_war:
           context: "{{ context }}"
@@ -43,12 +34,12 @@
         proxy_env: "{{ env_vars }}"
 
     # create a WebADE connection jar for the container
-    - name: webade_connection_jar
+    - role: webade_connection_jar
       # Uncomment the following line if using the MOF Webade datastore
       # vars:
       #   webade_datastore: "ca.bc.gov.webade.mof.MOFOrganizationDatastore"
       become: yes
-      become_user: "{{ install_user }}"
+      become_user: "{{ polaris_install_user }}"
 
   tasks:
     # The following task is an example for adding custom webapp configuration files
@@ -59,9 +50,9 @@
         dest: "{{ item.dest }}"
         mode: "0775"
       become: yes
-      become_user: "{{ install_user }}"
+      become_user: "{{ polaris_install_user }}"
       with_items:
         - {
             src: "web.xml.j2",
-            dest: "{{ apps_home }}/{{ pd_prop_project_name }}/{{ pd_prop_service_name }}/{{ pd_prop_service_install_directory }}/webapps/{{ alt_app_dir_name | default(context) }}/WEB-INF/web.xml"
+            dest: "{{ polaris_apps_service_install_home }}/webapps/{{ alt_app_dir_name | default(context) }}/WEB-INF/web.xml"
           }

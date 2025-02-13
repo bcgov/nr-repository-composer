@@ -43,7 +43,7 @@ The example command will run the 'gh-maven-build' generator. This creates or upd
 ### Container
 
 ```
-podman run --rm -it -v ${PWD}:/src --userns keep-id ghcr.io/bcgov/nr-repository-composer:latest -- nr-repository-composer:gh-maven-build
+podman run --rm -v ${PWD}:/src --userns keep-id ghcr.io/bcgov/nr-repository-composer:latest -- nr-repository-composer:gh-maven-build
 ```
 ```
 docker run --rm -it -v ${PWD}:/src ghcr.io/bcgov/nr-repository-composer:latest -- nr-repository-composer:gh-maven-build
@@ -99,6 +99,10 @@ The option `--promptless` can be used with a number of generators to attempt to 
 ### Force changes (--force)
 
 The option `--force` will allow Yoeman to automatically overwrite any existing files. Yoeman's built-in file comparison is redundant if you are running the composer on a clean repository. You can review the changes using git and in a pull request.
+
+### Headless (--headless)
+
+The option `--headless` will fail if the command cannot be run without prompting the user.
 
 # Developing Generators
 

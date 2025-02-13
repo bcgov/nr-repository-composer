@@ -1,4 +1,5 @@
 import * as fs from 'fs';
+import path from 'path';
 
 export function extractGitHubSlug(gitUrl) {
   if (typeof gitUrl !== 'string') {
@@ -15,10 +16,36 @@ export function extractGitHubSlug(gitUrl) {
   return match ? match[1] : null;
 }
 
+export function findGitRepoOrigin(startPath = process.cwd()) {
+  let currentPath = startPath;
+
+  while (currentPath !== path.parse(currentPath).root) {
+    const gitConfigPath = path.join(currentPath, '.git', 'config');
+
+    try {
+      if (fs.statSync(gitConfigPath).isFile()) {
+        return gitConfigPath;
+      }
+      // eslint-disable-next-line no-unused-vars
+    } catch (error) {
+      // If the file isn't found, continue walking up
+    }
+
+    currentPath = path.dirname(currentPath);
+  }
+
+  console.error('No .git/config file found');
+  return null;
+}
+
 export function getGitRepoOriginUrl() {
   try {
     // Read the contents of the .git/config file
-    const configContent = fs.readFileSync('.git/config', 'utf8');
+    const gitConfigPath = findGitRepoOrigin();
+    if (gitConfigPath === null) {
+      return null;
+    }
+    const configContent = fs.readFileSync(gitConfigPath, 'utf8');
 
     // Regular expression to match the remote "origin" URL
     const regex = /\[remote "origin"\]\s+url\s*=\s*(.*)/g;

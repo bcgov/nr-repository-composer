@@ -110,6 +110,7 @@ jobs:
             echo "Exiting..."
             exit 1
           fi
+          echo "project_tag=${TAG}" >> $GITHUB_OUTPUT
           echo "project_version=${PROJECT_VERSION}" >> $GITHUB_OUTPUT
           echo "build_guid=$(echo ${RESPONSE} | jq -r '.data[].id')" >> $GITHUB_OUTPUT
           echo "build_number=$(echo ${RESPONSE} | jq -r '.data[].actions[].package.buildNumber')" >> $GITHUB_OUTPUT
@@ -134,7 +135,7 @@ jobs:
           echo "${DOWNLOAD_URL}"
           echo "download_url=$(echo ${DOWNLOAD_URL})" >> $GITHUB_OUTPUT
         env:
-          PACKAGE_TAG: ${{ steps.set-tag-output.outputs.project_version }}
+          PACKAGE_TAG: ${{ steps.set-tag-output.outputs.project_tag }}
           PACKAGE_REPO: ${{ env.PACKAGE_REPO }}
   submit-job:
     name: Submit job

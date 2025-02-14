@@ -4,6 +4,7 @@ import Generator from 'yeoman-generator';
 import yosay from 'yosay';
 import chalk from 'chalk';
 import { Document, parseDocument } from 'yaml';
+import { bailOnAnyQuestions } from '../util/process.js';
 import {
   BACKSTAGE_FILENAME,
   pathToProps,
@@ -39,6 +40,7 @@ export default class extends Generator {
 
   async prompting() {
     const promptless = !!this.options.promptless;
+    const headless = !!this.options.headless;
     this.answers = extractFromYaml(this.backstageDoc, pathToProps);
     console.log(this.answers);
 
@@ -179,7 +181,8 @@ export default class extends Generator {
               question.default = this.answers[question.name];
             }
             return question;
-          }),
+          })
+          .map(bailOnAnyQuestions(headless)),
       )),
     };
   }

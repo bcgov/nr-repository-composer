@@ -3,6 +3,7 @@ import * as fs from 'fs';
 import Generator from 'yeoman-generator';
 import yosay from 'yosay';
 import { Document, parseDocument } from 'yaml';
+import { bailOnAnyQuestions } from '../util/process.js';
 import {
   BACKSTAGE_FILENAME,
   pathToProps,
@@ -29,6 +30,7 @@ export default class extends Generator {
 
   async prompting() {
     const promptless = !!this.options.promptless;
+    const headless = !!this.options.headless;
     this.answers = extractFromYaml(this.backstageDoc, pathToProps);
 
     this.log(yosay('Welcome to the backstage file generator!'));
@@ -107,7 +109,8 @@ export default class extends Generator {
               question.default = this.answers[question.name];
             }
             return question;
-          }),
+          })
+          .map(bailOnAnyQuestions(headless)),
       )),
     };
   }

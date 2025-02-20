@@ -42,7 +42,6 @@ export default class extends Generator {
     const promptless = !!this.options.promptless;
     const headless = !!this.options.headless;
     this.answers = extractFromYaml(this.backstageDoc, pathToProps);
-    console.log(this.answers);
 
     if (!promptless) {
       this.log(

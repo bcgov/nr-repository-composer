@@ -117,6 +117,10 @@ The following are expected to be installed.
 
 The Dockerfile can be built by running './build.sh'. The local image will be tagged as 'nr-repository-composer'.
 
+# Tools
+
+See: [Tools](./tools)
+
 # License
 
 See: [LICENSE](./LICENSE)

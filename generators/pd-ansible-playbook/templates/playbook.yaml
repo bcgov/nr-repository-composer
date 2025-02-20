@@ -11,21 +11,27 @@
 
   roles:
     # prepare the installation environment by creating the necessary folders
+    # See: https://github.com/bcgov/nr-polaris-collection/tree/main/polaris/deploy/roles/create_project_directories
     - role: create_project_directories
 
     # Establish the port number
+    # See: https://github.com/bcgov/nr-polaris-collection/tree/main/polaris/deploy/roles/port_manager
     - role: port_manager
 
     # individual JDK installation
+    # See: https://github.com/bcgov/nr-polaris-collection/tree/main/polaris/deploy/roles/jdk
     - role: jdk
 
     # create a self signed certificate to allow for HTTPS
+    # See: https://github.com/bcgov/nr-polaris-collection/tree/main/polaris/deploy/roles/self_signed_cert
     - role: self_signed_cert
 
-    # install & configure the Tomcat container
+    # Install & configure the Tomcat container
+    # See: https://github.com/bcgov/nr-polaris-collection/tree/main/polaris/deploy/roles/tomcat
     - role: tomcat
 
     # deploy the webapp
+    # See: https://github.com/bcgov/nr-polaris-collection/tree/main/polaris/deploy/roles/webapp
     - role: webapp
       vars:
         webapp_war:
@@ -34,25 +40,30 @@
         proxy_env: "{{ env_vars }}"
 
     # create a WebADE connection jar for the container
+    # If using the MOF Webade datastore, add the following to vars/custom/all.yaml
+    # webade_datastore: "ca.bc.gov.webade.mof.MOFOrganizationDatastore"
+    # See: https://github.com/bcgov/nr-polaris-collection/tree/main/polaris/deploy/roles/webade_connection_jar
     - role: webade_connection_jar
-      # Uncomment the following line if using the MOF Webade datastore
-      # vars:
-      #   webade_datastore: "ca.bc.gov.webade.mof.MOFOrganizationDatastore"
       become: yes
       become_user: "{{ polaris_install_user }}"
 
   tasks:
-    # The following task is an example for adding custom webapp configuration files
-    # You can modify it according to your needs or remove it if custom configuration is not needed
-    - name: configure nonstandard files
-      template:
-        src: "{{ playbook_dir }}/templates/{{ item.src }}"
-        dest: "{{ item.dest }}"
-        mode: "0775"
-      become: yes
-      become_user: "{{ polaris_install_user }}"
-      with_items:
-        - {
-            src: "web.xml.j2",
-            dest: "{{ polaris_apps_service_install_home }}/webapps/{{ alt_app_dir_name | default(context) }}/WEB-INF/web.xml"
-          }
+    - stat:
+      path: custom-tasks.yaml
+      register: playbookcustomtask
+    - ansible.builtin.include_tasks: custom-tasks.yaml
+      when: playbookcustomtask.stat.exists
+    # The following is an example of a custom-tasks.yaml for adding custom webapp configuration files
+    # ---
+    # - name: configure nonstandard files
+    #   template:
+    #     src: "{{ playbook_dir }}/templates/{{ item.src }}"
+    #     dest: "{{ item.dest }}"
+    #     mode: "0775"
+    #   become: yes
+    #   become_user: "{{ polaris_install_user }}"
+    #   with_items:
+    #     - {
+    #         src: "web.xml.j2",
+    #         dest: "{{ polaris_apps_service_install_home }}/webapps/{{ alt_app_dir_name | default(context) }}/WEB-INF/web.xml"
+    #       }

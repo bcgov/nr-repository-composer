@@ -7,4 +7,4 @@
 **/Non-deliverables
 **/lib*
 **/node_modules/
-/test
+/test*

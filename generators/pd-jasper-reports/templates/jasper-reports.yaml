@@ -1,0 +1,41 @@
+
+---
+- name: Deploy <%= projectNameUpperCase %> Jasper Reports
+  hosts: localhost
+  connection: local
+  collections:
+    - polaris.deploy
+  vars:
+    jasper_server_instance: <%= jasperServerInstanceUpperCase %>
+    jasper_project_name: <%= projectNameUpperCase %>
+    jasper_ds_0_url: "{{ lookup('ansible.builtin.env', 'PODMAN_cfg_jasper_ds_0_url') | default('') }}"
+    jasper_ds_0_user: "{{ lookup('ansible.builtin.env', 'PODMAN_cfg_jasper_ds_0_user') | default('') }}"
+    jasper_ds_0_password: "{{ lookup('ansible.builtin.env', 'PODMAN_cfg_jasper_ds_0_password') | default('') }}"
+    jasper_deployer_url: "{{ lookup('ansible.builtin.env', 'PODMAN_cfg_jasper_deployer_url') | default('') }}"
+    jasper_deployer_user: "{{ lookup('ansible.builtin.env', 'PODMAN_cfg_jasper_deployer_user') | default('') }}"
+    jasper_deployer_password: "{{ lookup('ansible.builtin.env', 'PODMAN_cfg_jasper_deployer_password') | default('') }}"
+
+  tasks:
+    - name: Create packages
+      include_role:
+        name: jasper_reports
+      tags: create_packages
+
+    - name: Deploy to node 1
+      when: jasper_env in ["dev", "test", "prod"]
+      include_role:
+        name: jasper_reports
+      tags: deploy_packages
+
+    - name: Deploy to node 2
+      when: jasper_env in ["test", "prod"]
+      include_role:
+        name: jasper_reports
+      vars:
+        jasper_route_id: ".2"
+      tags: deploy_packages
+
+    - name: Delete staging directory
+      include_role:
+        name: jasper_reports
+      tags: delete_staging_dir

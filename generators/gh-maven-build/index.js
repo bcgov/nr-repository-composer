@@ -189,11 +189,24 @@ export default class extends Generator {
             default: false,
           },
           {
+            type: 'confirm',
+            name: 'deployJasperReports',
+            message: 'Deploy Jasper Reports:',
+            default: false,
+          },
+          {
+            type: 'input',
+            name: 'jasperServerInstance',
+            message: 'Jasper Reports server instance:',
+            default: 'JCRS',
+            when: (answers) => answers.deployJasperReports,
+          },
+          {
             type: 'input',
             name: 'playbookPath',
             message: 'Playbook path:',
             default: 'playbooks',
-            when: (answers) => answers.deployOnPrem,
+            when: (answers) => answers.deployOnPrem || answers.deployJasperReports,
           },
           {
             type: 'input',
@@ -313,6 +326,15 @@ export default class extends Generator {
         'nr-repository-composer:pd-ansible-playbook',
         playbook_args,
         playbook_options,
+      );
+      const jasper_reports_args = [
+        this.answers.projectName,
+        this.answers.jasperServerInstance,
+        this.answers.playbookPath,
+      ];
+      this.composeWith(
+        'nr-repository-composer:pd-jasper-reports',
+        jasper_reports_args,
       );
     }
   }

@@ -244,6 +244,19 @@ export default class extends Generator {
           serviceName: this.answers.serviceName,
         },
       );
+      const playbook_args = [
+        this.answers.projectName,
+        this.answers.serviceName,
+        this.answers.playbookPath, 
+      ];
+      const playbook_options = {
+        addWebadeConfig: this.answers.addWebadeConfig,
+      };
+      this.composeWith(
+        'nr-repository-composer:pd-ansible-playbook',
+        playbook_args,
+        playbook_options,
+      );
     }
   }
 

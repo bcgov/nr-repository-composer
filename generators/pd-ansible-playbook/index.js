@@ -28,9 +28,8 @@ export default class extends Generator {
       required: true,
       description: 'Playbook Path',
     });
-    this.argument('tomcatContext', {
+    this.option('tomcatContext', {
       type: String,
-      required: true,
       description: 'Tomcat Context',
     });
     this.option('altAppDirName', {
@@ -51,14 +50,25 @@ export default class extends Generator {
         this.destinationPath(`${this.options.playbookPath}/playbook.yaml`),
       )
     ) {
-      this.fs.copyTpl(
-        this.templatePath('playbook.yaml'),
-        this.destinationPath(`${this.options.playbookPath}/playbook.yaml`),
-        {
-          projectName: this.options.projectName,
-          serviceName: this.options.serviceName,
-        },
-      );
+        if (this.options.tomcatContext) {
+          this.fs.copyTpl(
+            this.templatePath('playbook.yaml'),
+            this.destinationPath(`${this.options.playbookPath}/playbook.yaml`),
+            {
+              projectName: this.options.projectName,
+              serviceName: this.options.serviceName,
+            },
+          );
+        } else {
+          this.fs.copyTpl(
+            this.templatePath('playbook-nodejs.yaml'),
+            this.destinationPath(`${this.options.playbookPath}/playbook.yaml`),
+            {
+              projectName: this.options.projectName,
+              serviceName: this.options.serviceName,
+            },
+          );
+        }
     }
     this.fs.copyTpl(
       this.templatePath('vars/standard/**'),

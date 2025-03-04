@@ -247,13 +247,10 @@ export default class extends Generator {
       const playbook_args = [
         this.answers.projectName,
         this.answers.serviceName,
-        this.answers.playbookPath,
-        this.answers.tomcatContext,
-        this.answers.altAppDirName,
-      ];      
+        this.answers.playbookPath, 
+      ];
       const playbook_options = {
         addWebadeConfig: this.answers.addWebadeConfig,
-        altAppDirName: this.answers.altAppDirName,
       };
       this.composeWith(
         'nr-repository-composer:pd-ansible-playbook',

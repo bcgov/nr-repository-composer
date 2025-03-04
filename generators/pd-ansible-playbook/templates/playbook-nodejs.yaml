@@ -1,0 +1,29 @@
+---
+- name: <%= projectName %>/<%= serviceName %>
+  hosts: "{{ tomcat_server_hosts }}"
+  collections:
+    - polaris.deploy
+  vars_files:
+    - "vars/standard/all.yaml"
+    - "vars/standard/{{env_vars}}.yaml"
+    - "vars/custom/all.yaml"
+    - "vars/custom/{{env_vars}}.yaml"
+
+  roles:
+    # prepare the installation environment by creating the necessary folders
+    # See: https://github.com/bcgov/nr-polaris-collection/tree/main/polaris/deploy/roles/create_project_directories
+    - role: create_project_directories
+
+    # Establish the port number
+    # See: https://github.com/bcgov/nr-polaris-collection/tree/main/polaris/deploy/roles/port_manager
+    - role: port_manager
+
+    # install & configure the Tomcat container
+    - role: nodejs
+      vars:
+        nodejs_version_number: "latest-v22.x"
+        proxy_env: "{{ env_vars }}"
+
+    - role: nodejs_app
+      vars:
+        proxy_env: "{{ env_vars }}"

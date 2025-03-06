@@ -10,9 +10,9 @@ ansible_ssh_extra_args: "-o StrictHostKeyChecking=no"
 polaris_apps_project_name: "<%= projectNameUpperCase %>"
 polaris_apps_service_name: "<%= serviceName %>"
 
-pd_prop_project_version: "{{ lookup('ansible.builtin.env', 'PODMAN_PROJECT_VERSION') }}"
-pd_prop_build_number: "{{ lookup('ansible.builtin.env', 'PODMAN_BUILD_NUMBER') }}"
-polaris_apps_service_install_name: "{{ pd_prop_project_version }}-{{ pd_prop_build_number }}"
+polaris_apps_project_version: "{{ lookup('ansible.builtin.env', 'PODMAN_PROJECT_VERSION') }}"
+polaris_apps_build_number: "{{ lookup('ansible.builtin.env', 'PODMAN_BUILD_NUMBER') }}"
+polaris_apps_service_install_name: "{{ polaris_apps_project_version }}-{{ polaris_apps_build_number }}"
 
 # The following properties are custom to each particular service
 <% if (tomcatContext) { -%>

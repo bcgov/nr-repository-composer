@@ -203,6 +203,13 @@ export default class extends Generator {
           },
           {
             type: 'input',
+            name: 'jasperReportsProject',
+            message: 'Jasper Reports project:',
+            default: this.answers.projectName,
+            when: (answers) => answers.deployJasperReports,
+          },
+          {
+            type: 'input',
             name: 'playbookPath',
             message: 'Playbook path:',
             default: 'playbooks',
@@ -317,7 +324,7 @@ export default class extends Generator {
         this.answers.playbookPath,
         this.answers.altAppDirName,
       ];
-      const playbook_options = {        
+      const playbook_options = {
         tomcatContext: this.answers.tomcatContext,
         addWebadeConfig: this.answers.addWebadeConfig,
         altAppDirName: this.answers.altAppDirName,
@@ -326,11 +333,11 @@ export default class extends Generator {
         'nr-repository-composer:pd-ansible-playbook',
         playbook_args,
         playbook_options,
-      );      
+      );
     }
     if (this.answers.deployJasperReports) {
       const jasper_reports_args = [
-        this.answers.projectName,
+        this.answers.jasperReportsProject,
         this.answers.jasperServerInstance,
         this.answers.playbookPath,
       ];

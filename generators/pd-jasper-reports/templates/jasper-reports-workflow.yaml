@@ -1,0 +1,33 @@
+name: Jasper reports
+
+on:
+  workflow_dispatch:
+
+concurrency:
+  group: jasper-${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
+env:
+  JOB: buildByToken/buildWithParameters?job=<%= projectName %>/<%= serviceName %>
+  URL: https://cd.io.nrs.gov.bc.ca
+
+jobs:
+  submit-job:
+    name: Submit job
+    runs-on: ubuntu-latest
+    steps:
+      - name: Submit a job to Jenkins
+        run: |
+          curl \
+          --data-urlencode "token=${{ secrets.JENKINS_TOKEN }}" \
+          --data-urlencode "githubToken=${{ secrets.GITHUB_TOKEN }}" \
+          --data-urlencode "gitBranch=${{ github.ref_name }}" \
+          --data-urlencode "gitTag=${{ (startsWith(github.ref, 'refs/tags/') && github.ref_name) || '' }}" \
+          --data-urlencode "brokerJwt=${{ secrets.<%= brokerJwt %> }}" \
+          -H "Connection: close" \
+          ${{ env.URL }}/${{ env.JOB }}
+      # The automatically generated GitHub token will expire when the workflow ends. We need to wait so the job has time to clone the repo
+      # and download the package
+      - name: Sleep
+        run: sleep 30s
+        shell: bash

@@ -196,16 +196,23 @@ export default class extends Generator {
           },
           {
             type: 'input',
-            name: 'jasperServerInstance',
-            message: 'Jasper Reports server instance:',
-            default: 'JCRS',
+            name: 'jasperProjectName',
+            message: 'Jasper Project Name:',
+            default: this.answers.projectName,
             when: (answers) => answers.deployJasperReports,
           },
           {
             type: 'input',
-            name: 'jasperReportsProject',
-            message: 'Jasper Reports project:',
-            default: this.answers.projectName,
+            name: 'jasperServiceName',
+            message: 'Jasper Service Name:',
+            default: `${this.answers.projectName}-jasper-reports`,
+            when: (answers) => answers.deployJasperReports,
+          },
+          {
+            type: 'input',
+            name: 'jasperServerInstance',
+            message: 'Jasper Reports server instance:',
+            default: 'JCRS',
             when: (answers) => answers.deployJasperReports,
           },
           {
@@ -337,8 +344,11 @@ export default class extends Generator {
     }
     if (this.answers.deployJasperReports) {
       const jasper_reports_args = [
-        this.answers.jasperReportsProject,
+        this.answers.projectName,
+        this.answers.jasperServiceName,
+        this.answers.jasperProjectName,
         this.answers.jasperServerInstance,
+        brokerJwt,
         this.answers.playbookPath,
       ];
       this.composeWith(

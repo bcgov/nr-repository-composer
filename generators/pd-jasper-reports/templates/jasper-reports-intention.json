@@ -1,0 +1,37 @@
+{
+  "event": {
+    "provider": "EVENT_PROVIDER",
+    "reason": "Job triggered",
+    "url": "JOB_URL"
+  },
+  "actions": [
+    {
+      "action": "server-access",
+      "id": "login",
+      "provision": ["token/self"],
+      "service": {
+        "name": "<%= serviceName %>",
+        "project": "<%= projectName %>",
+        "environment": "",
+        "target": {
+          "name": "jasper-reports-jcrs",
+          "project": "jasper",
+          "environment": "production"
+        }
+      }
+    },
+    {
+      "action": "package-configure",
+      "id": "configure",
+      "provision": ["token/self"],
+      "service": {
+        "name": "<%= serviceName %>",
+        "project": "<%= projectName %>",
+        "environment": ""
+      }
+    }
+  ],
+  "user": {
+    "name": "USER_ID"
+  }
+}

@@ -14,7 +14,6 @@ fi
 
 # Get the authenticated user token
 TOKEN=$(gh auth token)
-echo $TOKEN
 
 # Get all repositories in the organization
 # REPOS=$(gh repo list $ORG --limit 1000 --json name --jq '.[].name')

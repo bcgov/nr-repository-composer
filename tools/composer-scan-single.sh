@@ -1,7 +1,19 @@
 #!/bin/bash
 
-ORG="bcgov-c"
+# Check if the required arguments are provided
+if [[ -z "$1" || -z "$2" ]]; then
+    echo "Usage: $0 <organization> <repository>"
+    echo "Example: $0 bcgov-c nr-msd"
+    exit 1
+fi
+
+ORG=$1
+if [[ ! "$ORG" =~ ^(bcgov|bcgov-nr|bcgov-c)$ ]]; then
+    echo "Error: Organization must be one of [bcgov, bcgov-nr, bcgov-c]"
+    exit 1
+fi
 ANNOTATION_KEY="composer.io.nrs.gov.bc.ca/generators"
+REPO=$2
 
 # Check if already logged in
 echo "Checking GitHub CLI authentication..."
@@ -17,7 +29,6 @@ TOKEN=$(gh auth token)
 
 # Get all repositories in the organization
 # REPOS=$(gh repo list $ORG --limit 1000 --json name --jq '.[].name')
-REPO=$1
 
 echo "Scanning repositories for catalog-info.yaml files with the annotation $ANNOTATION_KEY..."
 
@@ -54,14 +65,14 @@ echo "Scanning repositories for catalog-info.yaml files with the annotation $ANN
         for VALUE in "${VALUES[@]}"; do
           echo "    - $VALUE"
           git reset --hard
-          docker run --rm -v ${PWD}:/src -u $(id -u):$(id -g) --entrypoint yo ghcr.io/bcgov/nr-repository-composer:latest nr-repository-composer:$VALUE --promptless --force 
+          docker run --rm -v ${PWD}:/src -u $(id -u):$(id -g) --entrypoint yo ghcr.io/bcgov/nr-repository-composer:latest nr-repository-composer:$VALUE --promptless --force
                   
           if [[ $? -ne 0 ]]; then
               echo "    ⚠️ Error running Docker command for $VALUE in $REPO"
 
               # Create a GitHub issue
-               gh issue create --repo "$ORG/$REPO" --title "Composer [$VALUE]: Out of date" \
-                --body "This composer must be run manually to update it. Please see instructions."
+              gh issue create --repo "$ORG/$REPO" --title "Composer [$VALUE]: Out of date" \
+                  --body "This composer must be run manually to update it. Please see instructions."
           else
             echo "$?"
             echo "$(git status)"
@@ -79,8 +90,8 @@ echo "Scanning repositories for catalog-info.yaml files with the annotation $ANN
         cd ..
 
         # Delete the cloned repository after processing
-        # echo "  Deleting cloned repository: $REPO"
-        # rm -rf "$REPO"
+        echo "  Deleting cloned repository: $REPO"
+        rm -rf "$REPO"
     else
         echo "  Annotation not found in $REPO"
     fi

@@ -15,6 +15,8 @@ jobs:
   submit-job:
     name: Submit job
     runs-on: ubuntu-latest
+    permissions:
+      contents: read
     steps:
       - name: Submit a job to Jenkins
         run: |

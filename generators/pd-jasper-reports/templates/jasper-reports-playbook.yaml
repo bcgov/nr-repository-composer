@@ -16,16 +16,16 @@
     jasper_deployer_password: "{{ lookup('ansible.builtin.env', 'PODMAN_cfg_jasper_deployer_password') | default('') }}"
 
   tasks:
-    - name: Create packages
+    - name: Create package
       include_role:
         name: jasper_reports
-      tags: create_packages
+      tags: create_package
 
     - name: Deploy to node 1
       when: jasper_env in ["dev", "test", "prod"]
       include_role:
         name: jasper_reports
-      tags: deploy_packages
+      tags: deploy_package
 
     - name: Deploy to node 2
       when: jasper_env in ["test", "prod"]
@@ -33,7 +33,7 @@
         name: jasper_reports
       vars:
         jasper_route_id: ".2"
-      tags: deploy_packages
+      tags: deploy_package
 
     - name: Delete staging directory
       include_role:

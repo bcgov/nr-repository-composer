@@ -65,8 +65,9 @@ echo "Scanning repositories for catalog-info.yaml files with the annotation $ANN
         for VALUE in "${VALUES[@]}"; do
           echo "    - $VALUE"
           git reset --hard
+          docker pull ghcr.io/bcgov/nr-repository-composer:latest
           docker run --rm -v ${PWD}:/src -u $(id -u):$(id -g) --entrypoint yo ghcr.io/bcgov/nr-repository-composer:latest nr-repository-composer:$VALUE --promptless --force
-                  
+
           if [[ $? -ne 0 ]]; then
               echo "    ⚠️ Error running Docker command for $VALUE in $REPO"
 

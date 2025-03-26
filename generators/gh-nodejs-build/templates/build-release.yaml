@@ -22,6 +22,7 @@ env:
 jobs:
   check_token_expiration:
     uses: ./.github/workflows/check-token.yaml
+    permissions: {}
     secrets:
       token: ${{ secrets.<%= brokerJwt %> }}
 <% if (unitTestsPath) { -%>

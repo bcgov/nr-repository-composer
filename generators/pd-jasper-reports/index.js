@@ -65,14 +65,20 @@ export default class extends Generator {
         serviceName: this.options.serviceName,
       },
     );
-    this.fs.copyTpl(
-      this.templatePath('jasper-reports-playbook.yaml'),
-      this.destinationPath(`${this.options.playbookPath}/jasper-reports.yaml`),
-      {
-        projectNameUpperCase: this.options.jasperProjectName.toUpperCase(),
-        jasperServerInstanceUpperCase: this.options.jasperServerInstance.toUpperCase(),
-      },
-    );
+    if (
+      !fs.existsSync(
+        this.destinationPath(`${this.options.playbookPath}/jasper-reports.yaml`),
+      )
+    ) {
+      this.fs.copyTpl(
+        this.templatePath('jasper-reports-playbook.yaml'),
+        this.destinationPath(`${this.options.playbookPath}/jasper-reports.yaml`),
+        {
+          projectNameUpperCase: this.options.jasperProjectName.toUpperCase(),
+          jasperServerInstanceUpperCase: this.options.jasperServerInstance.toUpperCase(),
+        },
+      );
+    }
     this.config.save();
   }
 }

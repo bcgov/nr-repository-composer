@@ -1,0 +1,10 @@
+---
+- template:
+    src: "{{ playbook_dir }}/templates/{{ item.src }}"
+    dest: "{{ item.dest }}"
+  delegate_to: localhost
+  with_items:
+    - {
+        src: "<%= jasperServerInstanceUpperCase %>_<%= projectNameUpperCase %>.xml.j2",
+        dest: "{{ jasper_staging_dir }}/jcrs-reports/resources/<%= jasperServerInstanceUpperCase %>/Data_Sources/<%= jasperServerInstanceUpperCase %>_<%= projectNameUpperCase %>.xml"
+      }

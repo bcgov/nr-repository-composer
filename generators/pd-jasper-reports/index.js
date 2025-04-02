@@ -73,6 +73,14 @@ export default class extends Generator {
         jasperServerInstanceUpperCase: this.options.jasperServerInstance.toUpperCase(),
       },
     );
+    this.fs.copyTpl(
+      this.templatePath('jasper-reports-datasource.yaml'),
+      this.destinationPath(`${this.options.playbookPath}/jasper-datasource.yaml`),
+      {
+        projectNameUpperCase: this.options.jasperProjectName.toUpperCase(),
+        jasperServerInstanceUpperCase: this.options.jasperServerInstance.toUpperCase(),
+      },
+    );
     this.config.save();
   }
 }

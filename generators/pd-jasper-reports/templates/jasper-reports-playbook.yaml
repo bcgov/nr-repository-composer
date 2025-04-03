@@ -14,6 +14,8 @@
     jasper_deployer_url: "{{ lookup('ansible.builtin.env', 'PODMAN_cfg_jasper_deployer_url') | default('') }}"
     jasper_deployer_user: "{{ lookup('ansible.builtin.env', 'PODMAN_cfg_jasper_deployer_user') | default('') }}"
     jasper_deployer_password: "{{ lookup('ansible.builtin.env', 'PODMAN_cfg_jasper_deployer_password') | default('') }}"
+    jasper_datasource_names:
+      - <%= jasperServerInstanceUpperCase %>_<%= projectNameUpperCase %>
 
   tasks:
     - name: Create package

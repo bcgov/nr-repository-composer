@@ -37,7 +37,6 @@
         webapp_war:
           context: "{{ context }}"
         webapp_root_log_level: "{{ log_level_root | default('INFO') }}"
-        proxy_env: "{{ env_vars }}"
 
     # create a WebADE connection jar for the container
     # If using the MOF Webade datastore, add the following to vars/custom/all.yaml
@@ -49,8 +48,11 @@
 
   tasks:
     - stat:
-      path: custom-tasks.yaml
+        path: custom-tasks.yaml
       register: playbookcustomtask
+      delegate_to: localhost
+    - debug:
+        msg: "{{ playbookcustomtask }}"
     - ansible.builtin.include_tasks: custom-tasks.yaml
       when: playbookcustomtask.stat.exists
     # The following is an example of a custom-tasks.yaml for adding custom webapp configuration files

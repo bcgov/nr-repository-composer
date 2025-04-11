@@ -337,7 +337,7 @@ export default class extends Generator {
         altAppDirName: this.answers.altAppDirName,
       };
       this.composeWith(
-        'nr-repository-composer:pd-ansible-playbook',
+        'nr-repository-composer:pd-tomcat-nodejs-deploy',
         playbook_args,
         playbook_options,
       );

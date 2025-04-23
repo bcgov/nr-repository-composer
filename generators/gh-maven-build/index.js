@@ -325,35 +325,37 @@ export default class extends Generator {
           serviceName: this.answers.serviceName,
         },
       );
-      const playbook_args = [
+      const java_playbook_args = [
         this.answers.projectName,
         this.answers.serviceName,
         this.answers.playbookPath,
-        this.answers.altAppDirName,
       ];
-      const playbook_options = {
+      const java_playbook_options = {
         tomcatContext: this.answers.tomcatContext,
         addWebadeConfig: this.answers.addWebadeConfig,
         altAppDirName: this.answers.altAppDirName,
       };
       this.composeWith(
-        'nr-repository-composer:pd-ansible-playbook',
-        playbook_args,
-        playbook_options,
+        'nr-repository-composer:pd-java-playbook',
+        java_playbook_args,
+        java_playbook_options,
       );
     }
     if (this.answers.deployJasperReports) {
       const jasper_reports_args = [
         this.answers.projectName,
         this.answers.jasperServiceName,
-        this.answers.jasperProjectName,
-        this.answers.jasperServerInstance,
-        brokerJwt,
         this.answers.playbookPath,
       ];
+      const jasper_playbook_options = {
+        jasperProjectName: this.answers.jasperProjectName,
+        jasperServerInstance: this.answers.jasperServerInstance,
+        brokerJwt: brokerJwt,
+      };
       this.composeWith(
         'nr-repository-composer:pd-jasper-reports',
         jasper_reports_args,
+        jasper_playbook_options
       );
     }
   }

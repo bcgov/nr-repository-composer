@@ -1,0 +1,51 @@
+---
+- name: <%= projectName %>/<%= serviceName %>
+  hosts: "{{ tomcat_server_hosts }}"
+  collections:
+    - polaris.deploy
+  vars_files:
+    - "vars/standard/all.yaml"
+    - "vars/standard/{{env_vars}}.yaml"
+    - "vars/custom/all.yaml"
+    - "vars/custom/{{env_vars}}.yaml"
+
+  roles:
+    # prepare the installation environment by creating the necessary folders
+    # See: https://github.com/bcgov/nr-polaris-collection/tree/main/polaris/deploy/roles/create_project_directories
+    - role: create_project_directories
+
+    # Establish the port number
+    # See: https://github.com/bcgov/nr-polaris-collection/tree/main/polaris/deploy/roles/port_manager
+    - role: port_manager
+
+    # Install nodejs
+    # See: https://github.com/bcgov/nr-polaris-collection/tree/main/polaris/deploy/roles/nodejs
+    - role: nodejs
+
+    # Install nodejs application
+    # See: https://github.com/bcgov/nr-polaris-collection/tree/main/polaris/deploy/roles/nodejs_app
+    - role: nodejs_app
+
+  tasks:
+    - stat:
+        path: custom-tasks.yaml
+      register: playbookcustomtask
+      delegate_to: localhost
+    - debug:
+        msg: "{{ playbookcustomtask }}"
+    - ansible.builtin.include_tasks: custom-tasks.yaml
+      when: playbookcustomtask.stat.exists
+    # The following is an example of a custom-tasks.yaml for adding custom webapp configuration files
+    # ---
+    # - name: configure nonstandard files
+    #   template:
+    #     src: "{{ playbook_dir }}/templates/{{ item.src }}"
+    #     dest: "{{ item.dest }}"
+    #     mode: "0775"
+    #   become: yes
+    #   become_user: "{{ install_user }}"
+    #   with_items:
+    #   - {
+    #       src: "configuration.ts.j2",
+    #       dest: "{{ nodejs_app_service_install_app_home }}/dist/src/config/configuration.js"
+    #     }

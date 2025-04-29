@@ -37,7 +37,7 @@
         webapp_war:
           context: "{{ context }}"
         webapp_root_log_level: "{{ log_level_root | default('INFO') }}"
-
+<% if (addWebadeConfig === 'true') { %>
     # create a WebADE connection jar for the container
     # If using the MOF Webade datastore, add the following to vars/custom/all.yaml
     # webade_datastore: "ca.bc.gov.webade.mof.MOFOrganizationDatastore"
@@ -45,6 +45,7 @@
     - role: webade_connection_jar
       become: yes
       become_user: "{{ polaris_install_user }}"
+<% } -%>
 
   tasks:
     - stat:

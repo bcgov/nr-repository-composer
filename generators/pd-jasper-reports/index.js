@@ -1,5 +1,5 @@
 'use strict';
-import Generator from 'yeoman-generator';
+import BaseGenerator from '../base/index.js';
 // eslint-disable-next-line no-unused-vars
 import yosay from 'yosay';
 // eslint-disable-next-line no-unused-vars
@@ -9,45 +9,38 @@ import * as fs from 'node:fs';
 /**
  * Generate the files needed for Jasper Reports deployments
  */
-export default class extends Generator {
+export default class extends BaseGenerator {
   constructor(args, opts) {
     super(args, opts);
 
-    this.argument('projectName', {
+    this.option('jasperProjectName', {
       type: String,
-      required: true,
-      description: 'Project Name',
-    });
-    this.argument('serviceName', {
-      type: String,
-      required: true,
-      description: 'Service Name',
-    });
-    this.argument('jasperProjectName', {
-      type: String,
-      required: true,
       description: 'Jasper Project Name',
     });
-    this.argument('jasperServerInstance', {
+    this.option('jasperServerInstance', {
       type: String,
-      required: true,
       description: 'Jasper Server Instance',
     });
-    this.argument('brokerJwt', {
+    this.option('brokerJwt', {
       type: String,
-      required: true,
       description: 'Broker JWT',
-    });
-    this.argument('playbookPath', {
-      type: String,
-      required: true,
-      description: 'Playbook Path',
     });
   }
 
   // Generate files
   writing() {
     this.log('Generating files');
+    const playbook_args = [
+      this.options.projectName,
+      this.options.serviceName,
+      this.options.playbookPath,
+    ];
+    const playbook_options = {};
+    this.composeWith(
+      'nr-repository-composer:base',
+      playbook_args,
+      playbook_options,
+    );
     this.fs.copyTpl(
       this.templatePath('jasper-reports-workflow.yaml'),
       this.destinationPath('.github/workflows/jasper-reports.yaml'),

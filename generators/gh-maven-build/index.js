@@ -1,10 +1,35 @@
 'use strict';
 import * as fs from 'fs';
 import Generator from 'yeoman-generator';
-import yosay from 'yosay';
 import chalk from 'chalk';
 import { Document, parseDocument } from 'yaml';
+import { nrsay } from '../util/nrsay.js';
+import { OPTION_HEADLESS, OPTION_HELP_PROMPTS } from '../util/options.js';
 import { bailOnAnyQuestions } from '../util/process.js';
+
+import {
+  PROMPT_PROJECT,
+  PROMPT_SERVICE,
+  PROMPT_LICENSE,
+  PROMPT_CLIENT_ID,
+  PROMPT_UNIT_TESTS_PATH,
+  PROMPT_DEPLOY_ON_PREM,
+  PROMPT_POM_ROOT,
+  PROMPT_GITHUB_PACKAGES,
+  PROMPT_GITHUB_OWNER_PACK,
+  PROMPT_ARTIFACTORY_PROJECT,
+  PROMPT_ARTIFACTORY_PACKAGE_TYPE,
+  PROMPT_DEPLOY_JASPER_REPORTS,
+  PROMPT_JASPER_PROJECT_NAME,
+  PROMPT_JASPER_SERVICE_NAME,
+  PROMPT_JASPER_SERVER_INSTANCE,
+  PROMPT_PLAYBOOK_PATH_DEPLOY,
+  PROMPT_TOMCAT_CONTEXT,
+  PROMPT_USE_ALT_APP_DIR_NAME,
+  PROMPT_ALT_APP_DIR_NAME,
+  PROMPT_ADD_WEBADE_CONFIG,
+  getPromptToUsage,
+} from '../util/prompts.js';
 import {
   BACKSTAGE_FILENAME,
   pathToProps,
@@ -14,18 +39,72 @@ import {
   writePropToPath,
 } from '../util/yaml.js';
 
+const questions = [
+  PROMPT_PROJECT,
+  PROMPT_SERVICE,
+  PROMPT_LICENSE,
+  PROMPT_CLIENT_ID,
+  PROMPT_POM_ROOT,
+  PROMPT_UNIT_TESTS_PATH,
+  PROMPT_GITHUB_PACKAGES,
+  {
+    ...PROMPT_GITHUB_OWNER_PACK,
+    when: (answers) => answers.gitHubPackages,
+  },
+  {
+    ...PROMPT_ARTIFACTORY_PROJECT,
+    when: (answers) => !answers.gitHubPackages,
+  },
+  {
+    ...PROMPT_ARTIFACTORY_PACKAGE_TYPE,
+    when: (answers) => !answers.gitHubPackages,
+  },
+  PROMPT_DEPLOY_ON_PREM,
+  PROMPT_DEPLOY_JASPER_REPORTS,
+  {
+    ...PROMPT_JASPER_PROJECT_NAME,
+    default: (answers) => answers.projectName,
+    when: (answers) => answers.deployJasperReports,
+  },
+  {
+    ...PROMPT_JASPER_SERVICE_NAME,
+    default: (answers) => `${answers.projectName}-jasper-reports`,
+    when: (answers) => answers.deployJasperReports,
+  },
+  {
+    ...PROMPT_JASPER_SERVER_INSTANCE,
+    when: (answers) => answers.deployJasperReports,
+  },
+  {
+    ...PROMPT_PLAYBOOK_PATH_DEPLOY,
+    when: (answers) => answers.deployOnPrem || answers.deployJasperReports,
+  },
+  {
+    ...PROMPT_TOMCAT_CONTEXT,
+    when: (answers) => answers.deployOnPrem,
+  },
+  {
+    ...PROMPT_USE_ALT_APP_DIR_NAME,
+    when: (answers) => answers.deployOnPrem,
+  },
+  {
+    ...PROMPT_ALT_APP_DIR_NAME,
+    when: (answers) => answers.useAltAppDirName,
+  },
+  {
+    ...PROMPT_ADD_WEBADE_CONFIG,
+    when: (answers) => answers.deployOnPrem,
+  },
+];
+
 /**
  * Generate the CI workflow and NR Broker intention files needed for Java/Tomcat Maven builds in GitHub
  */
 export default class extends Generator {
   constructor(args, opts) {
     super(args, opts);
-
-    this.option('promptless', {
-      type: String,
-      required: false,
-      description: 'Run headless with no user prompts',
-    });
+    this.option(OPTION_HEADLESS);
+    this.option(OPTION_HELP_PROMPTS);
   }
 
   async initializing() {
@@ -39,218 +118,45 @@ export default class extends Generator {
   }
 
   async prompting() {
-    const promptless = !!this.options.promptless;
-    const headless = !!this.options.headless;
+    const headless = this.options[OPTION_HEADLESS.name];
+    const askAnswered = this.options['ask-answered'];
+    const helpPrompts = this.options[OPTION_HELP_PROMPTS.name];
     this.answers = extractFromYaml(this.backstageDoc, pathToProps);
 
-    if (!promptless) {
+    if (!headless) {
       this.log(
-        yosay(
-          'Welcome to the GitHub workflow and NR Broker intention file generator!',
+        nrsay(
+          'NR GitHub Maven Build and Deploy Generator',
+          'Create workflow and NR Broker intention files for GitHub Maven builds',
+          [
+            'Generator',
+            'https://github.com/bcgov/nr-repository-composer/blob/main/README.md#github-maven-build-gh-maven-build',
+          ],
+          ['Documentation', 'https://github.com/bcgov/nr-polaris-collection'],
+          ['Documentation', 'https://github.com/bcgov-nr/polaris-pipelines'],
         ),
       );
-
-      this.log(chalk.bold('Usage'));
-      this.log('');
-      this.log(
-        '  ' +
-          chalk.bold('Project:     ') +
-          chalk.dim(
-            'Lowercase kebab-case name that uniquely identifies the project',
-          ),
-      );
-      this.log('               ' + chalk.dim('Example: super-project'));
-      this.log(
-        '  ' +
-          chalk.bold('Service:     ') +
-          chalk.dim(
-            'Lowercase kebab-case name that uniquely indentifies the service',
-          ),
-      );
-      this.log(
-        '               ' +
-          chalk.dim(
-            'Should start with project, have an optional descriptor and end with an artifact identifier',
-          ),
-      );
-      this.log(
-        '               ' + chalk.dim('Example: super-project-backend-war'),
-      );
-      this.log(
-        '  ' +
-          chalk.bold('Client ID:   ') +
-          chalk.dim(
-            'The client id of the Broker account to use. Leave blank to use manually set BROKER_JWT secret.',
-          ),
-      );
-      this.log(
-        '  ' +
-          chalk.bold('Artifactory: ') +
-          chalk.dim('The OCP Artifactory namespace this will be published to'),
-      );
-      this.log(
-        '  ' +
-          chalk.bold('Pom root:    ') +
-          chalk.dim(
-            "The path to where your pom file is located relative to the repository's root",
-          ),
-      );
-      this.log(
-        '  ' +
-          chalk.bold('GitHub Owner with repo path:    ') +
-          chalk.dim('The Github owner with repo path (e.g. bcgov-c/nr-edqa) '),
-      );
-      this.log('');
-
-      this.log(chalk.bold('Prompts'));
-      this.log('');
     }
 
-    const backstageAnswer = promptless
-      ? { skip: true }
-      : await this.prompt([
-          {
-            type: 'confirm',
-            name: 'skip',
-            message: `Skip prompts for values found in Backstage file (${BACKSTAGE_FILENAME}):`,
-            default: true,
-          },
-        ]);
+    if (helpPrompts) {
+      this.log(chalk.bold('Prompts\n'));
+      for (const question of questions) {
+        this.log(getPromptToUsage(question));
+      }
+      this.log(
+        `${chalk.bold.underline('                                       ')}\n`,
+      );
+    }
 
     this.answers = {
       ...this.answers,
       ...(await this.prompt(
-        [
-          {
-            type: 'input',
-            name: 'projectName',
-            message: 'Project:',
-          },
-          {
-            type: 'input',
-            name: 'serviceName',
-            message: 'Service:',
-          },
-          {
-            type: 'input',
-            name: 'license',
-            default: 'Apache-2.0',
-            message: 'License (SPDX):',
-          },
-          {
-            type: 'input',
-            name: 'clientId',
-            message: 'Client ID:',
-            default: '',
-          },
-          {
-            type: 'input',
-            name: 'pomRoot',
-            message: 'Pom root:',
-            default: './',
-          },
-          {
-            type: 'input',
-            name: 'unitTestsPath',
-            message: 'Path to unit tests (./.github/workflows/test.yaml):',
-            default: '',
-            store: true,
-          },
-          {
-            type: 'confirm',
-            name: 'gitHubPackages',
-            message: 'Publish to GitHub Packages:',
-            default: false,
-          },
-          {
-            type: 'input',
-            name: 'gitHubOwnerPack',
-            message: 'GitHub Owner with repo path (e.g. bcgov-c/nr-results):',
-            when: (answers) => answers.gitHubPackages,
-          },
-          {
-            type: 'input',
-            name: 'artifactoryProject',
-            message: 'Artifactory:',
-            default: 'cc20',
-            when: (answers) => !answers.gitHubPackages,
-          },
-          {
-            type: 'input',
-            name: 'artifactoryPackageType',
-            message: 'Artifactory Package Type (maven, ivy, npm):',
-            default: 'maven',
-            when: (answers) => !answers.gitHubPackages,
-          },
-          {
-            type: 'confirm',
-            name: 'deployOnPrem',
-            message: 'Deploy on-prem:',
-            default: false,
-          },
-          {
-            type: 'confirm',
-            name: 'deployJasperReports',
-            message: 'Deploy Jasper Reports:',
-            default: false,
-          },
-          {
-            type: 'input',
-            name: 'jasperProjectName',
-            message: 'Jasper Project Name:',
-            default: this.answers.projectName,
-            when: (answers) => answers.deployJasperReports,
-          },
-          {
-            type: 'input',
-            name: 'jasperServiceName',
-            message: 'Jasper Service Name:',
-            default: `${this.answers.projectName}-jasper-reports`,
-            when: (answers) => answers.deployJasperReports,
-          },
-          {
-            type: 'input',
-            name: 'jasperServerInstance',
-            message: 'Jasper Reports server instance:',
-            default: 'JCRS',
-            when: (answers) => answers.deployJasperReports,
-          },
-          {
-            type: 'input',
-            name: 'playbookPath',
-            message: 'Playbook path:',
-            default: 'playbooks',
-            when: (answers) => answers.deployOnPrem || answers.deployJasperReports,
-          },
-          {
-            type: 'input',
-            name: 'tomcatContext',
-            message: 'Tomcat Context (e.g. ext#results):',
-            when: (answers) => answers.deployOnPrem,
-          },
-          {
-            type: 'confirm',
-            name: 'useAltAppDirName',
-            message: 'Use alternative webapp directory:',
-            default: false,
-            when: (answers) => answers.deployOnPrem,
-          },
-          {
-            type: 'input',
-            name: 'altAppDirName',
-            message: 'Alternative webapp directory name:',
-            when: (answers) => answers.useAltAppDirName,
-          },
-          {
-            type: 'confirm',
-            name: 'addWebadeConfig',
-            message: 'Add Webade configuration:',
-            default: false,
-            when: (answers) => answers.deployOnPrem,
-          },
-        ]
+        questions
           .filter(
-            generateSetAnswerPropPredicate(this.answers, !backstageAnswer.skip),
+            generateSetAnswerPropPredicate(
+              this.answers,
+              !headless && askAnswered,
+            ),
           )
           .map((question) => {
             if (this.answers[question?.name]) {
@@ -355,7 +261,7 @@ export default class extends Generator {
       this.composeWith(
         'nr-repository-composer:pd-jasper-reports',
         jasper_reports_args,
-        jasper_playbook_options
+        jasper_playbook_options,
       );
     }
   }

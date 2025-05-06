@@ -54,7 +54,7 @@ for REPO in $REPOS; do
           echo "    - $VALUE"
           git reset --hard
           docker pull ghcr.io/bcgov/nr-repository-composer:latest
-          docker run --rm -v ${PWD}:/src ghcr.io/bcgov/nr-repository-composer:latest -- nr-repository-composer:"$VALUE" --promptless --force --headless
+          docker run --rm -v ${PWD}:/src ghcr.io/bcgov/nr-repository-composer:latest -- nr-repository-composer:"$VALUE" --force --headless
           if [[ $? -ne 0 ]]; then
               echo "    ⚠️ Error running Docker command for $VALUE in $REPO"
 

@@ -1,10 +1,22 @@
 'use strict';
 import * as fs from 'fs';
 import Generator from 'yeoman-generator';
-import yosay from 'yosay';
 import chalk from 'chalk';
 import { Document, parseDocument } from 'yaml';
+import { nrsay } from '../util/nrsay.js';
+import { OPTION_HEADLESS, OPTION_HELP_PROMPTS } from '../util/options.js';
 import { bailOnAnyQuestions } from '../util/process.js';
+import {
+  PROMPT_PROJECT,
+  PROMPT_SERVICE,
+  PROMPT_LIFECYCLE,
+  PROMPT_CLIENT_ID,
+  PROMPT_UNIT_TESTS_PATH,
+  PROMPT_PUBLISH_ARTIFACT_SUFFIX,
+  PROMPT_DEPLOY_ON_PREM,
+  PROMPT_PLAYBOOK_PATH,
+  getPromptToUsage,
+} from '../util/prompts.js';
 import {
   BACKSTAGE_FILENAME,
   pathToProps,
@@ -14,18 +26,28 @@ import {
   writePropToPath,
 } from '../util/yaml.js';
 
+const questions = [
+  PROMPT_PROJECT,
+  PROMPT_SERVICE,
+  PROMPT_LIFECYCLE,
+  PROMPT_CLIENT_ID,
+  PROMPT_UNIT_TESTS_PATH,
+  PROMPT_PUBLISH_ARTIFACT_SUFFIX,
+  PROMPT_DEPLOY_ON_PREM,
+  {
+    ...PROMPT_PLAYBOOK_PATH,
+    when: (answers) => answers.deployOnPrem,
+  },
+];
+
 /**
  * Generate the CI workflow and NR Broker intention files needed for Java/Tomcat Maven builds in GitHub
  */
 export default class extends Generator {
   constructor(args, opts) {
     super(args, opts);
-
-    this.option('promptless', {
-      type: String,
-      required: false,
-      description: 'Run headless with no user prompts',
-    });
+    this.option(OPTION_HEADLESS);
+    this.option(OPTION_HELP_PROMPTS);
   }
 
   async initializing() {
@@ -39,141 +61,45 @@ export default class extends Generator {
   }
 
   async prompting() {
-    const promptless = !!this.options.promptless;
-    const headless = !!this.options.headless;
+    const headless = this.options[OPTION_HEADLESS.name];
+    const askAnswered = this.options['ask-answered'];
+    const helpPrompts = this.options[OPTION_HELP_PROMPTS.name];
     this.answers = extractFromYaml(this.backstageDoc, pathToProps);
 
-    if (!promptless) {
+    if (!headless) {
       this.log(
-        yosay(
-          'Welcome to the GitHub workflow and NR Broker intention file generator!',
+        nrsay(
+          'NR GitHub NodeJS Build and Deploy Generator',
+          'Create workflow and NR Broker intention files for GitHub NodeJS builds',
+          [
+            'Generator',
+            'https://github.com/bcgov/nr-repository-composer/blob/main/README.md#github-maven-build-gh-nodejs-build',
+          ],
+          ['Documentation', 'https://github.com/bcgov/nr-polaris-collection'],
+          ['Documentation', 'https://github.com/bcgov-nr/polaris-pipelines'],
         ),
       );
-
-      this.log(chalk.bold('Usage'));
-      this.log('');
-      this.log(
-        '  ' +
-          chalk.bold('Project:     ') +
-          chalk.dim(
-            'Lowercase kebab-case name that uniquely identifies the project',
-          ),
-      );
-      this.log('               ' + chalk.dim('Example: super-project'));
-      this.log(
-        '  ' +
-          chalk.bold('Service:     ') +
-          chalk.dim(
-            'Lowercase kebab-case name that uniquely indentifies the service',
-          ),
-      );
-      this.log(
-        '               ' +
-          chalk.dim(
-            'Should start with project, have an optional descriptor and end with an artifact identifier',
-          ),
-      );
-      this.log(
-        '               ' + chalk.dim('Example: super-project-backend-war'),
-      );
-      this.log(
-        '  ' +
-          chalk.bold('Client ID:   ') +
-          chalk.dim(
-            'The client id of the Broker account to use. Leave blank to use manually set BROKER_JWT secret.',
-          ),
-      );
-      this.log(
-        '  ' +
-          chalk.bold('Artifactory: ') +
-          chalk.dim('The OCP Artifactory namespace this will be published to'),
-      );
-      this.log(
-        '  ' +
-          chalk.bold('GitHub Owner with repo path: ') +
-          chalk.dim(
-            'The Github owner with repo path (e.g. bcgov-nr/edqa-war) ',
-          ),
-      );
-      this.log(
-        '  ' +
-          chalk.bold('Published files/folders: ') +
-          chalk.dim(
-            'A space separated list with the first used as the overall checksum.',
-          ),
-      );
-
-      this.log('');
-
-      this.log(chalk.bold('Prompts'));
-      this.log('');
     }
 
-    const backstageAnswer = promptless
-      ? { skip: true }
-      : await this.prompt([
-          {
-            type: 'confirm',
-            name: 'skip',
-            message: `Skip prompts for values found in Backstage file (${BACKSTAGE_FILENAME}):`,
-            default: true,
-          },
-        ]);
+    if (helpPrompts) {
+      this.log(chalk.bold('Prompts\n'));
+      for (const question of questions) {
+        this.log(getPromptToUsage(question));
+      }
+      this.log(
+        `${chalk.bold.underline('                                       ')}\n`,
+      );
+    }
 
     this.answers = {
       ...this.answers,
       ...(await this.prompt(
-        [
-          {
-            type: 'input',
-            name: 'projectName',
-            message: 'Project:',
-          },
-          {
-            type: 'input',
-            name: 'serviceName',
-            message: 'Service:',
-          },
-          {
-            type: 'input',
-            name: 'license',
-            default: 'Apache-2.0',
-            message: 'License (SPDX):',
-          },
-          {
-            type: 'input',
-            name: 'clientId',
-            message: 'Client ID:',
-            default: '',
-          },
-          {
-            type: 'input',
-            name: 'unitTestsPath',
-            message: 'Path to unit tests (./.github/workflows/test.yaml):',
-            default: '',
-          },
-          {
-            type: 'input',
-            name: 'publishArtifactSuffix',
-            message: 'Published files/folders:',
-            default: 'dist node_modules package.json package-lock.json',
-          },
-          {
-            type: 'confirm',
-            name: 'deployOnPrem',
-            message: 'Deploy on-prem:',
-            default: false,
-          },
-          {
-            type: 'input',
-            name: 'playbookPath',
-            message: 'Playbook path:',
-            default: 'playbooks',
-            when: (answers) => answers.deployOnPrem,
-          },
-        ]
+        questions
           .filter(
-            generateSetAnswerPropPredicate(this.answers, !backstageAnswer.skip),
+            generateSetAnswerPropPredicate(
+              this.answers,
+              !headless && askAnswered,
+            ),
           )
           .map((question) => {
             if (this.answers[question?.name]) {
@@ -184,10 +110,6 @@ export default class extends Generator {
           .map(bailOnAnyQuestions(headless)),
       )),
     };
-  }
-
-  async configuring() {
-    // this.config.save();
   }
 
   // Generate GitHub workflows and NR Broker intention files

@@ -1,10 +1,18 @@
 'use strict';
 import * as fs from 'fs';
 import Generator from 'yeoman-generator';
-import yosay from 'yosay';
 import chalk from 'chalk';
 import { Document, parseDocument } from 'yaml';
+import { nrsay } from '../util/nrsay.js';
+import { OPTION_HEADLESS, OPTION_HELP_PROMPTS } from '../util/options.js';
 import { bailOnAnyQuestions } from '../util/process.js';
+import {
+  PROMPT_SCHEMA_NAME,
+  PROMPT_SCHEMA_MIGRATION_TOOL,
+  PROMPT_SCHEMA_MIGRATION_TYPE,
+  PROMPT_SCHEMA_MIGRATION_BASE_PATH,
+  getPromptToUsage,
+} from '../util/prompts.js';
 import {
   BACKSTAGE_FILENAME,
   pathToProps,
@@ -14,10 +22,23 @@ import {
   addGeneratorToDoc,
 } from '../util/yaml.js';
 
+const questions = [
+  PROMPT_SCHEMA_NAME,
+  PROMPT_SCHEMA_MIGRATION_TOOL,
+  PROMPT_SCHEMA_MIGRATION_TYPE,
+  PROMPT_SCHEMA_MIGRATION_BASE_PATH,
+];
+
 /**
  * Generate a database directory
  */
 export default class extends Generator {
+  constructor(args, opts) {
+    super(args, opts);
+    this.option(OPTION_HEADLESS);
+    this.option(OPTION_HELP_PROMPTS);
+  }
+
   async initializing() {
     const backstagePath = this.destinationPath(BACKSTAGE_FILENAME);
     if (fs.existsSync(backstagePath)) {
@@ -29,70 +50,39 @@ export default class extends Generator {
   }
 
   async prompting() {
-    const promptless = !!this.options.promptless;
-    const headless = !!this.options.headless;
+    const headless = this.options[OPTION_HEADLESS.name];
+    const askAnswered = this.options['ask-answered'];
+    const helpPrompts = this.options[OPTION_HELP_PROMPTS.name];
     this.answers = extractFromYaml(this.backstageDoc, pathToProps);
 
-    if (!promptless) {
-      this.log(yosay('Welcome to the database generator!'));
-
-      this.log(chalk.bold('Usage'));
-      this.log('');
+    if (!headless) {
       this.log(
-        '  ' +
-          chalk.bold('Schema(s):     ') +
-          chalk.dim('Comma-separated list of schemas to manage in this repos'),
-      );
-      this.log(
-        '  ' +
-          chalk.bold('Tool:     ') +
-          chalk.dim(
-            'If a supported tool is choosen, additional guidelines provided',
-          ),
+        nrsay('NR Database Generator', 'Create standard database file layout', [
+          'Generator',
+          'https://github.com/bcgov/nr-repository-composer/blob/main/README.md#db-migrations-migrations',
+        ]),
       );
     }
 
-    const backstageAnswer = promptless
-      ? { skip: true }
-      : await this.prompt([
-          {
-            type: 'confirm',
-            name: 'skip',
-            message: `Skip prompts for values found in Backstage file (${BACKSTAGE_FILENAME}):`,
-            default: true,
-          },
-        ]);
+    if (helpPrompts) {
+      this.log(chalk.bold('Prompts\n'));
+      for (const question of questions) {
+        this.log(getPromptToUsage(question));
+      }
+      this.log(
+        `${chalk.bold.underline('                                       ')}\n`,
+      );
+    }
 
     this.answers = {
       ...this.answers,
       ...(await this.prompt(
-        [
-          {
-            type: 'input',
-            name: 'schemaName',
-            message: 'Schema(s):',
-          },
-          {
-            type: 'input',
-            name: 'schemaMigrationTool',
-            default: 'flyway',
-            message: 'Tool (manual, flyway, liquibase):',
-          },
-          {
-            type: 'input',
-            name: 'schemaMigrationType',
-            default: '',
-            message: 'Type (oracle, mongodb, postgressql, etc.):',
-          },
-          {
-            type: 'input',
-            name: 'schemaMigrationBasePath',
-            default: '',
-            message: 'Base path:',
-          },
-        ]
+        questions
           .filter(
-            generateSetAnswerPropPredicate(this.answers, !backstageAnswer.skip),
+            generateSetAnswerPropPredicate(
+              this.answers,
+              !headless && askAnswered,
+            ),
           )
           .map((question) => {
             if (this.answers[question?.name]) {

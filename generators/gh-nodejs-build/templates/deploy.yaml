@@ -157,6 +157,7 @@ jobs:
       contents: read
     runs-on: ubuntu-latest
     steps:
+      # See: https://github.com/bcgov-nr/polaris-pipelines
       - name: Submit a job to Jenkins
         run: |
           curl \

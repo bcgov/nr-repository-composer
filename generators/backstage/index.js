@@ -1,9 +1,8 @@
 'use strict';
 import * as fs from 'fs';
+import chalk from 'chalk';
 import Generator from 'yeoman-generator';
-import yosay from 'yosay';
 import { Document, parseDocument } from 'yaml';
-import { bailOnAnyQuestions } from '../util/process.js';
 import {
   BACKSTAGE_FILENAME,
   pathToProps,
@@ -12,12 +11,43 @@ import {
   generateSetAnswerPropPredicate,
   writePropToPath,
 } from '../util/yaml.js';
-import { extractGitHubSlug, getGitRepoOriginUrl } from '../util/git.js';
+import { nrsay } from '../util/nrsay.js';
+import { OPTION_HEADLESS, OPTION_HELP_PROMPTS } from '../util/options.js';
+import { bailOnAnyQuestions } from '../util/process.js';
+import {
+  PROMPT_PROJECT,
+  PROMPT_SERVICE,
+  PROMPT_DESCRIPTION,
+  PROMPT_TITLE,
+  PROMPT_TYPE,
+  PROMPT_LIFECYCLE,
+  PROMPT_LICENSE,
+  PROMPT_OWNER,
+  PROMPT_GITHUB_PROJECT_SLUG,
+  getPromptToUsage,
+} from '../util/prompts.js';
+
+const questions = [
+  PROMPT_PROJECT,
+  PROMPT_SERVICE,
+  PROMPT_DESCRIPTION,
+  PROMPT_TITLE,
+  PROMPT_TYPE,
+  PROMPT_LIFECYCLE,
+  PROMPT_LICENSE,
+  PROMPT_OWNER,
+  PROMPT_GITHUB_PROJECT_SLUG,
+];
 
 /**
  * Generate a basic backstage file
  */
 export default class extends Generator {
+  constructor(args, opts) {
+    super(args, opts);
+    this.option(OPTION_HEADLESS);
+    this.option(OPTION_HELP_PROMPTS);
+  }
   async initializing() {
     const backstagePath = this.destinationPath(BACKSTAGE_FILENAME);
     if (fs.existsSync(backstagePath)) {
@@ -29,80 +59,47 @@ export default class extends Generator {
   }
 
   async prompting() {
-    const promptless = !!this.options.promptless;
-    const headless = !!this.options.headless;
+    const headless = this.options[OPTION_HEADLESS.name];
+    const askAnswered = this.options['ask-answered'];
+    const helpPrompts = this.options[OPTION_HELP_PROMPTS.name];
     this.answers = extractFromYaml(this.backstageDoc, pathToProps);
 
-    this.log(yosay('Welcome to the backstage file generator!'));
+    if (!headless) {
+      this.log(
+        nrsay(
+          'NR Backstage Software Catalog Generator',
+          'Create a `catalog-info.yaml` Backstage file',
+          [
+            'Generator',
+            'https://github.com/bcgov/nr-repository-composer/blob/main/README.md#backstage-backstage',
+          ],
+          [
+            'Documentation',
+            'https://backstage.io/docs/features/software-catalog/',
+          ],
+        ),
+      );
+    }
 
-    // Attempt to read origin url
-    const repoOrigin = getGitRepoOriginUrl();
-
-    const backstageAnswer = promptless
-      ? { skip: true }
-      : await this.prompt([
-          {
-            type: 'confirm',
-            name: 'skip',
-            message: `Skip prompts for values found in Backstage file (${BACKSTAGE_FILENAME}):`,
-            default: true,
-          },
-        ]);
+    if (helpPrompts) {
+      this.log(chalk.bold('Prompts\n'));
+      for (const question of questions) {
+        this.log(getPromptToUsage(question));
+      }
+      this.log(
+        `${chalk.bold.underline('                                       ')}\n`,
+      );
+    }
 
     this.answers = {
       ...this.answers,
       ...(await this.prompt(
-        [
-          {
-            type: 'input',
-            name: 'projectName',
-            message: 'Project:',
-          },
-          {
-            type: 'input',
-            name: 'serviceName',
-            message: 'Service:',
-          },
-          {
-            type: 'input',
-            name: 'description',
-            message: 'Description:',
-          },
-          {
-            type: 'input',
-            name: 'title',
-            message: 'Title:',
-          },
-          {
-            type: 'input',
-            name: 'type',
-            message: 'Type (service, website, library):',
-          },
-          {
-            type: 'input',
-            name: 'lifecycle',
-            message: 'Lifecycle (experimental, production, deprecated):',
-          },
-          {
-            type: 'input',
-            name: 'license',
-            default: 'Apache-2.0',
-            message: 'License (SPDX):',
-          },
-          {
-            type: 'input',
-            name: 'owner',
-            message: 'Owner:',
-          },
-          {
-            type: 'input',
-            name: 'githubProjectSlug',
-            message: 'GitHub Slug (<organization or owner>/<repository>):',
-            default: extractGitHubSlug(repoOrigin) ?? '',
-          },
-        ]
+        questions
           .filter(
-            generateSetAnswerPropPredicate(this.answers, !backstageAnswer.skip),
+            generateSetAnswerPropPredicate(
+              this.answers,
+              !headless && askAnswered,
+            ),
           )
           .map((question) => {
             if (this.answers[question?.name]) {

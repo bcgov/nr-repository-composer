@@ -1,10 +1,7 @@
 'use strict';
-import BaseGenerator from '../base/index.js';
-// eslint-disable-next-line no-unused-vars
-import yosay from 'yosay';
+import BaseGenerator from '../pd-base-playbook/index.js';
 // eslint-disable-next-line no-unused-vars
 import chalk from 'chalk';
-import * as fs from 'node:fs';
 
 /**
  * Generate the files needed for Jasper Reports deployments
@@ -37,7 +34,7 @@ export default class extends BaseGenerator {
     ];
     const playbook_options = {};
     this.composeWith(
-      'nr-repository-composer:base',
+      'nr-repository-composer:pd-base-playbook',
       playbook_args,
       playbook_options,
     );
@@ -63,15 +60,19 @@ export default class extends BaseGenerator {
       this.destinationPath(`${this.options.playbookPath}/jasper-reports.yaml`),
       {
         projectNameUpperCase: this.options.jasperProjectName.toUpperCase(),
-        jasperServerInstanceUpperCase: this.options.jasperServerInstance.toUpperCase(),
+        jasperServerInstanceUpperCase:
+          this.options.jasperServerInstance.toUpperCase(),
       },
     );
     this.fs.copyTpl(
       this.templatePath('jasper-reports-datasource.yaml'),
-      this.destinationPath(`${this.options.playbookPath}/jasper-datasource.yaml`),
+      this.destinationPath(
+        `${this.options.playbookPath}/jasper-datasource.yaml`,
+      ),
       {
         projectNameUpperCase: this.options.jasperProjectName.toUpperCase(),
-        jasperServerInstanceUpperCase: this.options.jasperServerInstance.toUpperCase(),
+        jasperServerInstanceUpperCase:
+          this.options.jasperServerInstance.toUpperCase(),
       },
     );
     this.config.save();

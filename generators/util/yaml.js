@@ -82,22 +82,38 @@ export const pathToProps = [
     writeEmpty: false,
   },
   {
-    path: ['metadata', 'annotations', 'playbook.io.nrs.gov.bc.ca/deployJasperReports'],
+    path: [
+      'metadata',
+      'annotations',
+      'playbook.io.nrs.gov.bc.ca/deployJasperReports',
+    ],
     prop: 'deployJasperReports',
     writeEmpty: false,
   },
   {
-    path: ['metadata', 'annotations', 'playbook.io.nrs.gov.bc.ca/jasperProjectName'],
+    path: [
+      'metadata',
+      'annotations',
+      'playbook.io.nrs.gov.bc.ca/jasperProjectName',
+    ],
     prop: 'jasperProjectName',
     writeEmpty: false,
   },
   {
-    path: ['metadata', 'annotations', 'playbook.io.nrs.gov.bc.ca/jasperServiceName'],
+    path: [
+      'metadata',
+      'annotations',
+      'playbook.io.nrs.gov.bc.ca/jasperServiceName',
+    ],
     prop: 'jasperServiceName',
     writeEmpty: false,
   },
   {
-    path: ['metadata', 'annotations', 'playbook.io.nrs.gov.bc.ca/jasperServerInstance'],
+    path: [
+      'metadata',
+      'annotations',
+      'playbook.io.nrs.gov.bc.ca/jasperServerInstance',
+    ],
     prop: 'jasperServerInstance',
     writeEmpty: false,
   },

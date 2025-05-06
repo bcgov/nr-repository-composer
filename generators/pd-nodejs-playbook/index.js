@@ -1,10 +1,7 @@
 'use strict';
-import BaseGenerator from '../base/index.js';
-// eslint-disable-next-line no-unused-vars
-import yosay from 'yosay';
+import BaseGenerator from '../pd-base-playbook/index.js';
 // eslint-disable-next-line no-unused-vars
 import chalk from 'chalk';
-import * as fs from 'node:fs';
 
 /**
  * Generate Ansible playbook and variable files
@@ -16,6 +13,7 @@ export default class extends BaseGenerator {
 
   writing() {
     this.log('Generating playbook files');
+
     const playbook_args = [
       this.options.projectName,
       this.options.serviceName,
@@ -23,7 +21,7 @@ export default class extends BaseGenerator {
     ];
     const playbook_options = {};
     this.composeWith(
-      'nr-repository-composer:base',
+      'nr-repository-composer:pd-base-playbook',
       playbook_args,
       playbook_options,
     );

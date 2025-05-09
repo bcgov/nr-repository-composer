@@ -25,6 +25,7 @@ env:
 
 jobs:
   check-token-expiration:
+    name: Check token expiration
     uses: ./.github/workflows/check-token.yaml
     permissions: {}
     secrets:

@@ -18,7 +18,7 @@ jobs:
     permissions:
       contents: read
     steps:
-      - name: Submit a job to Jenkins
+      - name: Submit deployment job
         run: |
           curl \
           --data-urlencode "token=${{ secrets.JENKINS_TOKEN }}" \

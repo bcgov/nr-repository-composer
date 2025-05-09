@@ -20,16 +20,17 @@ env:
   PACKAGE_REPO: ghcr.io/${{ github.repository }}/package
 
 jobs:
-  check_token_expiration:
+  check-token-expiration:
+    name: Check token expiration
     uses: ./.github/workflows/check-token.yaml
     permissions: {}
     secrets:
       token: ${{ secrets.<%= brokerJwt %> }}
-  deploy-build:
-    name: Deploy development version
+  deploy-pre-release-build:
+    name: Trigger dev/test deployment
     if: ${{ ! startsWith(github.ref, 'refs/tags/') }}
     runs-on: ubuntu-latest
-    needs: check_token_expiration
+    needs: check-token-expiration
     permissions:
       contents: read
       packages: read
@@ -84,11 +85,11 @@ jobs:
         env:
           PACKAGE_TAG: ${{ github.ref_name }}
           PACKAGE_REPO: ${{ env.PACKAGE_REPO }}
-  deploy-tag:
-    name: Deploy release version
+  deploy-release-build:
+    name: Trigger prod deployment
     if: ${{ startsWith(github.ref, 'refs/tags/') }}
     runs-on: ubuntu-latest
-    needs: check_token_expiration
+    needs: check-token-expiration
     permissions:
       contents: read
       packages: read
@@ -144,13 +145,13 @@ jobs:
         env:
           PACKAGE_TAG: ${{ steps.set-tag-output.outputs.project_tag }}
           PACKAGE_REPO: ${{ env.PACKAGE_REPO }}
-  submit-job:
-    name: Submit job
+  submit-deployment-job:
+    name: Submit deployment job
     if: |
       always() &&
-      ((needs.deploy-build.result == 'success' && needs.deploy-tag.result == 'skipped') ||
-      (needs.deploy-build.result == 'skipped' && needs.deploy-tag.result == 'success'))
-    needs: [deploy-build, deploy-tag]
+      ((needs.deploy-pre-release-build.result == 'success' && needs.deploy-release-build.result == 'skipped') ||
+      (needs.deploy-pre-release-build.result == 'skipped' && needs.deploy-release-build.result == 'success'))
+    needs: [deploy-pre-release-build, deploy-release-build]
     permissions:
       actions: read
       packages: read
@@ -175,13 +176,15 @@ jobs:
           -H "Connection: close" \
           ${{ env.URL }}/${{ env.JOB }}
         env:
-          PROJECT_VERSION: ${{ needs.deploy-build.outputs.project_version || needs.deploy-tag.outputs.project_version }}
-          BUILD_GUID: ${{ needs.deploy-build.outputs.build_guid || needs.deploy-tag.outputs.build_guid }}
-          BUILD_NUMBER: ${{ needs.deploy-build.outputs.build_number || needs.deploy-tag.outputs.build_number }}
-          ARTIFACT_SHA256: ${{ needs.deploy-build.outputs.artifact_sha256 || needs.deploy-tag.outputs.artifact_sha256 }}
-          DOWNLOAD_URL: ${{ needs.deploy-build.outputs.download_url || needs.deploy-tag.outputs.download_url }}
-      # The automatically generated GitHub token will expire when the workflow ends. We need to wait so the job has time to clone the repo
-      # and download the package
-      - name: Sleep
+          PROJECT_VERSION: ${{ needs.deploy-pre-release-build.outputs.project_version || needs.deploy-release-build.outputs.project_version }}
+          BUILD_GUID: ${{ needs.deploy-pre-release-build.outputs.build_guid || needs.deploy-release-build.outputs.build_guid }}
+          BUILD_NUMBER: ${{ needs.deploy-pre-release-build.outputs.build_number || needs.deploy-release-build.outputs.build_number }}
+          ARTIFACT_SHA256: ${{ needs.deploy-pre-release-build.outputs.artifact_sha256 || needs.deploy-release-build.outputs.artifact_sha256 }}
+          DOWNLOAD_URL: ${{ needs.deploy-pre-release-build.outputs.download_url || needs.deploy-release-build.outputs.download_url }}
+      - name: Display deployment job URL
+        run: |
+          DEPLOYMENT_JOB_URL="${{ env.URL }}/job/${{ env.SERVICE_PROJECT }}/job/${{ env.SERVICE_NAME }}/"
+          echo "Deployment job URL: ${DEPLOYMENT_JOB_URL}"
+      - name: Keep GH token alive
         run: sleep 90s
         shell: bash

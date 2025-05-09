@@ -20,7 +20,8 @@ env:
   SERVICE_NAME: <%= serviceName %>
 
 jobs:
-  check_token_expiration:
+  check-token-expiration:
+    name: Check token expiration
     uses: ./.github/workflows/check-token.yaml
     permissions: {}
     secrets:
@@ -35,9 +36,9 @@ jobs:
     name: Build and release
     runs-on: ubuntu-latest
 <% if (unitTestsPath) { -%>
-    needs: [check_token_expiration, test]
+    needs: [check-token-expiration, test]
 <% } else { -%>
-    needs: check_token_expiration
+    needs: check-token-expiration
 <% } -%>
     permissions:
       contents: read

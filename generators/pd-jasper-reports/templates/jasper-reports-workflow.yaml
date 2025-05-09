@@ -12,8 +12,8 @@ env:
   URL: https://cd.io.nrs.gov.bc.ca
 
 jobs:
-  submit-job:
-    name: Submit job
+  submit-deployment-job:
+    name: Submit deployment job
     runs-on: ubuntu-latest
     permissions:
       contents: read
@@ -28,8 +28,10 @@ jobs:
           --data-urlencode "brokerJwt=${{ secrets.<%= brokerJwt %> }}" \
           -H "Connection: close" \
           ${{ env.URL }}/${{ env.JOB }}
-      # The automatically generated GitHub token will expire when the workflow ends. We need to wait so the job has time to clone the repo
-      # and download the package
-      - name: Sleep
-        run: sleep 30s
+      - name: Display deployment job URL
+        run: |
+          DEPLOYMENT_JOB_URL="${{ env.URL }}/job/${{ env.SERVICE_PROJECT }}/job/${{ env.SERVICE_NAME }}/"
+          echo "Deployment job URL: ${DEPLOYMENT_JOB_URL}"
+      - name: Keep GH token alive
+        run: sleep 90s
         shell: bash

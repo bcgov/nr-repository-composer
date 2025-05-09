@@ -159,7 +159,7 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       # See: https://github.com/bcgov-nr/polaris-pipelines
-      - name: Submit a job to Jenkins
+      - name: Submit deployment job
         run: |
           curl \
           --data-urlencode "token=${{ secrets.JENKINS_TOKEN }}" \

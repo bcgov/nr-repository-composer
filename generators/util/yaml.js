@@ -238,7 +238,7 @@ export function addGeneratorToDoc(doc, generator) {
 
 export function generateSetAnswerPropPredicate(answers, skip) {
   return (val) => {
-    return answers[val.name] === undefined || (answers[val.name] && skip);
+    return answers[val.name] === undefined || (val.name in answers && skip);
   };
 }
 

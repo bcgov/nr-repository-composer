@@ -39,7 +39,7 @@ This assists in creating a standard layout of folders and files related to datab
 
 ## Command Options
 
-### --ask-answers [Default: false]
+### --ask-answered [Default: false]
 
 If true, show prompts for already configured options. Generators read information stored in your `catalog-info.yaml` for previous prompt answers.
 

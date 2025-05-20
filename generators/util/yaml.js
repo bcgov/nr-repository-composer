@@ -236,9 +236,9 @@ export function addGeneratorToDoc(doc, generator) {
   }
 }
 
-export function generateSetAnswerPropPredicate(answers, skip) {
+export function generateSetAnswerPropPredicate(answers, keepAnswered) {
   return (val) => {
-    return answers[val.name] === undefined || (answers[val.name] && skip);
+    return !(val.name in answers) || keepAnswered;
   };
 }
 

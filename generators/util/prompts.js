@@ -178,6 +178,7 @@ export const PROMPT_JASPER_PAUSE_SECONDS = {
   type: 'input',
   name: 'jasperPauseSeconds',
   message: 'Pause seconds for Jasper Reports deployment:',
+  default: 30,
 };
 export const PROMPT_TOMCAT_CONTEXT = {
   type: 'input',

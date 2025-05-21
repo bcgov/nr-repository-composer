@@ -19,7 +19,7 @@
       - <%= jasperServerInstanceUpperCase %>_<%= projectNameUpperCase %>
 <% if (jasperPauseSeconds) { -%>
     # Increase the number of seconds to wait before requesting the import status
-    jasper_pause_seconds: 20
+    jasper_pause_seconds: <%= jasperPauseSeconds -%>
 <% } -%>
 
   tasks:

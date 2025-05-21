@@ -174,6 +174,11 @@ export const PROMPT_JASPER_SERVER_INSTANCE = {
   message: 'Jasper Reports server instance:',
   default: 'JCRS',
 };
+export const PROMPT_JASPER_PAUSE_SECONDS = {
+  type: 'input',
+  name: 'jasperPauseSeconds',
+  message: 'Pause seconds for Jasper Reports deployment:',
+};
 export const PROMPT_TOMCAT_CONTEXT = {
   type: 'input',
   name: 'tomcatContext',
@@ -298,6 +303,9 @@ export const PROMPT_TO_USAGE = {
   },
   jasperServerInstance: {
     description: 'The Jasper server instance to use (e.g. JCRS, JRS, etc.)',
+  },
+  jasperPauseSeconds: {
+    description: 'The number of seconds to pause before requesting import status',
   },
   tomcatContext: {
     description: 'The Tomcat context to use (e.g. ext#results).',

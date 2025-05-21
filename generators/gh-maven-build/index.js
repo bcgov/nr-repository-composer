@@ -29,6 +29,7 @@ import {
   PROMPT_ALT_APP_DIR_NAME,
   PROMPT_ADD_WEBADE_CONFIG,
   getPromptToUsage,
+  PROMPT_JASPER_PAUSE_SECONDS,
 } from '../util/prompts.js';
 import {
   BACKSTAGE_FILENAME,
@@ -73,6 +74,10 @@ const questions = [
   },
   {
     ...PROMPT_JASPER_SERVER_INSTANCE,
+    when: (answers) => answers.deployJasperReports,
+  },
+  {
+    ...PROMPT_JASPER_PAUSE_SECONDS,
     when: (answers) => answers.deployJasperReports,
   },
   {
@@ -256,6 +261,7 @@ export default class extends Generator {
       const jasper_playbook_options = {
         jasperProjectName: this.answers.jasperProjectName,
         jasperServerInstance: this.answers.jasperServerInstance,
+        jasperPauseSeconds: this.answers.jasperPauseSeconds,
         brokerJwt: brokerJwt,
       };
       this.composeWith(

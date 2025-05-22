@@ -126,6 +126,7 @@ export const pathToProps = [
     ],
     prop: 'jasperPauseSeconds',
     writeEmpty: false,
+    transform: (val) => (val === '' || val === undefined ? val : Number(val)),
   },
   {
     path: ['metadata', 'annotations', 'playbook.io.nrs.gov.bc.ca/playbookPath'],

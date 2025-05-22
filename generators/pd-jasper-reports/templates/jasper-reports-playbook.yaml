@@ -17,6 +17,10 @@
     # If you have additional datasource templates, you can add them to the jasper_datasource_folders list below.
     jasper_datasource_folders:
       - <%= jasperServerInstanceUpperCase %>_<%= projectNameUpperCase %>
+<% if (jasperPauseSeconds) { -%>
+    # Increase the number of seconds to wait before requesting the import status
+    jasper_pause_seconds: <%= jasperPauseSeconds -%>
+<% } -%>
 
   tasks:
     - name: Create package

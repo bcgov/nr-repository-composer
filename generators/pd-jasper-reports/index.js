@@ -18,6 +18,10 @@ export default class extends BaseGenerator {
       type: String,
       description: 'Jasper Server Instance',
     });
+    this.option('jasperPauseSeconds', {
+      type: String,
+      description: 'Pause seconds for Jasper Reports deployment',
+    });
     this.option('brokerJwt', {
       type: String,
       description: 'Broker JWT',
@@ -62,6 +66,7 @@ export default class extends BaseGenerator {
         projectNameUpperCase: this.options.jasperProjectName.toUpperCase(),
         jasperServerInstanceUpperCase:
           this.options.jasperServerInstance.toUpperCase(),
+        jasperPauseSeconds: this.options.jasperPauseSeconds,
       },
     );
     this.fs.copyTpl(

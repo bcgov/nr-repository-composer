@@ -81,6 +81,7 @@ export const pathToProps = [
     prop: 'deployOnPrem',
     writeEmpty: false,
   },
+  // Jasper
   {
     path: [
       'metadata',
@@ -116,6 +117,16 @@ export const pathToProps = [
     ],
     prop: 'jasperServerInstance',
     writeEmpty: false,
+  },
+  {
+    path: [
+      'metadata',
+      'annotations',
+      'playbook.io.nrs.gov.bc.ca/jasperPauseSeconds',
+    ],
+    prop: 'jasperPauseSeconds',
+    writeEmpty: false,
+    transform: (val) => (val === '' || val === undefined ? val : Number(val)),
   },
   {
     path: ['metadata', 'annotations', 'playbook.io.nrs.gov.bc.ca/playbookPath'],

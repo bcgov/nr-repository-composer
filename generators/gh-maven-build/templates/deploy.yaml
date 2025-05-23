@@ -54,11 +54,27 @@ jobs:
             -H 'accept: application/json' \
             -H 'Authorization: Bearer '"${BROKER_JWT}"'' \
             -d '')
+          echo "Broker API response:"
+          echo "$RESPONSE"
           if echo "$RESPONSE" | jq -e '.statusCode == 401' > /dev/null; then
             echo "Status code is 401. This indicates an authorization error."
             echo "Please check if your Broker Token is valid. Teams can generate a new one in Broker if needed."
             echo "Link: https://broker.io.nrs.gov.bc.ca/browse/brokerAccount"
             echo "Exiting..."
+            exit 1
+          fi
+          if [ "$(echo "$RESPONSE" | jq '.data | length')" -eq 0 ]; then
+            echo
+            echo "============================================================"
+            echo "Error: Broker API response data is empty."
+            echo "------------------------------------------------------------"
+            echo "Explanation: No build information was found for this commit."
+            echo "Why it matters: The deployment cannot proceed without build metadata."
+            echo "Check if the build completed and published to Broker."
+            echo "--- Broker API response below ---"
+            echo "$RESPONSE"
+            echo "============================================================"
+            echo
             exit 1
           fi
           echo "project_version=$(echo ${RESPONSE} | jq -r '.data[].actions[].package.version')" >> $GITHUB_OUTPUT
@@ -89,14 +105,54 @@ jobs:
         id: set-download-url
 <% if (gitHubPackages) { -%>
         run: |
+          set -e
           sudo apt-get update
           sudo apt-get -qq install libxml2-utils
           GROUP_ID=$(mvn help:evaluate -Dexpression=project.groupId -q -DforceStdout --file <%= pomRoot %>pom.xml)
           GROUP_ID_PATH="${GROUP_ID//.//}"
           PACKAGE_TYPE=$(mvn help:evaluate -Dexpression=project.packaging -q -DforceStdout --file <%= pomRoot %>pom.xml)
-          curl -LO "${PACKAGE_REPO}/${GROUP_ID_PATH}/${SERVICE_NAME}/${PROJECT_VERSION}/maven-metadata.xml" -H "Authorization: token ${{ secrets.GITHUB_TOKEN }}"
-          TIMESTAMP=$(xmllint --xpath '//metadata/versioning/snapshot/timestamp/text()' maven-metadata.xml)
-          BUILD_NUMBER=$(xmllint --xpath '//metadata/versioning/snapshot/buildNumber/text()' maven-metadata.xml)
+          CURL_RESPONSE=$(curl -w "\n%{http_code}" -LO "${PACKAGE_REPO}/${GROUP_ID_PATH}/${SERVICE_NAME}/${PROJECT_VERSION}/maven-metadata.xml" -H "Authorization: token ${{ secrets.GITHUB_TOKEN }}")
+          HTTP_STATUS=$(echo "$CURL_RESPONSE" | tail -n1)
+          if [ "$HTTP_STATUS" -ne 200 ]; then
+            echo
+            echo "============================================================"
+            echo "Error: Failed to download maven-metadata.xml (HTTP $HTTP_STATUS)"
+            echo "------------------------------------------------------------"
+            echo "Curl response:"
+            echo "$CURL_RESPONSE"
+            echo "============================================================"
+            echo
+            exit 1
+          fi
+          if ! grep -q "<timestamp>" maven-metadata.xml || ! grep -q "<buildNumber>" maven-metadata.xml; then
+            echo
+            echo "============================================================"
+            echo "Error: maven-metadata.xml does not contain <timestamp> or <buildNumber>."
+            echo "------------------------------------------------------------"
+            echo "Explanation: This usually means the artifact is not a snapshot build, or the metadata is missing/corrupted."
+            echo "Why it matters: Without <timestamp> and <buildNumber>, the workflow cannot construct the correct snapshot artifact filename, so the deployment cannot proceed."
+            echo "Check if the build published a snapshot and if the repository is correct."
+            echo "--- maven-metadata.xml contents below ---"
+            cat maven-metadata.xml
+            echo "============================================================"
+            echo
+            exit 1
+          fi
+          TIMESTAMP=$(xmllint --xpath 'string(//metadata/versioning/snapshot/timestamp)' maven-metadata.xml)
+          BUILD_NUMBER=$(xmllint --xpath 'string(//metadata/versioning/snapshot/buildNumber)' maven-metadata.xml)
+          if [ -z "$TIMESTAMP" ] || [ -z "$BUILD_NUMBER" ]; then
+            echo
+            echo "============================================================"
+            echo "Error: Could not extract timestamp or buildNumber from maven-metadata.xml"
+            echo "------------------------------------------------------------"
+            echo "Explanation: The XML structure may be different than expected, or the snapshot build did not complete properly."
+            echo "Why it matters: Without these values, the workflow cannot determine the correct artifact version to download, so deployment will fail."
+            echo "Verify the contents of maven-metadata.xml and ensure the build process published the snapshot."
+            cat maven-metadata.xml
+            echo "============================================================"
+            echo
+            exit 1
+          fi
           SNAPSHOT_VERSION="${PROJECT_VERSION//SNAPSHOT/$TIMESTAMP-$BUILD_NUMBER}"
           ARTIFACT_NAME="${SERVICE_NAME}-${SNAPSHOT_VERSION}.${PACKAGE_TYPE}"
           DOWNLOAD_URL="${PACKAGE_REPO}/${GROUP_ID_PATH}/${SERVICE_NAME}/${PROJECT_VERSION}/${ARTIFACT_NAME}"
@@ -151,6 +207,20 @@ jobs:
             echo "Exiting..."
             exit 1
           fi
+          if [ "$(echo "$RESPONSE" | jq '.data | length')" -eq 0 ]; then
+            echo
+            echo "============================================================"
+            echo "Error: Broker API response data is empty."
+            echo "------------------------------------------------------------"
+            echo "Explanation: No build information was found for this tag."
+            echo "Why it matters: The deployment cannot proceed without build metadata."
+            echo "Check if the build completed and published to Broker."
+            echo "--- Broker API response below ---"
+            echo "$RESPONSE"
+            echo "============================================================"
+            echo
+            exit 1
+          fi
           echo "project_version=${PROJECT_VERSION}" >> $GITHUB_OUTPUT
           echo "build_guid=$(echo ${RESPONSE} | jq -r '.data[].id')" >> $GITHUB_OUTPUT
           echo "build_number=$(echo ${RESPONSE} | jq -r '.data[].actions[].package.buildNumber')" >> $GITHUB_OUTPUT
@@ -177,6 +247,7 @@ jobs:
       - name: Set download URL
         id: set-download-url
         run: |
+          set -e
           sudo apt-get update
           sudo apt-get -qq install libxml2-utils
           GROUP_ID=$(mvn help:evaluate -Dexpression=project.groupId -q -DforceStdout --file <%= pomRoot %>pom.xml)
@@ -184,6 +255,18 @@ jobs:
           PACKAGE_TYPE=$(mvn help:evaluate -Dexpression=project.packaging -q -DforceStdout --file <%= pomRoot %>pom.xml)
           ARTIFACT_NAME="${SERVICE_NAME}-${PROJECT_VERSION}.${PACKAGE_TYPE}"
           DOWNLOAD_URL="${PACKAGE_REPO}/${GROUP_ID_PATH}/${SERVICE_NAME}/${PROJECT_VERSION}/${ARTIFACT_NAME}"
+          if [ -z "$GROUP_ID" ] || [ -z "$PACKAGE_TYPE" ] || [ -z "$ARTIFACT_NAME" ] || [ -z "$DOWNLOAD_URL" ]; then
+            echo
+            echo "============================================================"
+            echo "Error: Failed to construct the download URL for the release artifact."
+            echo "------------------------------------------------------------"
+            echo "Explanation: One or more required values (groupId, packaging, artifact name, or download URL) could not be determined."
+            echo "Why it matters: Without a valid download URL, the workflow cannot retrieve the release artifact, so deployment cannot proceed."
+            echo "Check that the pom.xml is present and contains valid groupId and packaging, and that environment variables are set correctly."
+            echo "============================================================"
+            echo
+            exit 1
+          fi
           echo "${DOWNLOAD_URL}"
           echo "download_url=$(echo ${DOWNLOAD_URL})" >> $GITHUB_OUTPUT
         env:

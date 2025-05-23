@@ -8,6 +8,8 @@ concurrency:
   cancel-in-progress: true
 
 env:
+  SERVICE_PROJECT: <%= projectName %>
+  SERVICE_NAME: <%= serviceName %>
   JOB: buildByToken/buildWithParameters?job=<%= projectName %>/<%= serviceName %>
   URL: https://cd.io.nrs.gov.bc.ca
 

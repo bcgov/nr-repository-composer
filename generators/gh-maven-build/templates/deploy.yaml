@@ -108,9 +108,9 @@ jobs:
           set -e
           sudo apt-get update
           sudo apt-get -qq install libxml2-utils
-          GROUP_ID=$(mvn help:evaluate -Dexpression=project.groupId -q -DforceStdout --file ./pom.xml)
+          GROUP_ID=$(mvn help:evaluate -Dexpression=project.groupId -q -DforceStdout --file <%= pomRoot %>pom.xml)
           GROUP_ID_PATH="${GROUP_ID//.//}"
-          PACKAGE_TYPE=$(mvn help:evaluate -Dexpression=project.packaging -q -DforceStdout --file ./pom.xml)
+          PACKAGE_TYPE=$(mvn help:evaluate -Dexpression=project.packaging -q -DforceStdout --file <%= pomRoot %>pom.xml)
           CURL_RESPONSE=$(curl -w "\n%{http_code}" -LO "${PACKAGE_REPO}/${GROUP_ID_PATH}/${SERVICE_NAME}/${PROJECT_VERSION}/maven-metadata.xml" -H "Authorization: token ${{ secrets.GITHUB_TOKEN }}")
           HTTP_STATUS=$(echo "$CURL_RESPONSE" | tail -n1)
           if [ "$HTTP_STATUS" -ne 200 ]; then
@@ -250,9 +250,9 @@ jobs:
           set -e
           sudo apt-get update
           sudo apt-get -qq install libxml2-utils
-          GROUP_ID=$(mvn help:evaluate -Dexpression=project.groupId -q -DforceStdout --file ./pom.xml)
+          GROUP_ID=$(mvn help:evaluate -Dexpression=project.groupId -q -DforceStdout --file <%= pomRoot %>pom.xml)
           GROUP_ID_PATH="${GROUP_ID//.//}"
-          PACKAGE_TYPE=$(mvn help:evaluate -Dexpression=project.packaging -q -DforceStdout --file ./pom.xml)
+          PACKAGE_TYPE=$(mvn help:evaluate -Dexpression=project.packaging -q -DforceStdout --file <%= pomRoot %>pom.xml)
           ARTIFACT_NAME="${SERVICE_NAME}-${PROJECT_VERSION}.${PACKAGE_TYPE}"
           DOWNLOAD_URL="${PACKAGE_REPO}/${GROUP_ID_PATH}/${SERVICE_NAME}/${PROJECT_VERSION}/${ARTIFACT_NAME}"
           if [ -z "$GROUP_ID" ] || [ -z "$PACKAGE_TYPE" ] || [ -z "$ARTIFACT_NAME" ] || [ -z "$DOWNLOAD_URL" ]; then

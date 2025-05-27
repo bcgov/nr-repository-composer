@@ -236,6 +236,13 @@ export default class extends Generator {
           serviceName: this.answers.serviceName,
         },
       );
+      this.fs.copyTpl(
+        this.templatePath('PIPELINE.md'),
+        this.destinationPath('PIPELINE.md'),
+        { 
+          gitHubOwnerPack: this.answers.gitHubOwnerPack
+        },
+      );
       const java_playbook_args = [
         this.answers.projectName,
         this.answers.serviceName,

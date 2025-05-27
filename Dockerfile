@@ -16,3 +16,4 @@ WORKDIR /src
 VOLUME ["/src"]
 
 ENTRYPOINT ["yo"]
+CMD []

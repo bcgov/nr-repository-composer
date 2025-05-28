@@ -1,4 +1,4 @@
 #!/usr/bin/env bash
 
 # Build the image
-podman build -t nr-repository-composer .
+podman build --pull=newer -t nr-repository-composer .

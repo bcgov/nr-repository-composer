@@ -49,7 +49,11 @@ The option `--force` will allow Yoeman to automatically overwrite any existing f
 
 ### --headless [Default: false]
 
-If true, exit with error if any prompt is required. Obvisouly, this will always exit with an error if you enable `--ask-answers`. This is for scripting running the generators.
+If true, exit with error if any prompt is required. Obviously, this will always exit with an error if you enable `--ask-answered`. This is for scripting running the generators.
+
+### --help [Default: false]
+
+If true, displays usage and options and exits.
 
 ### --help-prompts [Default: false]
 
@@ -94,10 +98,10 @@ The example command will run the 'gh-maven-build' generator. This creates or upd
 ### Container
 
 ```
-podman run --rm -it -v ${PWD}:/src --userns keep-id ghcr.io/bcgov/nr-repository-composer:latest -- nr-repository-composer:gh-maven-build
+podman run --rm -it -v ${PWD}:/src --userns keep-id ghcr.io/bcgov/nr-repository-composer:latest nr-repository-composer:gh-maven-build
 ```
 ```
-docker run --rm -v ${PWD}:/src ghcr.io/bcgov/nr-repository-composer:latest -- nr-repository-composer:gh-maven-build
+docker run --rm -v ${PWD}:/src ghcr.io/bcgov/nr-repository-composer:latest nr-repository-composer:gh-maven-build
 ```
 
 The examples map the current working directory to the '/src' directory inside of the container image. The generator container image uses '/src' as its working directory and will read and write files at that location.

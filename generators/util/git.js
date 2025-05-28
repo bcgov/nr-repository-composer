@@ -23,7 +23,10 @@ export function findGitRepoOrigin(startPath = process.cwd()) {
     const gitConfigPath = path.join(currentPath, '.git', 'config');
 
     try {
-      if (fs.statSync(gitConfigPath).isFile()) {
+      if (
+        fs.existsSync(gitConfigPath) &&
+        fs.lstatSync(gitConfigPath).isFile()
+      ) {
         return gitConfigPath;
       }
       // eslint-disable-next-line no-unused-vars

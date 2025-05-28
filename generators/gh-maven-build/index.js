@@ -237,12 +237,19 @@ export default class extends Generator {
         },
       );
       this.fs.copyTpl(
-        this.templatePath('PIPELINE.md'),
-        this.destinationPath('PIPELINE.md'),
+        this.templatePath('gh-docs/*.md'),
+        this.destinationPath(''),
         { 
           gitHubOwnerPack: this.answers.gitHubOwnerPack
         },
       );
+      if (this.fs.exists(this.destinationPath('README.md'))) {
+        if (!this.fs.read(this.destinationPath('README.md')).includes("## How to Deploy")) {
+          this.fs.appendTpl(this.destinationPath('README.md'), this.fs.read(this.templatePath('gh-docs/README.md.tpl')))
+        }
+      } else {
+        this.fs.copyTpl(this.templatePath('gh-docs/README.md.tpl'), this.destinationPath('README.md'), {});
+      }
       const java_playbook_args = [
         this.answers.projectName,
         this.answers.serviceName,

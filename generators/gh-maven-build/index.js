@@ -236,15 +236,8 @@ export default class extends Generator {
           serviceName: this.answers.serviceName,
         },
       );
-      this.fs.copyTpl(
-        this.templatePath('gh-docs/*.md'),
-        this.destinationPath(''),
-        { 
-          gitHubOwnerPack: this.answers.gitHubOwnerPack
-        },
-      );
       if (this.fs.exists(this.destinationPath('README.md'))) {
-        if (!this.fs.read(this.destinationPath('README.md')).includes("## How to Deploy")) {
+        if (!this.fs.read(this.destinationPath('README.md')).includes("## Working With the Polaris Pipeline")) {
           this.fs.appendTpl(this.destinationPath('README.md'), this.fs.read(this.templatePath('gh-docs/README.md.tpl')))
         }
       } else {

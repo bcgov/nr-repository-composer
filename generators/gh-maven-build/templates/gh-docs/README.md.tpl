@@ -1,11 +1,7 @@
 
-## How to Deploy
+## Working With the Polaris Pipeline
 
-Follow the [branch model](CONTRIBUTING.md) and create a PR to the main branch to deploy to non-production environments.
+This repository uses the Polaris Pipeline to build and deploy.
 
-This repository uses GitHub Packages to store release builds.
-
-Creating a release will automatically create a package that you can deploy to production.
-
-Read more: [DEPLOY.md](DEPLOY.md)
+Refer to [nr-polaris-docs](https://github.com/bcgov/nr-polaris-docs) for more information about how to use the Polaris Pipeline.
 

@@ -46,11 +46,24 @@ jobs:
       artifact_sha256: ${{ steps.set-build-output.outputs.artifact_sha256 }}
       download_url: ${{ steps.set-download-url.outputs.download_url }}
     steps:
+      - name: Lookup PR Merge Ref
+        id: lookup-pr-merge-ref
+        run: |
+          if [[ ${{ github.ref_name != 'main' }} = true ]]; then
+            RESPONSE=$(curl -s "https://api.github.com/repos/<%= gitHubOwnerPack %>/pulls?head=<%= gitHubOwnerPack.split('/')[0] %>:${{ github.ref_name }}&state=open&base=main" \
+              -H "Authorization: token ${{ secrets.GITHUB_TOKEN }}" \
+              -H "Accept: application/vnd.github+json")
+            echo "build_sha=$(echo ${RESPONSE} | jq -r .[0].merge_commit_sha)" >> $GITHUB_OUTPUT
+            echo "checkout_ref=refs/pull/$(echo ${RESPONSE} | jq -r .[0].number)/merge" >> $GITHUB_OUTPUT
+          else
+            echo "build_sha=${{ github.sha }}" >> $GITHUB_OUTPUT
+            echo "checkout_ref=${{ github.ref }}" >> $GITHUB_OUTPUT
+          fi
       - name: Set build output
         id: set-build-output
         run: |
           RESPONSE=$(curl -s -X 'POST' \
-            "${BROKER_URL}/v1/intention/search?where=%7B%22actions.action%22%3A%22package-build%22%2C%22actions.service.project%22%3A%22${SERVICE_PROJECT}%22%2C%22actions.service.name%22%3A%22${SERVICE_NAME}%22%2C%22actions.package.buildVersion%22%3A%22${GITHUB_SHA}%22%7D&offset=0&limit=1" \
+            "${BROKER_URL}/v1/intention/search?where=%7B%22actions.action%22%3A%22package-build%22%2C%22actions.service.project%22%3A%22${SERVICE_PROJECT}%22%2C%22actions.service.name%22%3A%22${SERVICE_NAME}%22%2C%22actions.package.buildVersion%22%3A%22${BUILD_SHA}%22%7D&offset=0&limit=1" \
             -H 'accept: application/json' \
             -H 'Authorization: Bearer '"${BROKER_JWT}"'' \
             -d '')
@@ -88,13 +101,13 @@ jobs:
           BROKER_JWT: ${{ secrets.<%= brokerJwt %> }}
           SERVICE_PROJECT: ${{ env.SERVICE_PROJECT }}
           SERVICE_NAME: ${{ env.SERVICE_NAME }}
-          GITHUB_SHA: ${{ github.sha }}
+          BUILD_SHA: ${{ steps.lookup-pr-merge-ref.outputs.build_sha }}
       - name: Checkout repository
         uses: actions/checkout@v4
         with:
             fetch-depth: 0
             fetch-tags: true
-            ref: ${{ github.ref }}
+            ref: ${{ steps.lookup-pr-merge-ref.outputs.checkout_ref }}
       - name: Set up Java
         uses: actions/setup-java@v4
         with:

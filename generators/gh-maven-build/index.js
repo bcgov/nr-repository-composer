@@ -237,8 +237,13 @@ export default class extends Generator {
         },
       );
       if (this.fs.exists(this.destinationPath('README.md'))) {
-        if (!this.fs.read(this.destinationPath('README.md')).includes("## Working With the Polaris Pipeline")) {
-          this.fs.appendTpl(this.destinationPath('README.md'), this.fs.read(this.templatePath('gh-docs/README.md.tpl')))
+        var readmeContent = this.fs.read(this.destinationPath('README.md'));
+        const readmeRegex = new RegExp("<!-- README\.md\.tpl:START -->.*<!-- README\.md\.tpl:END -->", 'gs')
+        if (!readmeRegex.test(readmeContent)) {
+          this.fs.appendTpl(this.destinationPath('README.md'), "\n\n" + this.fs.read(this.templatePath('gh-docs/README.md.tpl')));
+        } else {
+          readmeContent = readmeContent.replace(readmeRegex, this.fs.read(this.templatePath('gh-docs/README.md.tpl')).trim());
+          this.fs.write(this.destinationPath('README.md'), readmeContent);
         }
       } else {
         this.fs.copyTpl(this.templatePath('gh-docs/README.md.tpl'), this.destinationPath('README.md'), {});

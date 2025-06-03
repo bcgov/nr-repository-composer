@@ -8,5 +8,5 @@ Refer to [nr-polaris-docs](https://github.com/bcgov/nr-polaris-docs) for more in
 
 ## Resources
 
-[GitHub Repository Best Practices](https://apps.nrs.gov.bc.ca/int/confluence/display/AR/GitHub+Repository+Best+Practices)
+[NRM Architecture Confluence: GitHub Repository Best Practices](https://apps.nrs.gov.bc.ca/int/confluence/x/TZ_9CQ)
 

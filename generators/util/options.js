@@ -1,11 +1,3 @@
-// export const OPTION_PROMPTLESS = {
-//   name: 'promptless',
-//   type: Boolean,
-//   required: false,
-//   description: 'Run headless with no user prompts',
-//   default: false,
-// };
-
 export const OPTION_HEADLESS = {
   name: 'headless',
   type: Boolean,

@@ -42,7 +42,5 @@ export default class extends BaseGenerator {
         projectNameUpperCase: this.options.projectName.toUpperCase(),
       },
     );
-
-    this.config.save();
   }
 }

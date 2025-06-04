@@ -218,6 +218,11 @@ export const pathToProps = [
   },
 ];
 
+export const propRecord = pathToProps.reduce((acc, pathToProp) => {
+  acc[pathToProp.prop] = pathToProp;
+  return acc;
+}, {});
+
 export function extractFromYaml(doc, pathToProps) {
   const answers = {};
 

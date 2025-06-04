@@ -80,6 +80,5 @@ export default class extends BaseGenerator {
           this.options.jasperServerInstance.toUpperCase(),
       },
     );
-    this.config.save();
   }
 }

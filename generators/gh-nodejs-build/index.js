@@ -1,9 +1,8 @@
 'use strict';
-import * as fs from 'fs';
 import Generator from 'yeoman-generator';
 import chalk from 'chalk';
-import { Document, parseDocument } from 'yaml';
 import { nrsay } from '../util/nrsay.js';
+import { BackstageStorage } from '../util/backstage.storage.js';
 import { OPTION_HEADLESS, OPTION_HELP_PROMPTS } from '../util/options.js';
 import { bailOnAnyQuestions } from '../util/process.js';
 import {
@@ -19,11 +18,7 @@ import {
 } from '../util/prompts.js';
 import {
   BACKSTAGE_FILENAME,
-  pathToProps,
-  addGeneratorToDoc,
-  extractFromYaml,
   generateSetAnswerPropPredicate,
-  writePropToPath,
 } from '../util/yaml.js';
 
 const questions = [
@@ -36,7 +31,9 @@ const questions = [
   PROMPT_DEPLOY_ON_PREM,
   {
     ...PROMPT_PLAYBOOK_PATH,
-    when: (answers) => answers.deployOnPrem,
+    when: (answers) => {
+      return answers.deployOnPrem;
+    },
   },
 ];
 
@@ -50,21 +47,18 @@ export default class extends Generator {
     this.option(OPTION_HELP_PROMPTS);
   }
 
-  async initializing() {
-    const backstagePath = this.destinationPath(BACKSTAGE_FILENAME);
-    if (fs.existsSync(backstagePath)) {
-      const backstageYaml = fs.readFileSync(backstagePath, 'utf8');
-      this.backstageDoc = parseDocument(backstageYaml);
-    } else {
-      this.backstageDoc = new Document();
-    }
+  _getStorage() {
+    return new BackstageStorage(
+      this.rootGeneratorName(),
+      this.destinationPath(BACKSTAGE_FILENAME),
+    );
   }
 
   async prompting() {
     const headless = this.options[OPTION_HEADLESS.name];
     const askAnswered = this.options['ask-answered'];
     const helpPrompts = this.options[OPTION_HELP_PROMPTS.name];
-    this.answers = extractFromYaml(this.backstageDoc, pathToProps);
+    this.answers = this.config.getAnswers();
 
     if (!headless) {
       this.log(
@@ -91,25 +85,18 @@ export default class extends Generator {
       );
     }
 
-    this.answers = {
-      ...this.answers,
-      ...(await this.prompt(
-        questions
-          .filter(
-            generateSetAnswerPropPredicate(
-              this.answers,
-              !headless && askAnswered,
-            ),
-          )
-          .map((question) => {
-            if (this.answers[question?.name]) {
-              question.default = this.answers[question.name];
-            }
-            return question;
-          })
-          .map(bailOnAnyQuestions(headless)),
-      )),
-    };
+    bailOnAnyQuestions(
+      questions
+        .filter(
+          generateSetAnswerPropPredicate(
+            this.answers,
+            !headless && askAnswered,
+          ),
+        )
+        .filter((question) => question.when && question.when(this.answers)),
+      headless,
+    );
+    this.answers = await this.prompt(questions, 'config');
   }
 
   // Generate GitHub workflows and NR Broker intention files
@@ -181,11 +168,7 @@ export default class extends Generator {
   }
 
   writingBackstage() {
-    writePropToPath(this.backstageDoc, pathToProps, this.answers);
-    addGeneratorToDoc(this.backstageDoc, 'gh-nodejs-build');
-    this.fs.write(
-      this.destinationPath(BACKSTAGE_FILENAME),
-      this.backstageDoc.toString(),
-    );
+    this.config.addGeneratorToDoc('gh-nodejs-build');
+    this.config.save();
   }
 }

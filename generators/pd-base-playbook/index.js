@@ -1,6 +1,8 @@
 'use strict';
 import Generator from 'yeoman-generator';
 import * as fs from 'node:fs';
+import { BACKSTAGE_FILENAME } from '../util/yaml.js';
+import { BackstageStorage } from '../util/backstage.storage.js';
 
 /**
  * Generate the Ansible playbook and variable files needed for a generic webapp deployments
@@ -27,6 +29,13 @@ export default class extends Generator {
     });
   }
 
+  _getStorage() {
+    return new BackstageStorage(
+      this.rootGeneratorName(),
+      this.destinationPath(BACKSTAGE_FILENAME),
+    );
+  }
+
   // Generate Ansible variable files
   writing() {
     this.log('Generating variable files');
@@ -50,7 +59,5 @@ export default class extends Generator {
         );
       }
     }
-
-    this.config.save();
   }
 }

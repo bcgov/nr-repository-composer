@@ -1,9 +1,6 @@
-export function bailOnAnyQuestions(headless) {
-  return (question) => {
-    if (headless) {
-      // Bail if any questions exist
-      process.exit(1);
-    }
-    return question;
-  };
+export function bailOnAnyQuestions(questions, headless) {
+  if (questions.length > 0 && headless) {
+    // Bail if any questions exist
+    process.exit(1);
+  }
 }

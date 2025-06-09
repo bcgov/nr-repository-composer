@@ -59,7 +59,5 @@ export default class extends BaseGenerator {
         addWebadeConfig: this.options.addWebadeConfig,
       },
     );
-
-    this.config.save();
   }
 }

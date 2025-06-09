@@ -306,7 +306,8 @@ export const PROMPT_TO_USAGE = {
     description: 'The Jasper server instance to use (e.g. JCRS, JRS, etc.)',
   },
   jasperPauseSeconds: {
-    description: 'The number of seconds to pause before requesting import status',
+    description:
+      'The number of seconds to pause before requesting import status',
   },
   tomcatContext: {
     description: 'The Tomcat context to use (e.g. ext#results).',

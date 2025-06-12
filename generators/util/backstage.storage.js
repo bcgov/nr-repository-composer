@@ -38,9 +38,12 @@ export class BackstageStorage {
   }
 
   getPath(path) {
-    path = Array.isArray(path) ? path : propRecord[path].path;
     // console.log(`Getting path "${path}: ${this.backstageDoc.getIn(path)}"`);
-    return this.backstageDoc.getIn(path);
+    const docPath = Array.isArray(path) ? path : propRecord[path]?.path;
+    if (!docPath) {
+      throw new Error(`Mapping from "${path}" to YAML document path not found`);
+    }
+    return this.backstageDoc.getIn(docPath);
   }
 
   get(key) {

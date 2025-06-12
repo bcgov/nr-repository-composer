@@ -8,6 +8,7 @@ import { bailOnAnyQuestions } from '../util/process.js';
 import {
   PROMPT_PROJECT,
   PROMPT_SERVICE,
+  PROMPT_LICENSE,
   PROMPT_LIFECYCLE,
   PROMPT_CLIENT_ID,
   PROMPT_UNIT_TESTS_PATH,
@@ -24,6 +25,7 @@ import {
 const questions = [
   PROMPT_PROJECT,
   PROMPT_SERVICE,
+  PROMPT_LICENSE,
   PROMPT_LIFECYCLE,
   PROMPT_CLIENT_ID,
   PROMPT_UNIT_TESTS_PATH,
@@ -147,10 +149,23 @@ export default class extends Generator {
       );
       this.fs.copyTpl(
         this.templatePath('deployment-intention.json'),
-        this.destinationPath('.jenkins/deployment-intention.json'),
+        this.destinationPath(
+          `.jenkins/${this.answers.serviceName}-deployment-intention.json`,
+        ),
         {
           projectName: this.answers.projectName,
           serviceName: this.answers.serviceName,
+        },
+      );
+      this.fs.copyTpl(
+        this.templatePath('check-deploy-job-status.sh'),
+        this.destinationPath('.github/workflows/check-deploy-job-status.sh'),
+      );
+      this.fs.copyTpl(
+        this.templatePath('run-deploy.yaml'),
+        this.destinationPath('.github/workflows/run-deploy.yaml'),
+        {
+          brokerJwt,
         },
       );
       const playbook_args = [

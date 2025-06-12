@@ -117,12 +117,6 @@ export const PROMPT_PLAYBOOK_PATH = {
   message: 'Playbook path:',
   default: 'playbooks',
 };
-export const PROMPT_PLAYBOOK_PATH_DEPLOY = {
-  type: 'input',
-  name: 'playbookPathDeploy',
-  message: 'Playbook path:',
-  default: 'playbooks',
-};
 export const PROMPT_POM_ROOT = {
   type: 'input',
   name: 'pomRoot',
@@ -326,11 +320,12 @@ export const PROMPT_TO_USAGE = {
 };
 
 export function getPromptToUsage(question) {
+  console.log(question);
   const usage = PROMPT_TO_USAGE[question.name];
   return (
     `${chalk.bold(question.message)} (key: ${question.name})
     Description: ${usage?.description ?? 'unknown'}` +
-    (usage?.example ? `\n    Example: ${usage.example}` : '') +
+    (usage?.example ? `\n    Example: ${usage?.example}` : '') +
     '\n'
   );
 }

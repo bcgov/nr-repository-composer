@@ -112,7 +112,7 @@ jobs:
           PACKAGE_TAG: ${{ steps.lookup-pr-merge-ref.outputs.package_tag}}
           PACKAGE_REPO: ${{ env.PACKAGE_REPO }}
   deploy-release-build:
-    name: Trigger prod deployment
+    name: Trigger production deployment
     if: ${{ startsWith(github.ref, 'refs/tags/') }}
     runs-on: ubuntu-latest
     environment: ${{ inputs.environment }}
@@ -266,7 +266,7 @@ jobs:
           --data-urlencode "configBranch=${{ inputs.config_branch || '' }}" \
           --data-urlencode "downloadUrl=${DOWNLOAD_URL}" \
           --data-urlencode "downloadType=OCI" \
-          --data-urlencode "envShort=${{ inputs.environment }}" \
+          --data-urlencode "envLong=${{ inputs.environment }}" \
           --data-urlencode "deploymentApprover=${DEPLOYMENT_APPROVER}" \
           -H "Connection: close" \
           ${{ env.URL }}/${{ env.JOB }}

@@ -1,4 +1,4 @@
-name: Run deploy
+name: Run <%= serviceName %> Deploy
 
 on:
   workflow_dispatch:
@@ -8,9 +8,9 @@ on:
         required: true
         type: choice
         options:
-          - dev
+          - development
           - test
-          - prod
+          - production
       config_branch:
         description: 'Use branch for testing configuration changes'
         required: false
@@ -28,9 +28,9 @@ jobs:
     uses: ./.github/workflows/check-token.yaml
     secrets:
       token: ${{ secrets.<%= brokerJwt %> }}
-      
-  deploy-dev:
-    name: Deploy to dev
+
+  deploy-development:
+    name: Deploy to development
     uses: ./.github/workflows/deploy.yaml
     needs: check-token-expiration
     with:
@@ -38,9 +38,9 @@ jobs:
       config_branch: ${{ github.event.inputs.config_branch }}
     secrets: inherit
     if: |
-      github.event.inputs.environment == 'dev' ||
+      github.event.inputs.environment == 'development' ||
       github.event.inputs.environment == 'test' ||
-      github.event.inputs.environment == 'prod'
+      github.event.inputs.environment == 'production'
 
   deploy-test:
     name: Deploy to test
@@ -52,14 +52,14 @@ jobs:
     secrets: inherit
     if: |
       github.event.inputs.environment == 'test' ||
-      github.event.inputs.environment == 'prod'
+      github.event.inputs.environment == 'production'
  
-  deploy-prod:
-    name: Deploy to prod
+  deploy-production:
+    name: Deploy to production
     needs: deploy-test
     uses: ./.github/workflows/deploy.yaml
     with:
-      environment: prod
+      environment: production
       config_branch: ${{ github.event.inputs.config_branch }}
     secrets: inherit
-    if: github.event.inputs.environment == 'prod'
+    if: github.event.inputs.environment == 'production'

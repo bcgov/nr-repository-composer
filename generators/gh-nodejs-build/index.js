@@ -21,6 +21,10 @@ import {
   BACKSTAGE_FILENAME,
   generateSetAnswerPropPredicate,
 } from '../util/yaml.js';
+import {
+  copyCommonBuildWorkflows,
+  copyCommonDeployWorkflows,
+} from '../util/copyworkflows.js';
 
 const questions = [
   PROMPT_PROJECT,
@@ -120,23 +124,7 @@ export default class extends Generator {
         publishArtifactSuffix: this.answers.publishArtifactSuffix,
       },
     );
-    this.fs.copyTpl(
-      this.templatePath('build-intention.json'),
-      this.destinationPath('.github/workflows/build-intention.json'),
-      {
-        projectName: this.answers.projectName,
-        serviceName: this.answers.serviceName,
-        license: this.answers.license,
-      },
-    );
-    this.fs.copyTpl(
-      this.templatePath('build-intention.sh'),
-      this.destinationPath('.github/workflows/build-intention.sh'),
-    );
-    this.fs.copyTpl(
-      this.templatePath('check-token.yaml'),
-      this.destinationPath('.github/workflows/check-token.yaml'),
-    );
+    copyCommonBuildWorkflows(this, this.answers);
     if (this.answers.deployOnPrem) {
       this.fs.copyTpl(
         this.templatePath('deploy.yaml'),
@@ -147,27 +135,7 @@ export default class extends Generator {
           brokerJwt,
         },
       );
-      this.fs.copyTpl(
-        this.templatePath('deployment-intention.json'),
-        this.destinationPath(
-          `.jenkins/${this.answers.serviceName}-deployment-intention.json`,
-        ),
-        {
-          projectName: this.answers.projectName,
-          serviceName: this.answers.serviceName,
-        },
-      );
-      this.fs.copyTpl(
-        this.templatePath('check-deploy-job-status.sh'),
-        this.destinationPath('.github/workflows/check-deploy-job-status.sh'),
-      );
-      this.fs.copyTpl(
-        this.templatePath('run-deploy.yaml'),
-        this.destinationPath('.github/workflows/run-deploy.yaml'),
-        {
-          brokerJwt,
-        },
-      );
+      copyCommonDeployWorkflows(this, this.answers);
       const playbook_args = [
         this.answers.projectName,
         this.answers.serviceName,

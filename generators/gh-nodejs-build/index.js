@@ -8,6 +8,7 @@ import { bailOnAnyQuestions } from '../util/process.js';
 import {
   PROMPT_PROJECT,
   PROMPT_SERVICE,
+  PROMPT_LICENSE,
   PROMPT_LIFECYCLE,
   PROMPT_CLIENT_ID,
   PROMPT_UNIT_TESTS_PATH,
@@ -20,10 +21,15 @@ import {
   BACKSTAGE_FILENAME,
   generateSetAnswerPropPredicate,
 } from '../util/yaml.js';
+import {
+  copyCommonBuildWorkflows,
+  copyCommonDeployWorkflows,
+} from '../util/copyworkflows.js';
 
 const questions = [
   PROMPT_PROJECT,
   PROMPT_SERVICE,
+  PROMPT_LICENSE,
   PROMPT_LIFECYCLE,
   PROMPT_CLIENT_ID,
   PROMPT_UNIT_TESTS_PATH,
@@ -118,23 +124,7 @@ export default class extends Generator {
         publishArtifactSuffix: this.answers.publishArtifactSuffix,
       },
     );
-    this.fs.copyTpl(
-      this.templatePath('build-intention.json'),
-      this.destinationPath('.github/workflows/build-intention.json'),
-      {
-        projectName: this.answers.projectName,
-        serviceName: this.answers.serviceName,
-        license: this.answers.license,
-      },
-    );
-    this.fs.copyTpl(
-      this.templatePath('build-intention.sh'),
-      this.destinationPath('.github/workflows/build-intention.sh'),
-    );
-    this.fs.copyTpl(
-      this.templatePath('check-token.yaml'),
-      this.destinationPath('.github/workflows/check-token.yaml'),
-    );
+    copyCommonBuildWorkflows(this, this.answers);
     if (this.answers.deployOnPrem) {
       this.fs.copyTpl(
         this.templatePath('deploy.yaml'),
@@ -145,14 +135,7 @@ export default class extends Generator {
           brokerJwt,
         },
       );
-      this.fs.copyTpl(
-        this.templatePath('deployment-intention.json'),
-        this.destinationPath('.jenkins/deployment-intention.json'),
-        {
-          projectName: this.answers.projectName,
-          serviceName: this.answers.serviceName,
-        },
-      );
+      copyCommonDeployWorkflows(this, this.answers);
       const playbook_args = [
         this.answers.projectName,
         this.answers.serviceName,

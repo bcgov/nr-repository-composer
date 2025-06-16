@@ -370,7 +370,7 @@ jobs:
           --data-urlencode "configBranch=${{ inputs.config_branch || '' }}" \
           --data-urlencode "downloadUrl=${DOWNLOAD_URL}" \
           --data-urlencode "downloadType=<% if (gitHubPackages) { -%>GITHUB<% } else { -%>ARTIFACTORY<% } -%>" \
-          --data-urlencode "envShort=${{ inputs.environment }}" \
+          --data-urlencode "envLong=${{ inputs.environment }}" \
           --data-urlencode "deploymentApprover=${DEPLOYMENT_APPROVER}" \
           -H "Connection: close" \
           ${{ env.URL }}/${{ env.JOB }}

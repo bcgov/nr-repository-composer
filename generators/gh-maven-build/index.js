@@ -34,6 +34,11 @@ import {
   BACKSTAGE_FILENAME,
   generateSetAnswerPropPredicate,
 } from '../util/yaml.js';
+import {
+  copyCommonBuildWorkflows,
+  copyCommonDeployWorkflows,
+} from '../util/copyworkflows.js';
+
 
 const questions = [
   PROMPT_PROJECT,
@@ -181,23 +186,7 @@ export default class extends Generator {
         gitHubOwnerPack: this.answers.gitHubOwnerPack,
       },
     );
-    this.fs.copyTpl(
-      this.templatePath('build-intention.json'),
-      this.destinationPath('.github/workflows/build-intention.json'),
-      {
-        projectName: this.answers.projectName,
-        serviceName: this.answers.serviceName,
-        license: this.answers.license,
-      },
-    );
-    this.fs.copyTpl(
-      this.templatePath('build-intention.sh'),
-      this.destinationPath('.github/workflows/build-intention.sh'),
-    );
-    this.fs.copyTpl(
-      this.templatePath('check-token.yaml'),
-      this.destinationPath('.github/workflows/check-token.yaml'),
-    );
+    copyCommonBuildWorkflows(this, {...this.answers, "packageArchitecture":"jvm", "packageType":"war"});
     if (this.answers.deployOnPrem) {
       this.fs.copyTpl(
         this.templatePath('deploy.yaml'),

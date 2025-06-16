@@ -8,6 +8,8 @@ export function copyCommonBuildWorkflows(generator, answers) {
       projectName: answers.projectName,
       serviceName: answers.serviceName,
       license: answers.license,
+      packageArchitecture: answers.packageArchitecture,
+      packageType: answers.packageType,
     },
   );
 

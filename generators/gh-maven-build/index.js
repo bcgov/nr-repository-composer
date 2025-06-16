@@ -39,7 +39,6 @@ import {
   copyCommonDeployWorkflows,
 } from '../util/copyworkflows.js';
 
-
 const questions = [
   PROMPT_PROJECT,
   PROMPT_SERVICE,
@@ -186,7 +185,11 @@ export default class extends Generator {
         gitHubOwnerPack: this.answers.gitHubOwnerPack,
       },
     );
-    copyCommonBuildWorkflows(this, {...this.answers, "packageArchitecture":"jvm", "packageType":"war"});
+    copyCommonBuildWorkflows(this, {
+      ...this.answers,
+      packageArchitecture: 'jvm',
+      packageType: 'war',
+    });
     if (this.answers.deployOnPrem) {
       this.fs.copyTpl(
         this.templatePath('deploy.yaml'),
@@ -202,14 +205,7 @@ export default class extends Generator {
           gitHubOwnerPack: this.answers.gitHubOwnerPack,
         },
       );
-      this.fs.copyTpl(
-        this.templatePath('deployment-intention.json'),
-        this.destinationPath('.jenkins/deployment-intention.json'),
-        {
-          projectName: this.answers.projectName,
-          serviceName: this.answers.serviceName,
-        },
-      );
+      copyCommonDeployWorkflows(this, this.answers);
       if (this.fs.exists(this.destinationPath('README.md'))) {
         var readmeContent = this.fs.read(this.destinationPath('README.md'));
         const readmeRegex = new RegExp(

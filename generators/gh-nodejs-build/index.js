@@ -124,7 +124,11 @@ export default class extends Generator {
         publishArtifactSuffix: this.answers.publishArtifactSuffix,
       },
     );
-    copyCommonBuildWorkflows(this, {...this.answers, "packageArchitecture":"nodejs", "packageType":"application/vnd.oci.image.layer.v1.tar+gzip"});
+    copyCommonBuildWorkflows(this, {
+      ...this.answers,
+      packageArchitecture: 'nodejs',
+      packageType: 'application/vnd.oci.image.layer.v1.tar+gzip',
+    });
     if (this.answers.deployOnPrem) {
       this.fs.copyTpl(
         this.templatePath('deploy.yaml'),

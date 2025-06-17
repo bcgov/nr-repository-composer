@@ -11,12 +11,12 @@ on:
       token:
         description: "The Broker token"
         required: true
+permissions: {}
 
 jobs:
   check-jwt:
     name: Check broker token
     runs-on: ubuntu-latest
-
     steps:
       - name: Check token expiration
         shell: bash

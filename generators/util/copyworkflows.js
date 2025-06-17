@@ -8,6 +8,8 @@ export function copyCommonBuildWorkflows(generator, answers) {
       projectName: answers.projectName,
       serviceName: answers.serviceName,
       license: answers.license,
+      packageArchitecture: answers.packageArchitecture,
+      packageType: answers.packageType,
     },
   );
 
@@ -44,6 +46,17 @@ export function copyCommonDeployWorkflows(generator, answers) {
       serviceName: answers.serviceName,
     },
   );
+
+  if (
+    generator.fs.exists(
+      generator.destinationPath('.jenkins/deployment-intention.json'),
+    )
+  ) {
+    generator.fs.delete(
+      generator.destinationPath('.jenkins/deployment-intention.json'),
+    );
+  }
+
   generator.fs.copyTpl(
     generator.templatePath(`${commonTemplatePath}/run-deploy.yaml`),
     generator.destinationPath('.github/workflows/run-deploy.yaml'),

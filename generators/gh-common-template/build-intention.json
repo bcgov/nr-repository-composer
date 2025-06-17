@@ -15,12 +15,12 @@
         "environment": "tools"
       },
       "package": {
-        "architecture": "nodejs",
+        "architecture": "<%= packageArchitecture %>",
         "version": "",
         "buildVersion": "",
         "buildNumber": 0,
         "name": "<%= serviceName %>",
-        "type": "application/vnd.oci.image.layer.v1.tar+gzip",
+        "type": "<%= packageType %>",
         "license": "<%= license %>"
       }
     }

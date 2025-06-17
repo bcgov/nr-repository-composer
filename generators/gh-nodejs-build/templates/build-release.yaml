@@ -97,6 +97,7 @@ jobs:
           PACKAGE_BUILD_GUID:  ${{ steps.set-build-output-parameters.outputs.build_guid }}
           PACKAGE_BUILD_NUMBER: ${{ github.run_number }}
           PACKAGE_BUILD_VERSION: ${{ steps.set-build-output-parameters.outputs.git_commit }}
+          PACKAGE_TYPE: application/vnd.oci.image.layer.v1.tar+gzip
           PACKAGE_VERSION: ${{ steps.set-version.outputs.project_version }}
       - name: Open intention
         uses: bcgov-nr/action-broker-intention-open@v2

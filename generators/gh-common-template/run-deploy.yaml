@@ -34,7 +34,7 @@ jobs:
     uses: ./.github/workflows/deploy.yaml
     needs: check-token-expiration
     with:
-      environment: dev
+      environment: development
       config_branch: ${{ github.event.inputs.config_branch }}
     secrets: inherit
     if: |
@@ -44,7 +44,7 @@ jobs:
 
   deploy-test:
     name: Deploy to test
-    needs: deploy-dev
+    needs: deploy-development
     uses: ./.github/workflows/deploy.yaml
     with:
       environment: test

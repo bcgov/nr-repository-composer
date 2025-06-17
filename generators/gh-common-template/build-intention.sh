@@ -8,5 +8,6 @@ cat ./.github/workflows/build-intention.json | jq "\
     (.actions[] | select(.id == \"build\") .package.version) |= \"${PACKAGE_VERSION}\" | \
     (.actions[] | select(.id == \"build\") .package.buildGuid) |= \"${PACKAGE_BUILD_GUID}\" | \
     (.actions[] | select(.id == \"build\") .package.buildVersion) |= \"${PACKAGE_BUILD_VERSION}\" | \
+    (.actions[] | select(.id == \"build\") .package.type) |= \"${PACKAGE_TYPE}\" | \
     (.actions[] | select(.id == \"build\") .package.buildNumber) |= ${PACKAGE_BUILD_NUMBER} \
     " > intention.json

@@ -26,18 +26,11 @@ env:
 <% } -%>
 
 jobs:
-  check-token-expiration:
-    name: Check token expiration
-    uses: ./.github/workflows/check-token.yaml
-    permissions: {}
-    secrets:
-      token: ${{ secrets.<%= brokerJwt %> }}
   deploy-pre-release-build:
     name: "Trigger ${{ inputs.environment }} deploy"
     if: ${{ ! startsWith(github.ref, 'refs/tags/') }}
     runs-on: ubuntu-latest
     environment: ${{ inputs.environment }}
-    needs: check-token-expiration
     permissions:
       contents: read
       packages: read
@@ -195,7 +188,6 @@ jobs:
     if: ${{ startsWith(github.ref, 'refs/tags/') }}
     runs-on: ubuntu-latest
     environment: ${{ inputs.environment }}
-    needs: check-token-expiration
     permissions:
       contents: read
       packages: read

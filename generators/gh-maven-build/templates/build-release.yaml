@@ -45,6 +45,7 @@ jobs:
     permissions:
       contents: read
       packages: write
+      pull-requests: read
     outputs:
       project_version: ${{ steps.set-build-output-parameters.outputs.project_version }}
       intention_id: ${{ steps.set-intention-id.outputs.intention_id }}

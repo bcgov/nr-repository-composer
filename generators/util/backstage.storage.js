@@ -1,6 +1,7 @@
 import * as fs from 'fs';
-import { Document, parseDocument } from 'yaml';
+import { Document, parseDocument, isSeq } from 'yaml';
 import {
+  BACKSTAGE_API_VERSION,
   addGeneratorToDoc,
   extractFromYaml,
   propRecord,
@@ -8,15 +9,22 @@ import {
 } from './yaml.js';
 
 export class BackstageStorage {
-  constructor(name, configPath) {
+  constructor(name, kind, configPath) {
     this.path = configPath;
     this.name = name;
 
     if (fs.existsSync(this.path)) {
       const backstageYaml = fs.readFileSync(this.path, 'utf8');
       this.backstageDoc = parseDocument(backstageYaml);
+      if (this.getPath(['kind']) !== kind) {
+        throw new Error(
+          `Backstage document kind mismatch: expected "${kind}", found "${this.getPath(['kind'])}". Are you running the correct generator for the current working directory?`,
+        );
+      }
     } else {
       this.backstageDoc = new Document();
+      this.setPath(['apiVersion'], BACKSTAGE_API_VERSION);
+      this.setPath(['kind'], kind);
     }
   }
 
@@ -38,12 +46,15 @@ export class BackstageStorage {
   }
 
   getPath(path) {
-    // console.log(`Getting path "${path}: ${this.backstageDoc.getIn(path)}"`);
     const docPath = Array.isArray(path) ? path : propRecord[path]?.path;
     if (!docPath) {
       throw new Error(`Mapping from "${path}" to YAML document path not found`);
     }
-    return this.backstageDoc.getIn(docPath);
+    // console.log(
+    //   `Getting path "${docPath}: ${this.backstageDoc.getIn(docPath)}"`,
+    // );
+    const val = this.backstageDoc.getIn(docPath);
+    return val && isSeq(val) ? val.toJSON().join() : val;
   }
 
   get(key) {
@@ -51,7 +62,8 @@ export class BackstageStorage {
       return this.getAnswers();
     }
     // console.log(`Getting key "${key}"`);
-    this.backstageDoc.getIn(propRecord[key].path);
+    const val = this.backstageDoc.getIn(propRecord[key].path);
+    return val && isSeq(val) ? val.toJSON().join() : val;
   }
 
   getAll() {
@@ -60,8 +72,11 @@ export class BackstageStorage {
   }
 
   set(key, value) {
-    // console.log(`Setting key "${key}" to`, value);
-    this.backstageDoc.setIn(propRecord[key].path, value);
+    console.log(`Setting key "${key}" to`, value);
+    this.backstageDoc.setIn(
+      propRecord[key].path,
+      propRecord[key].csv ? value.split(',') : value,
+    );
   }
 
   setPath(path, value) {
@@ -69,9 +84,10 @@ export class BackstageStorage {
       // Do not set null values
       return;
     }
+    const csv = propRecord[path]?.csv;
     path = Array.isArray(path) ? path : propRecord[path].path;
     // console.log(`Setting path "${path}" to`, value);
-    this.backstageDoc.setIn(path, value);
+    this.backstageDoc.setIn(path, csv ? value.split(',') : value);
   }
 
   delete(key) {

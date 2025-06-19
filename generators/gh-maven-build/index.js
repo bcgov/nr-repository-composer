@@ -32,6 +32,7 @@ import {
 } from '../util/prompts.js';
 import {
   BACKSTAGE_FILENAME,
+  BACKSTAGE_KIND_COMPONENT,
   generateSetAnswerPropPredicate,
 } from '../util/yaml.js';
 import {
@@ -114,6 +115,7 @@ export default class extends Generator {
   _getStorage() {
     return new BackstageStorage(
       this.rootGeneratorName(),
+      BACKSTAGE_KIND_COMPONENT,
       this.destinationPath(BACKSTAGE_FILENAME),
     );
   }

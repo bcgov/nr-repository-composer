@@ -5,6 +5,7 @@ import { nrsay } from '../util/nrsay.js';
 import { BackstageStorage } from '../util/backstage.storage.js';
 import { OPTION_HEADLESS, OPTION_HELP_PROMPTS } from '../util/options.js';
 import { bailOnAnyQuestions } from '../util/process.js';
+import { destinationGitPath, relativeGitPath } from '../util/git.js';
 
 import {
   PROMPT_PROJECT,
@@ -166,6 +167,7 @@ export default class extends Generator {
   }
   // Generate GitHub workflows and NR Broker intention files
   writingWorkflow() {
+    const relativePath = relativeGitPath();
     const brokerJwt = this.answers.clientId.trim()
       ? `broker-jwt:${this.answers.clientId.trim()}`.replace(
           /[^a-zA-Z0-9_]/g,
@@ -174,7 +176,9 @@ export default class extends Generator {
       : 'BROKER_JWT';
     this.fs.copyTpl(
       this.templatePath('build-release.yaml'),
-      this.destinationPath('.github/workflows/build-release.yaml'),
+      destinationGitPath(
+        `.github/workflows/build-release${relativePath ? `-${this.answers.serviceName}` : ''}.yaml`,
+      ),
       {
         projectName: this.answers.projectName,
         serviceName: this.answers.serviceName,
@@ -185,6 +189,7 @@ export default class extends Generator {
         gitHubPackages: this.answers.gitHubPackages,
         artifactoryPackageType: this.answers.artifactoryPackageType,
         gitHubOwnerPack: this.answers.gitHubOwnerPack,
+        relativePath,
       },
     );
     copyCommonBuildWorkflows(this, {
@@ -195,7 +200,9 @@ export default class extends Generator {
     if (this.answers.deployOnPrem) {
       this.fs.copyTpl(
         this.templatePath('deploy.yaml'),
-        this.destinationPath('.github/workflows/deploy.yaml'),
+        destinationGitPath(
+          `.github/workflows/deploy${relativePath ? `-${this.answers.serviceName}` : ''}.yaml`,
+        ),
         {
           projectName: this.answers.projectName,
           serviceName: this.answers.serviceName,
@@ -205,6 +212,7 @@ export default class extends Generator {
           gitHubPackages: this.answers.gitHubPackages,
           artifactoryPackageType: this.answers.artifactoryPackageType,
           gitHubOwnerPack: this.answers.gitHubOwnerPack,
+          relativePath,
         },
       );
       copyCommonDeployWorkflows(this, this.answers);

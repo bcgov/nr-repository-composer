@@ -105,9 +105,10 @@ export class BackstageStorage {
     throw new Error('merge not implemented');
   }
 
+  // eslint-disable-next-line no-unused-vars
   createStorage(path) {
     // Ignore
-    console.log(`createStorage called with path: ${path}`);
+    // console.log(`createStorage called with path: ${path}`);
     // throw new Error('createStorage not implemented');
   }
 

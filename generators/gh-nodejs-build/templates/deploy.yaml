@@ -1,4 +1,4 @@
-name: Deploy to environment
+name: Deploy to environment - <%= serviceName %>
 
 on:
   workflow_call:
@@ -212,7 +212,7 @@ jobs:
           set -e
           ENVIRONMENT="${{ inputs.environment }}"
           REPO="${{ github.repository }}"
-          
+
           # Get environment info from the repo's deployment environments endpoint
           ENV_INFO=$(gh api repos/${REPO}/environments/${ENVIRONMENT})
           REVIEWERS=$(echo "$ENV_INFO" | jq -r '.protection_rules[]? | select(.reviewers != null) | .reviewers[0] // false')
@@ -221,7 +221,7 @@ jobs:
           else
             REVIEWERS_REQUIRED=true
           fi
-          
+
           if [[ "$REVIEWERS_REQUIRED" == "true" ]]; then
             # Reviewers are required, get the approver from approvals endpoint
             RUN_ID="${{ github.run_id }}"
@@ -254,7 +254,7 @@ jobs:
             echo "Error: No deployment approver found. Failing deployment."
             exit 1
           fi
-          
+
           curl \
           --data-urlencode "token=${{ secrets.JENKINS_TOKEN }}" \
           --data-urlencode "githubToken=${{ secrets.GITHUB_TOKEN }}" \

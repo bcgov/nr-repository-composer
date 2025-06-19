@@ -6,23 +6,21 @@ The generators are created using [Yeoman](http://yeoman.io). For distribution, i
 
 ## Generator Library
 
-All generators are built to be rerun multiple times.
-
-| Generator | Platform | Deploy to | Technologies |
+| Generator | Usage | Platform | Technologies |
 | ----------- | ----------- | ----------- | ----------- |
-| backstage | All | - | Backstage (kind: component) |
-| backstage-location | All | - | Backstage (kind: location) |
-| gh-maven-build | GitHub | Bring your own or on-premise | Java, GitHub Actions |
-| gh-nodejs-build | GitHub | Bring your own or on-premise | NodeJS, GitHub Actions |
-| migrations | All | - | FlyWay, Liquibase |
+| backstage | Catalog service | All | Backstage (kind: component) |
+| backstage-location | Catalog monorepo | All | Backstage (kind: location) |
+| gh-maven-build | Pipeline | GitHub | Java, GitHub Actions |
+| gh-nodejs-build | Pipeline | GitHub | NodeJS, GitHub Actions |
+| migrations | Database | All | FlyWay, Liquibase |
 
 ### Backstage: `backstage`
 
 This builds a Backstage component entity and outputs it to the file `./catalog-info.yaml` so that your repository can be added to software catalogs. A Backstage component is equivalent to a NR Broker service.
 
-All software should run this generator at the root folder of your service in your repository. The generator will prompt you for various information about your service. Other generators will read from the catalog file to skip prompts that ask for information stored in this file.
+All software should run this generator at the root folder of your service in your repository. The generator will prompt you for various information about your service. Other generators for your service will read from the catalog file and may store additional information in this file.
 
-Single service repositories should run this (and create the file) at the root of the repository.If you have a component file not located at the root of the repository, you must use `backstage-location` to describe where to look for the catalog data.
+Single service repositories should run this (and create the file) at the root of the repository.If you have a component file not located at the root of the repository, you must use `backstage-location` which builds a file that describe where to look for the catalog data.
 
 ### Backstage: `backstage-location`
 
@@ -143,6 +141,28 @@ The following are expected to be installed.
 ## Building the image
 
 The Dockerfile can be built by running './build.sh'. The local image will be tagged as 'nr-repository-composer'.
+
+# Assumptions and other errata
+
+## Running a generator
+
+The generators assume they are running inside of a git repository. It will search the current working directory and up the file system for the .git folder. All generators are built to be rerun and not re-ask prompts unless necessary. All information entered should be stored in a Backstage catalog file.
+
+## Standard file names and locations
+
+The generators all assume that the root of a service (and the repository) will have a Backstage file named `catalog-info.yaml`.
+
+## Services and Components
+
+The NR Broker and Backstage use the term service and component for the basically the same concept respectively.
+
+NR Broker description:
+
+> A service is a software component that runs in an environment.
+
+Backstage description:
+
+> A Component describes a software component. It is typically intimately linked to the source code that constitutes the component, and should be what a developer may regard a "unit of software", usually with a distinct deployable or linkable artifact
 
 # Tools
 

@@ -37,7 +37,7 @@ echo "Scanning repository $REPO..."
 
 if [[ ! $REPO =~ ^nr ]]; then
     echo "Skipping repository: $REPO"
-    # exit 0
+    exit 0
 fi
 
 echo "Checking repository: $REPO"

@@ -1,6 +1,20 @@
 import { extractGitHubSlug, getGitRepoOriginUrl } from '../util/git.js';
 import chalk from 'chalk';
 
+export const PROMPT_LOCATION_NAME = {
+  type: 'input',
+  name: 'locationName',
+  message: 'Name:',
+  default: 'components',
+};
+
+export const PROMPT_LOCATION_TARGETS = {
+  type: 'input',
+  name: 'locationTargets',
+  message: 'Targets (comma-separated list of paths):',
+  default: '',
+};
+
 export const PROMPT_PROJECT = {
   type: 'input',
   name: 'projectName',
@@ -199,6 +213,17 @@ export const PROMPT_ADD_WEBADE_CONFIG = {
 };
 
 export const PROMPT_TO_USAGE = {
+  locationName: {
+    description:
+      'The name of the location file. This is used to group services together in the Backstage catalog.',
+    example: 'components',
+  },
+  locationTargets: {
+    description:
+      'A comma-separated list of paths that this location file points to.',
+    example:
+      'src/services/catalog-info.yaml,src/website/catalog-info.yaml,src/libraries/catalog-info.yaml',
+  },
   projectName: {
     description:
       'Lowercase kebab-case name that uniquely identifies the project',
@@ -231,7 +256,7 @@ export const PROMPT_TO_USAGE = {
   githubProjectSlug: {
     description:
       'The GitHub slug of the service. If not provided, will be auto-detected from the git remote URL',
-    example: 'bcgov-nr/edqa-war',
+    example: 'bcgov-c/edqa-war',
   },
   clientId: {
     description:

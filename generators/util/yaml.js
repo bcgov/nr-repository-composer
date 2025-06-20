@@ -1,4 +1,8 @@
 export const BACKSTAGE_FILENAME = 'catalog-info.yaml';
+export const BACKSTAGE_API_VERSION = 'backstage.io/v1alpha1';
+export const BACKSTAGE_KIND_COMPONENT = 'Component';
+export const BACKSTAGE_KIND_LOCATION = 'Location';
+
 export const BACKSTAGE_GENERATOR_PATH = [
   'metadata',
   'annotations',
@@ -8,8 +12,15 @@ export const BACKSTAGE_GENERATOR_PATH = [
 export const pathToProps = [
   { path: ['spec', 'system'], prop: 'projectName', writeEmpty: false },
   { path: ['metadata', 'name'], prop: 'serviceName', writeEmpty: false },
+  { path: ['metadata', 'name'], prop: 'locationName', writeEmpty: false },
   { path: ['metadata', 'description'], prop: 'description', writeEmpty: true },
   { path: ['metadata', 'title'], prop: 'title', writeEmpty: false },
+  {
+    path: ['spec', 'targets'],
+    prop: 'locationTargets',
+    writeEmpty: true,
+    csv: true,
+  },
   { path: ['spec', 'type'], prop: 'type', writeEmpty: false },
   { path: ['spec', 'lifecycle'], prop: 'lifecycle', writeEmpty: false },
   { path: ['spec', 'owner'], prop: 'owner', writeEmpty: true },
@@ -258,23 +269,23 @@ export function generateSetAnswerPropPredicate(answers, keepAnswered) {
   };
 }
 
-export function generateSetDefaultFromDoc(answers) {
-  return (val) => {
-    return {
-      ...val,
-      ...(answers[val.name] ? { default: answers[val.name] } : {}),
-    };
-  };
-}
+// export function generateSetDefaultFromDoc(answers) {
+//   return (val) => {
+//     return {
+//       ...val,
+//       ...(answers[val.name] ? { default: answers[val.name] } : {}),
+//     };
+//   };
+// }
 
-export function writePropToPath(doc, pathToProps, answers) {
-  for (const pathToProp of pathToProps) {
-    const path = pathToProp.path;
-    if (
-      answers[pathToProp.prop] !== undefined &&
-      (pathToProp.writeEmpty || answers[pathToProp.prop] !== '')
-    ) {
-      doc.setIn(path, answers[pathToProp.prop]);
-    }
-  }
-}
+// export function writePropToPath(doc, pathToProps, answers) {
+//   for (const pathToProp of pathToProps) {
+//     const path = pathToProp.path;
+//     const answer = answers[pathToProp.prop];
+//     console.log(answer);
+//     if (answer !== undefined && (pathToProp.writeEmpty || answer !== '')) {
+//       console.log(pathToProp.csv);
+//       doc.setIn(path, pathToProp.csv ? answer.split(',') : answer);
+//     }
+//   }
+// }

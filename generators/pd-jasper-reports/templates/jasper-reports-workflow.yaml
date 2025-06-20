@@ -1,4 +1,4 @@
-name: Jasper reports
+name: Jasper reports - <%= serviceName %>
 
 on:
   workflow_dispatch:

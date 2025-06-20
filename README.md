@@ -6,34 +6,49 @@ The generators are created using [Yeoman](http://yeoman.io). For distribution, i
 
 ## Generator Library
 
-All generators are built to be rerun multiple times.
-
-| Generator | Platform | Deploy to | Technologies |
+| Generator | Usage | Platform | Technologies |
 | ----------- | ----------- | ----------- | ----------- |
-| backstage | All | - | Backstage |
-| gh-maven-build | GitHub | Bring your own or on-premise | Java, GitHub Actions |
-| gh-nodejs-build | GitHub | Bring your own or on-premise | NodeJS, GitHub Actions |
-| migrations | All | - | FlyWay, Liquibase |
+| backstage | Catalog service | All | Backstage (kind: component) |
+| backstage-location | Catalog monorepo | All | Backstage (kind: location) |
+| gh-maven-build | Pipeline | GitHub | Java, GitHub Actions |
+| gh-nodejs-build | Pipeline | GitHub | NodeJS, GitHub Actions |
+| migrations | Database | All | FlyWay, Liquibase |
 
-### Backstage: backstage
+### Backstage: `backstage`
 
-This generates a `catalog-info.yaml` catalogue file. It will prompt you for various information about your application.
+This builds a Backstage component entity and outputs it to the file `./catalog-info.yaml` so that your repository can be added to software catalogs. A Backstage component is equivalent to a NR Broker service.
 
-Other generators will read from the catalog file to skip prompts that ask for information stored in this file.
+All software should run this generator at the root folder of your service in your repository. The generator will prompt you for various information about your service. Other generators for your service will read from the catalog file and may store additional information in this file.
 
-### Github Maven Build: gh-maven-build
+Single service repositories should run this (and create the file) at the root of the repository.If you have a component file not located at the root of the repository, you must use `backstage-location` which builds a file that describe where to look for the catalog data.
+
+### Backstage: `backstage-location`
+
+This builds a Backstage location entity and outputs it to the file `./catalog-info.yaml` so that your repository can be added to software catalogs.
+
+This Backstage entity is necessary if you have a monorepo with more than one service in the repository or if you have a single service where you store the component entity file not at the repository root. This file should always be at the root of the repository.
+
+You will be asked to input the location of all component catalog files (targets) in your repository. All targets (spec.targets in the catalog-info.yaml) should be a relative path within the repository. Example: `./some/catalog-info.yaml`
+
+Remember to use the flag `--ask-answered` if you are adding additional targets.
+
+### Github Maven Build: `gh-maven-build`
 
 This generates the CI workflow and NR Broker intention files for building Java/Tomcat with Maven in GitHub.
 
 The generated files will appear in your .github/workflows and .jenkins directories.
 
-### Github Node.js Build: gh-nodejs-build
+This generator should be run at the root directory of your component (service) which should contain the `catalog-info.yaml` for it.
+
+### Github Node.js Build: `gh-nodejs-build`
 
 This generates the CI workflow and NR Broker intention files for building Node.js in GitHub. The workflow assume that your `package.json` has a `build` command and your build places the files in `./dist`.
 
 The generated files will appear in your .github/workflows and .jenkins directories.
 
-### DB Migrations: migrations
+This generator should be run at the root directory of your component (service) which should contain the `catalog-info.yaml` for it.
+
+### DB Migrations: `migrations`
 
 This assists in creating a standard layout of folders and files related to database migrations. This is a catch-all generator that supports manual and automated processes that incrementally alter your database.
 
@@ -106,6 +121,8 @@ docker run --rm -v ${PWD}:/src ghcr.io/bcgov/nr-repository-composer:latest nr-re
 
 The examples map the current working directory to the '/src' directory inside of the container image. The generator container image uses '/src' as its working directory and will read and write files at that location.
 
+The mounted `src` directory must always be the root of the repository. Use the "working directory" run argument (example: `-w /src/mydir`) to alter the working directory if you want to run the generator not at the root of the repository. The generators always need to be able to locate the `.git` folder as some files are output relative to it (not relative to the working directory).
+
 ### Local
 
 ```bash
@@ -124,6 +141,28 @@ The following are expected to be installed.
 ## Building the image
 
 The Dockerfile can be built by running './build.sh'. The local image will be tagged as 'nr-repository-composer'.
+
+# Assumptions and other errata
+
+## Running a generator
+
+The generators assume they are running inside of a git repository. It will search the current working directory and up the file system for the .git folder. All generators are built to be rerun and not re-ask prompts unless necessary. All information entered should be stored in a Backstage catalog file.
+
+## Standard file names and locations
+
+The generators all assume that the root of a service (and the repository) will have a Backstage file named `catalog-info.yaml`.
+
+## Services and Components
+
+The NR Broker and Backstage use the term service and component for the basically the same concept respectively.
+
+NR Broker description:
+
+> A service is a software component that runs in an environment.
+
+Backstage description:
+
+> A Component describes a software component. It is typically intimately linked to the source code that constitutes the component, and should be what a developer may regard a "unit of software", usually with a distinct deployable or linkable artifact
 
 # Tools
 

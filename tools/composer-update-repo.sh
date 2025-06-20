@@ -12,8 +12,8 @@ if [[ ! "$ORG" =~ ^(bcgov|bcgov-nr|bcgov-c)$ ]]; then
     echo "Error: Organization must be one of [bcgov, bcgov-nr, bcgov-c]"
     exit 1
 fi
-#CONTAINER_IMAGE="ghcr.io/bcgov/nr-repository-composer:latest"
-CONTAINER_IMAGE="nr-repository-composer"
+CONTAINER_IMAGE="ghcr.io/bcgov/nr-repository-composer:latest"
+#CONTAINER_IMAGE="nr-repository-composer"
 ANNOTATION_KEY="composer.io.nrs.gov.bc.ca/generators"
 REPO=$2
 
@@ -92,10 +92,7 @@ for TARGET_FILE in $TARGETS; do
         echo "    🎯 Running generator: $VALUE"
         git reset --hard > /dev/null
         git clean -fd > /dev/null
-        # podman pull $CONTAINER_IMAGE
-        echo "/src/$(dirname $TARGET_FILE)"
-        echo "$(id -u):$(id -g)"
-        echo nr-repository-composer:"$VALUE"
+        podman pull $CONTAINER_IMAGE
         podman run --rm -v "${PWD}:/src" -w "/src/$(dirname $TARGET_FILE)" -u "$(id -u):$(id -g)" --entrypoint yo $CONTAINER_IMAGE nr-repository-composer:"$VALUE" --headless --force
 
         if [[ $? -ne 0 ]]; then

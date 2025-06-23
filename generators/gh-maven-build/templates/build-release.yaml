@@ -139,10 +139,12 @@ jobs:
 <% if (gitHubPackages) { -%>
         run: |
           ARTIFACT_NAME="${ARTIFACT_ID}-${PROJECT_VERSION}.${PACKAGE_TYPE}"
-          mvn --batch-mode -Dmaven.test.skip=true -Pgithub deploy --file <%= pomRoot %>pom.xml
+          mvn --batch-mode -Dmaven.test.skip=true -Pgithub deploy --settings ./settings.xml --file <%= pomRoot %>pom.xml
           echo "artifact_sha256=$(sha256sum <%= pomRoot %>target/${ARTIFACT_NAME} | awk '{ print $1 }')" >> $GITHUB_OUTPUT
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          ARTIFACTORY_USERNAME: ${{ secrets.ARTIFACTORY_USERNAME }}
+          ARTIFACTORY_PASSWORD: ${{ secrets.ARTIFACTORY_PASSWORD }}
           PROJECT_VERSION: ${{ steps.set-build-output-parameters.outputs.project_version }}
           ARTIFACT_ID: ${{ steps.set-build-output-parameters.outputs.artifact_id }}
           PACKAGE_TYPE: ${{ steps.set-build-output-parameters.outputs.package_type }}
@@ -156,7 +158,7 @@ jobs:
           ARTIFACT_SHA256: ${{ steps.publish-artifact.outputs.artifact_sha256 }}
           BUILD_TOKEN: ${{ env.ACTION_TOKEN_BUILD }}
 <% } else { -%>
-        run: mvn --batch-mode -Dmaven.test.skip=true -Partifactory deploy --file <%= pomRoot %>pom.xml
+        run: mvn --batch-mode -Dmaven.test.skip=true -Partifactory deploy --settings ./settings.xml --file <%= pomRoot %>pom.xml
         env:
           ARTIFACTORY_USERNAME: ${{ secrets.ARTIFACTORY_USERNAME }}
           ARTIFACTORY_PASSWORD: ${{ secrets.ARTIFACTORY_PASSWORD }}

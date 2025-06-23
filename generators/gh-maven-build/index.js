@@ -190,6 +190,11 @@ export default class extends Generator {
       packageArchitecture: 'jvm',
       packageType: 'war',
     });
+    this.fs.copyTpl(
+      this.templatePath('settings.xml'),
+      this.destinationPath('settings.xml'),
+      {},
+    );
     if (this.answers.deployOnPrem) {
       this.fs.copyTpl(
         this.templatePath('deploy.yaml'),

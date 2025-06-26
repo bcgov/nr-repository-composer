@@ -1,4 +1,4 @@
-name: Build and release
+name: Build and release - <%= serviceName %>
 
 on:
   push:
@@ -89,7 +89,7 @@ jobs:
           echo "git_commit=$(git rev-parse --verify HEAD)" >> $GITHUB_OUTPUT
           echo "build_guid=uuid::$(uuidgen)" >> $GITHUB_OUTPUT
       - name: Build intention
-        run: sh ./.github/workflows/build-intention.sh
+        run: sh ./.github/workflows/build-intention<% if (relativePath){ -%>-<%= serviceName %><% } -%>.sh
         env:
           EVENT_REASON: Build ${{ github.ref_name }}
           GITHUB_REPOSITORY: ${{ github.repository}}
@@ -113,8 +113,10 @@ jobs:
           INTENTION_ID: ${{ env.INTENTION_ID }}
       - name: npm ci
         run: npm ci
+        working-directory: ./<%= relativePath %>
       - name: Build artifact
         run: npm run build --if-present
+        working-directory: ./<%= relativePath %>
       - name: Push build
         id: publish-artifact
         run: |
@@ -126,6 +128,7 @@ jobs:
           echo "artifact_size=$(echo $MANIFEST | jq -r '.layers | map(.size) | add')" >> $GITHUB_OUTPUT
         env:
           PROJECT_TAG: ${{ steps.set-version.outputs.tag }}
+        working-directory: ./<%= relativePath %>
       - name: Send build info
         run: |
           curl -s POST ${{ env.BROKER_URL }}/v1/intention/action/patch \

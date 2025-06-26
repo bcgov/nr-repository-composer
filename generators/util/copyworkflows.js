@@ -1,9 +1,14 @@
+import { destinationGitPath, relativeGitPath } from './git.js';
+
 export function copyCommonBuildWorkflows(generator, answers) {
   const commonTemplatePath = '../../gh-common-template';
+  const relativePath = relativeGitPath();
 
   generator.fs.copyTpl(
     generator.templatePath(`${commonTemplatePath}/build-intention.json`),
-    generator.destinationPath(`.github/workflows/build-intention.json`),
+    destinationGitPath(
+      `.github/workflows/build-intention${relativePath ? `-${answers.serviceName}` : ''}.json`,
+    ),
     {
       projectName: answers.projectName,
       serviceName: answers.serviceName,
@@ -15,17 +20,24 @@ export function copyCommonBuildWorkflows(generator, answers) {
 
   generator.fs.copyTpl(
     generator.templatePath(`${commonTemplatePath}/build-intention.sh`),
-    generator.destinationPath('.github/workflows/build-intention.sh'),
+    destinationGitPath(
+      `.github/workflows/build-intention${relativePath ? `-${answers.serviceName}` : ''}.sh`,
+    ),
+    {
+      serviceName: answers.serviceName,
+      relativePath,
+    },
   );
 
   generator.fs.copyTpl(
     generator.templatePath(`${commonTemplatePath}/check-token.yaml`),
-    generator.destinationPath('.github/workflows/check-token.yaml'),
+    destinationGitPath('.github/workflows/check-token.yaml'),
   );
 }
 
 export function copyCommonDeployWorkflows(generator, answers) {
   const commonTemplatePath = '../../gh-common-template';
+  const relativePath = relativeGitPath();
 
   const brokerJwt = answers.clientId.trim()
     ? `broker-jwt:${answers.clientId.trim()}`.replace(/[^a-zA-Z0-9_]/g, '_')
@@ -33,7 +45,7 @@ export function copyCommonDeployWorkflows(generator, answers) {
 
   generator.fs.copyTpl(
     generator.templatePath(`${commonTemplatePath}/check-deploy-job-status.sh`),
-    generator.destinationPath('.github/workflows/check-deploy-job-status.sh'),
+    destinationGitPath('.github/workflows/check-deploy-job-status.sh'),
   );
 
   generator.fs.copyTpl(
@@ -59,7 +71,9 @@ export function copyCommonDeployWorkflows(generator, answers) {
 
   generator.fs.copyTpl(
     generator.templatePath(`${commonTemplatePath}/run-deploy.yaml`),
-    generator.destinationPath('.github/workflows/run-deploy.yaml'),
+    destinationGitPath(
+      `.github/workflows/run-deploy${relativePath ? `-${answers.serviceName}` : ''}.yaml`,
+    ),
     {
       serviceName: answers.serviceName,
       brokerJwt,

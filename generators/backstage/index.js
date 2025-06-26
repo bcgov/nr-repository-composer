@@ -4,6 +4,7 @@ import Generator from 'yeoman-generator';
 import { BackstageStorage } from '../util/backstage.storage.js';
 import {
   BACKSTAGE_FILENAME,
+  BACKSTAGE_KIND_COMPONENT,
   generateSetAnswerPropPredicate,
 } from '../util/yaml.js';
 import { nrsay } from '../util/nrsay.js';
@@ -47,6 +48,7 @@ export default class extends Generator {
   _getStorage() {
     return new BackstageStorage(
       this.rootGeneratorName(),
+      BACKSTAGE_KIND_COMPONENT,
       this.destinationPath(BACKSTAGE_FILENAME),
     );
   }
@@ -99,8 +101,6 @@ export default class extends Generator {
   }
 
   writingBackstage() {
-    this.config.setPath(['apiVersion'], 'backstage.io/v1alpha1');
-    this.config.setPath(['kind'], 'Component');
     this.config.addGeneratorToDoc('backstage');
     this.config.save();
   }

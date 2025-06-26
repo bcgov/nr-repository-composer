@@ -41,6 +41,26 @@ export function findGitRepoOrigin(startPath = process.cwd()) {
   return null;
 }
 
+/**
+ * Join a path to the destination git root.
+ * @param  {...any} dest
+ */
+export function destinationGitPath(...dest) {
+  let filepath = path.join.apply(path, dest);
+
+  if (!path.isAbsolute(filepath)) {
+    filepath = path.join(findGitRepoOrigin(), '..', '..', filepath);
+  }
+
+  return filepath;
+}
+
+export function relativeGitPath(...dest) {
+  let filepath = path.join.apply(path, dest);
+
+  return path.relative(destinationGitPath('.'), filepath);
+}
+
 export function getGitRepoOriginUrl() {
   try {
     // Read the contents of the .git/config file

@@ -1,5 +1,6 @@
 'use strict';
 import BaseGenerator from '../pd-base-playbook/index.js';
+import { destinationGitPath, relativeGitPath } from '../util/git.js';
 // eslint-disable-next-line no-unused-vars
 import chalk from 'chalk';
 
@@ -37,6 +38,7 @@ export default class extends BaseGenerator {
       this.options.playbookPath,
     ];
     const playbook_options = {};
+    const relativePath = relativeGitPath();
     this.composeWith(
       'nr-repository-composer:pd-base-playbook',
       playbook_args,
@@ -44,7 +46,9 @@ export default class extends BaseGenerator {
     );
     this.fs.copyTpl(
       this.templatePath('jasper-reports-workflow.yaml'),
-      this.destinationPath('.github/workflows/jasper-reports.yaml'),
+      destinationGitPath(
+        `.github/workflows/jasper-reports${relativePath ? `-${this.answers.serviceName}` : ''}.yaml`,
+      ),
       {
         projectName: this.options.projectName,
         serviceName: this.options.serviceName,

@@ -1,7 +1,7 @@
 'use strict';
 import Generator from 'yeoman-generator';
 import * as fs from 'node:fs';
-import { BACKSTAGE_FILENAME } from '../util/yaml.js';
+import { BACKSTAGE_FILENAME, BACKSTAGE_KIND_COMPONENT } from '../util/yaml.js';
 import { BackstageStorage } from '../util/backstage.storage.js';
 
 /**
@@ -32,6 +32,7 @@ export default class extends Generator {
   _getStorage() {
     return new BackstageStorage(
       this.rootGeneratorName(),
+      BACKSTAGE_KIND_COMPONENT,
       this.destinationPath(BACKSTAGE_FILENAME),
     );
   }

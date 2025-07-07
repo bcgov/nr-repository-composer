@@ -1,7 +1,11 @@
 name: Jasper reports - <%= serviceName %>
 
 on:
-  workflow_dispatch:
+  workflow_call:
+    inputs:
+        environment:
+          required: true
+          type: string
 
 concurrency:
   group: jasper-${{ github.workflow }}-${{ github.ref }}
@@ -17,16 +21,72 @@ jobs:
   submit-deployment-job:
     name: Submit deployment job
     runs-on: ubuntu-latest
+    environment: ${{ inputs.environment }}
     permissions:
       contents: read
+      actions: read
     steps:
-      - name: Submit deployment job
+      - name: Checkout repository
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+          fetch-tags: true
+          ref: ${{ github.ref }}
+      - name: Get deployment approver
+        id: get-deployment-approver
         run: |
+          set -e
+          ENVIRONMENT="${{ inputs.environment }}"
+          REPO="${{ github.repository }}"
+
+          # Get environment info from the repo's deployment environments endpoint
+          ENV_INFO=$(gh api repos/${REPO}/environments/${ENVIRONMENT})
+          REVIEWERS=$(echo "$ENV_INFO" | jq -r '.protection_rules[]? | select(.reviewers != null) | .reviewers[0] // false')
+          if [[ -z "$REVIEWERS" ]]; then
+            REVIEWERS_REQUIRED=false
+          else
+            REVIEWERS_REQUIRED=true
+          fi
+
+          if [[ "$REVIEWERS_REQUIRED" == "true" ]]; then
+            # Reviewers are required, get the approver from approvals endpoint
+            RUN_ID="${{ github.run_id }}"
+            APPROVALS_JSON=$(gh api repos/${REPO}/actions/runs/${RUN_ID}/approvals)
+            APPROVER_ID=$(echo "$APPROVALS_JSON" | jq -r --arg ENVIRONMENT "$ENVIRONMENT" \
+              '.[] | select(.environments[]?.name == $ENVIRONMENT) | .user.id // empty')
+            if [[ -z "$APPROVER_ID" ]]; then
+              echo "No approver found for run ID: $RUN_ID"
+              exit 1
+            fi
+            echo "approver_id=${APPROVER_ID}@GitHub" >> $GITHUB_OUTPUT
+          else
+            # No reviewers required, use the GitHub actor's user id as the approver
+            ACTOR_ID=$(gh api users/${{ github.actor }} | jq -r '.id')
+            echo "approver_id=${ACTOR_ID}@GitHub" >> $GITHUB_OUTPUT
+          fi
+        env:
+          GH_TOKEN: ${{ github.token }}
+      - name: Submit deployment job
+        id: submit-job
+        run: |
+          # Record the timestamp in ISO 8601 format
+          GH_TASK_START=$(date -u +"%Y-%m-%dT%H:%M:%S.%3NZ")
+          echo "gh_task_start=$GH_TASK_START" >> $GITHUB_OUTPUT
+
+          # Require DEPLOYMENT_APPROVER in guid@GitHub format
+          if [[ -n "${{ steps.get-deployment-approver.outputs.approver_id }}" ]]; then
+            DEPLOYMENT_APPROVER="${{ steps.get-deployment-approver.outputs.approver_id }}"
+          else
+            echo "Error: No deployment approver found. Failing deployment."
+            exit 1
+          fi
           curl \
           --data-urlencode "token=${{ secrets.JENKINS_TOKEN }}" \
           --data-urlencode "githubToken=${{ secrets.GITHUB_TOKEN }}" \
           --data-urlencode "gitBranch=${{ github.ref_name }}" \
           --data-urlencode "gitTag=${{ (startsWith(github.ref, 'refs/tags/') && github.ref_name) || '' }}" \
+          --data-urlencode "envLong=${{ inputs.environment }}" \
+          --data-urlencode "deploymentApprover=${DEPLOYMENT_APPROVER}" \
           --data-urlencode "brokerJwt=${{ secrets.<%= brokerJwt %> }}" \
           -H "Connection: close" \
           ${{ env.URL }}/${{ env.JOB }}
@@ -34,6 +94,14 @@ jobs:
         run: |
           DEPLOYMENT_JOB_URL="${{ env.URL }}/job/${{ env.SERVICE_PROJECT }}/job/${{ env.SERVICE_NAME }}/"
           echo "Deployment job URL: ${DEPLOYMENT_JOB_URL}"
-      - name: Keep GH token alive
-        run: sleep 90s
-        shell: bash
+      - name: Wait for Jenkins jasper report job to be triggered and completed
+        id: check-jenkins-job-status
+        run: ./.github/workflows/check-deploy-job-status.sh
+        env:
+          GH_TASK_START: ${{ steps.submit-job.outputs.gh_task_start }}
+          BROKER_URL: https://broker.io.nrs.gov.bc.ca
+          BROKER_JWT: ${{ secrets.<%= brokerJwt %> }}
+          SERVICE_PROJECT: ${{ env.SERVICE_PROJECT }}
+          SERVICE_NAME: ${{ env.SERVICE_NAME }}
+          ACTION_NAME: "package-configure"
+          PROVIDER_NAME: "polaris-jasper"

@@ -387,3 +387,5 @@ jobs:
           BROKER_JWT: ${{ secrets.<%= brokerJwt %> }}
           SERVICE_PROJECT: ${{ env.SERVICE_PROJECT }}
           SERVICE_NAME: ${{ env.SERVICE_NAME }}
+          ACTION_NAME: "package-installation"
+          PROVIDER_NAME: "polaris-deploy"

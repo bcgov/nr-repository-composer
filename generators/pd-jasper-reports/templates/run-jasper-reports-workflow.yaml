@@ -11,6 +11,9 @@ on:
           - development
           - test
           - production
+concurrency:
+  group: run-jasper-${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
 
 permissions:
   contents: read

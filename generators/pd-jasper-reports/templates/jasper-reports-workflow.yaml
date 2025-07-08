@@ -82,6 +82,7 @@ jobs:
           fi
           curl \
           --data-urlencode "token=${{ secrets.JENKINS_TOKEN }}" \
+          --data-urlencode "githubRunId=${{ github.run_id }}" \
           --data-urlencode "githubToken=${{ secrets.GITHUB_TOKEN }}" \
           --data-urlencode "gitBranch=${{ github.ref_name }}" \
           --data-urlencode "gitTag=${{ (startsWith(github.ref, 'refs/tags/') && github.ref_name) || '' }}" \
@@ -105,3 +106,5 @@ jobs:
           SERVICE_NAME: ${{ env.SERVICE_NAME }}
           ACTION_NAME: "package-configure"
           PROVIDER_NAME: "polaris-jasper"
+          GITHUB_RUN_ID: ${{ github.run_id }}
+          ENVIRONMENT: ${{ inputs.environment }}

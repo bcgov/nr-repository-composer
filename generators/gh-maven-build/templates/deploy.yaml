@@ -353,6 +353,7 @@ jobs:
           fi
           curl \
           --data-urlencode "token=${{ secrets.JENKINS_TOKEN }}" \
+          --data-urlencode "githubRunId=${{ github.run_id }}" \
           --data-urlencode "githubToken=${{ secrets.GITHUB_TOKEN }}" \
           --data-urlencode "brokerJwt=${{ secrets.<%= brokerJwt %> }}" \
           --data-urlencode "artifactSha256=${ARTIFACT_SHA256}" \
@@ -389,3 +390,5 @@ jobs:
           SERVICE_NAME: ${{ env.SERVICE_NAME }}
           ACTION_NAME: "package-installation"
           PROVIDER_NAME: "polaris-deploy"
+          GITHUB_RUN_ID: ${{ github.run_id }}
+          ENVIRONMENT: ${{ inputs.environment }}

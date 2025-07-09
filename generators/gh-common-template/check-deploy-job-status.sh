@@ -4,31 +4,37 @@ set -e
 # Use the timestamp from the previous step
 GH_TASK_START="${GH_TASK_START}"
 echo "Current GitHub task start: $GH_TASK_START"
+sleep 30
+MAX_WAIT=30
+
+EVENT_REASON=$(echo -n "Github action: ${GITHUB_RUN_ID}" | jq -sRr @uri)
 
 # Wait for the Jenkins deployment job to be triggered (max 90s)
-for i in {1..9}; do
+for ((i=1; i<=MAX_WAIT; i++)); do
   RESPONSE=$(curl -s -X 'POST' \
-    "${BROKER_URL}/v1/intention/search?where=%7B%22actions.action%22%3A%22package-installation%22%2C%22actions.service.project%22%3A%22${SERVICE_PROJECT}%22%2C%22actions.service.name%22%3A%22${SERVICE_NAME}%22%2C%22event.provider%22%3A%22polaris-deploy%22%7D&offset=0&limit=1" \
+    "${BROKER_URL}/v1/intention/search?where=%7B%22actions.action%22%3A%22${ACTION_NAME}%22%2C%22event.reason%22%3A%22${EVENT_REASON}%22%2C%22actions.service.project%22%3A%22${SERVICE_PROJECT}%22%2C%22actions.service.name%22%3A%22${SERVICE_NAME}%22%2C%22actions.service.environment%22%3A%22${ENVIRONMENT}%22%2C%22event.provider%22%3A%22${PROVIDER_NAME}%22%7D&offset=0&limit=1" \
     -H 'accept: application/json' \
     -H 'Authorization: Bearer '"${BROKER_JWT}"'' \
     -d '')
-  TX_START=$(echo "$RESPONSE" | jq -r '.data[0].transaction.start // empty')
-  if [[ -n "$TX_START" && "$TX_START" > "$GH_TASK_START" ]]; then
-    echo "Found triggered job with transaction.start: $TX_START"
-    break
+  
+  DATA_LENGTH=$(echo "$RESPONSE" | jq '.data | length')
+
+  if [[ -z "$RESPONSE" || "$RESPONSE" == "null" || "$DATA_LENGTH" -eq 0 ]]; then
+    if [ $i -eq $MAX_WAIT ]; then
+      echo "Error: Deployment job was not triggered from broker after $((MAX_WAIT*10)) seconds."
+      exit 1
+    fi
+    echo "Waiting for deployment job to be triggered..."
+    sleep 10
+    continue
   fi
-  if [ $i -eq 9 ]; then
-    echo "Error: Deployment job was not triggered within 90 seconds."
-    exit 1
-  fi
-  echo "Waiting for deployment job to be triggered..."
-  sleep 10
+  break
 done
 
 # Wait for the deployment job to be closed (completed)
-for i in {1..9}; do
+for ((i=1; i<=MAX_WAIT; i++)); do
   RESPONSE=$(curl -s -X 'POST' \
-    "${BROKER_URL}/v1/intention/search?where=%7B%22actions.action%22%3A%22package-installation%22%2C%22actions.service.project%22%3A%22${SERVICE_PROJECT}%22%2C%22actions.service.name%22%3A%22${SERVICE_NAME}%22%2C%22event.provider%22%3A%22polaris-deploy%22%7D&offset=0&limit=1" \
+    "${BROKER_URL}/v1/intention/search?where=%7B%22actions.action%22%3A%22${ACTION_NAME}%22%2C%22event.reason%22%3A%22${EVENT_REASON}%22%2C%22actions.service.project%22%3A%22${SERVICE_PROJECT}%22%2C%22actions.service.name%22%3A%22${SERVICE_NAME}%22%2C%22actions.service.environment%22%3A%22${ENVIRONMENT}%22%2C%22event.provider%22%3A%22${PROVIDER_NAME}%22%7D&offset=0&limit=1" \
     -H 'accept: application/json' \
     -H 'Authorization: Bearer '"${BROKER_JWT}"'' \
     -d '')
@@ -37,8 +43,8 @@ for i in {1..9}; do
     echo "Deployment job is closed."
     break
   fi
-  if [ $i -eq 9 ]; then
-    echo "Error: Deployment job could not complete within 90 seconds."
+  if [ $i -eq $MAX_WAIT ]; then
+    echo "Error: Deployment job could not complete within $((MAX_WAIT*10)) seconds."
     exit 1
   fi
   echo "Deployment job still running... waiting 10s"

@@ -1,0 +1,60 @@
+name: Run <%= projectName %> Jasper Report Deploy
+
+on:
+  workflow_dispatch:
+    inputs:
+      environment:
+        description: 'Target environment (dev, test, prod)'
+        required: true
+        type: choice
+        options:
+          - development
+          - test
+          - production
+concurrency:
+  group: run-jasper-${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
+permissions:
+  contents: read
+  actions: read
+  pull-requests: read
+
+jobs:
+  check-token-expiration:
+    name: Check token expiration
+    uses: ./.github/workflows/check-token.yaml
+    secrets:
+      token: ${{ secrets.<%= brokerJwt %> }}
+
+  deploy-development:
+    name: Deploy to development
+    uses: ./.github/workflows/<%= jasperReportsWorkflowFile %>
+    needs: check-token-expiration
+    with:
+      environment: development
+    secrets: inherit
+    if: |
+      github.event.inputs.environment == 'development' ||
+      github.event.inputs.environment == 'test' ||
+      github.event.inputs.environment == 'production'
+
+  deploy-test:
+    name: Deploy to test
+    needs: deploy-development
+    uses: ./.github/workflows/<%= jasperReportsWorkflowFile %>
+    with:
+      environment: test
+    secrets: inherit
+    if: |
+      github.event.inputs.environment == 'test' ||
+      github.event.inputs.environment == 'production'
+ 
+  deploy-production:
+    name: Deploy to production
+    needs: deploy-test
+    uses: ./.github/workflows/<%= jasperReportsWorkflowFile %>
+    with:
+      environment: production
+    secrets: inherit
+    if: github.event.inputs.environment == 'production'

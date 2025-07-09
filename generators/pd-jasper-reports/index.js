@@ -39,6 +39,8 @@ export default class extends BaseGenerator {
     ];
     const playbook_options = {};
     const relativePath = relativeGitPath();
+    const jasperReportsWorkflowFile = `jasper-reports${relativePath ? `-${this.options.projectName}` : ''}.yaml`;
+
     this.composeWith(
       'nr-repository-composer:pd-base-playbook',
       playbook_args,
@@ -46,9 +48,7 @@ export default class extends BaseGenerator {
     );
     this.fs.copyTpl(
       this.templatePath('jasper-reports-workflow.yaml'),
-      destinationGitPath(
-        `.github/workflows/jasper-reports${relativePath ? `-${this.answers.serviceName}` : ''}.yaml`,
-      ),
+      destinationGitPath(`.github/workflows/${jasperReportsWorkflowFile}`),
       {
         projectName: this.options.projectName,
         serviceName: this.options.serviceName,
@@ -56,8 +56,20 @@ export default class extends BaseGenerator {
       },
     );
     this.fs.copyTpl(
+      this.templatePath('run-jasper-reports-workflow.yaml'),
+      destinationGitPath(`.github/workflows/run-${jasperReportsWorkflowFile}`),
+      {
+        projectName: this.options.projectName,
+        serviceName: this.options.serviceName,
+        brokerJwt: this.options.brokerJwt,
+        jasperReportsWorkflowFile,
+      },
+    );
+    this.fs.copyTpl(
       this.templatePath('jasper-reports-intention.json'),
-      this.destinationPath('.jenkins/jasper-reports-intention.json'),
+      this.destinationPath(
+        `.jenkins/${this.options.projectName}-jasper-reports-intention.json`,
+      ),
       {
         projectName: this.options.projectName,
         serviceName: this.options.serviceName,

@@ -16,7 +16,7 @@ fi
 TOKEN=$(gh auth token)
 
 # Get all repositories in the organization
-REPOS=$(gh repo list $ORG --limit 1000 --json name --jq '.[].name')
+REPOS=$(gh api orgs/$ORG/repos --paginate | jq --raw-output 'map(select(.archived == false)) | .[].name')
 
 echo "Scanning repositories for catalog-info.yaml files with the annotation $ANNOTATION_KEY..."
 

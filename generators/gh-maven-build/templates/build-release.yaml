@@ -99,7 +99,7 @@ jobs:
             TAG=${{ github.ref_name }}
             VERSION=${TAG#v}
           else
-            VERSION=$(mvn help:evaluate -Dexpression=project.version -q -DforceStdout --file ./pom.xml)
+            VERSION=$(mvn help:evaluate -Dexpression=project.version -q -DforceStdout --file <%= pomRoot %>pom.xml)
             VERSION=${VERSION/%SNAPSHOT/${{ steps.lookup-pr-merge-ref.outputs.version_modifier }}-SNAPSHOT}
           fi
           echo "VERSION=${VERSION}" >> $GITHUB_ENV

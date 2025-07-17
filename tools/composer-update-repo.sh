@@ -108,7 +108,7 @@ for TARGET_FILE in $TARGETS; do
         git reset --hard > /dev/null
         git clean -fd > /dev/null
         podman pull $CONTAINER_IMAGE
-        podman run --rm -v "${PWD}:/src" -w "/src/$(dirname $TARGET_FILE)" -u "$(id -u):$(id -g)" --entrypoint yo $CONTAINER_IMAGE nr-repository-composer:"$VALUE" --headless --force
+        podman run --rm -v "${PWD}:/src" -w "/src/$(dirname $TARGET_FILE)" -u "$(id -u):$(id -g)" --userns=keep-id --entrypoint yo $CONTAINER_IMAGE nr-repository-composer:"$VALUE" --headless --force
 
         if [[ $? -ne 0 ]]; then
             echo "    ⚠️ Docker failed for $VALUE"

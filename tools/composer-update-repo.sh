@@ -68,7 +68,16 @@ if [[ "$KIND" == "Location" ]]; then
 fi
 
 echo "  Cloning repository: $REPO"
-gh repo clone "$ORG/$REPO" "$REPO" -- -q
+
+if gh repo clone "$ORG/$REPO" "$REPO" -- -q; then
+  cd "$REPO"
+else
+  echo "  ❌ Failed cloning repository: $REPO"
+  exit 1
+fi
+
+
+
 cd "$REPO"
 
 for TARGET_FILE in $TARGETS; do

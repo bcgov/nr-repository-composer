@@ -17,6 +17,12 @@ CONTAINER_IMAGE="ghcr.io/bcgov/nr-repository-composer:latest"
 ANNOTATION_KEY="composer.io.nrs.gov.bc.ca/generators"
 REPO=$2
 
+# Check dependencies
+if ! command yq > /dev/null 2>&1; then
+  echo "Unable to find yq dependency."
+  exit 1
+fi
+
 # Check if already logged in
 echo "Checking GitHub CLI authentication..."
 if ! gh auth status &>/dev/null; then

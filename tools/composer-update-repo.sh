@@ -93,9 +93,6 @@ else
 fi
 
 
-
-cd "$REPO"
-
 for TARGET_FILE in $TARGETS; do
     echo "  ➤ Processing target: $TARGET_FILE"
 

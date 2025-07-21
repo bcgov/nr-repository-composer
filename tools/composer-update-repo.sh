@@ -23,6 +23,22 @@ if ! command yq > /dev/null 2>&1; then
   exit 1
 fi
 
+# Check git user.name
+if { ! { git config --global user.name &>/dev/null ;} ;} \
+  && { [ -z "$GIT_AUTHOR_NAME" ] || [ -z "$GIT_COMMITTER_NAME" ] ;}; then
+  echo 'Git user is not configured for committing.'
+  echo 'Please set `git config --global user.name` or use both environment variables `GIT_AUTHOR_NAME` and `GIT_COMMITTER_NAME`'
+  exit 1
+fi
+
+# Check git user.email
+if { ! { git config --global user.email &>/dev/null ;} ;} \
+  && { [ -z "$GIT_AUTHOR_EMAIL" ] || [ -z "$GIT_COMMITTER_EMAIL" ] ;}; then
+  echo 'Git email is not configured for committing.'
+  echo 'Please set `git config --global user.email` or use both environment variables `GIT_AUTHOR_EMAIL` and `GIT_COMMITTER_EMAIL`'
+  exit 1
+fi
+
 # Check if already logged in
 echo "Checking GitHub CLI authentication..."
 if ! gh auth status &>/dev/null; then

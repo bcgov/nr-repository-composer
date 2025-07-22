@@ -92,6 +92,17 @@ else
   exit 1
 fi
 
+gh_create_issue_idempotent () {
+  EXISTING_ISSUES=$(gh api "repos/$ORG/$REPO/issues" --paginate --jq "map(select(.title == \"$1\" and .body == \"$2\")) | .[].number")
+  if [ -z "$EXISTING_ISSUES" ]; then
+    gh issue create --repo "$ORG/$REPO" --title "$1" --body "$2"
+  else
+    for ISSUE_NUMBER in $EXISTING_ISSUES; do
+      echo "Existing issue: https://github.com/$ORG/$REPO/issues/$ISSUE_NUMBER"
+    done
+  fi
+
+}
 
 for TARGET_FILE in $TARGETS; do
     echo "  ➤ Processing target: $TARGET_FILE"
@@ -102,8 +113,10 @@ for TARGET_FILE in $TARGETS; do
     if [[ ! -f "$TARGET_FILE" ]]; then
         echo "    ❌ File not found: $TARGET_FILE"
 
-        gh issue create --repo "$ORG/$REPO" --title "Backstage location target not found: $TARGET_FILE" \
-            --body "When scanning this repository, we encountered an invalid reference to a file in the root catalog file. The file '$TARGET_FILE' does not exist. Please update this reference."
+        ISSUE_TITLE="Backstage location target not found: $TARGET_FILE"
+        ISSUE_BODY="When scanning this repository, we encountered an invalid reference to a file in the root catalog file. The file '$TARGET_FILE' does not exist. Please update this reference."
+
+        gh_create_issue_idempotent "$ISSUE_TITLE" "$ISSUE_BODY"
         continue
     fi
 
@@ -126,8 +139,10 @@ for TARGET_FILE in $TARGETS; do
         if [[ $? -ne 0 ]]; then
             echo "    ⚠️ Docker failed for $VALUE"
 
-            gh issue create --repo "$ORG/$REPO" --title "Composer [$VALUE]: Out of date" \
-                --body "This composer must be run manually to update it. Please see instructions."
+            ISSUE_TITLE="Composer [$VALUE]: Out of date"
+            ISSUE_BODY="This composer must be run manually to update it. Please see instructions."
+
+            gh_create_issue_idempotent "$ISSUE_TITLE" "$ISSUE_BODY"
         else
             if [[ -n "$(git status --porcelain)" ]]; then
                 BRANCH_NAME="composer/update-${TARGET_SERVICE}-${VALUE}"

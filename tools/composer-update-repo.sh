@@ -98,7 +98,7 @@ gh_create_issue_idempotent () {
     gh issue create --repo "$ORG/$REPO" --title "$1" --body "$2"
   else
     for ISSUE_NUMBER in $EXISTING_ISSUES; do
-      echo "Existing issue: https://github.com/$ORG/$REPO/issues/$ISSUE_NUMBER"
+      echo "    ⚠️ Existing issue: https://github.com/$ORG/$REPO/issues/$ISSUE_NUMBER"
     done
   fi
 

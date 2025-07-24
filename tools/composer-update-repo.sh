@@ -17,6 +17,28 @@ CONTAINER_IMAGE="ghcr.io/bcgov/nr-repository-composer:latest"
 ANNOTATION_KEY="composer.io.nrs.gov.bc.ca/generators"
 REPO=$2
 
+# Check dependencies
+if ! command yq > /dev/null 2>&1; then
+  echo "Unable to find yq dependency."
+  exit 1
+fi
+
+# Check git user.name
+if { ! { git config --global user.name &>/dev/null ;} ;} \
+  && { [ -z "$GIT_AUTHOR_NAME" ] || [ -z "$GIT_COMMITTER_NAME" ] ;}; then
+  echo 'Git user is not configured for committing.'
+  echo 'Please set `git config --global user.name` or use both environment variables `GIT_AUTHOR_NAME` and `GIT_COMMITTER_NAME`'
+  exit 1
+fi
+
+# Check git user.email
+if { ! { git config --global user.email &>/dev/null ;} ;} \
+  && { [ -z "$GIT_AUTHOR_EMAIL" ] || [ -z "$GIT_COMMITTER_EMAIL" ] ;}; then
+  echo 'Git email is not configured for committing.'
+  echo 'Please set `git config --global user.email` or use both environment variables `GIT_AUTHOR_EMAIL` and `GIT_COMMITTER_EMAIL`'
+  exit 1
+fi
+
 # Check if already logged in
 echo "Checking GitHub CLI authentication..."
 if ! gh auth status &>/dev/null; then
@@ -62,8 +84,25 @@ if [[ "$KIND" == "Location" ]]; then
 fi
 
 echo "  Cloning repository: $REPO"
-gh repo clone "$ORG/$REPO" "$REPO" -- -q
-cd "$REPO"
+
+if gh repo clone "$ORG/$REPO" "$REPO" -- -q; then
+  cd "$REPO"
+else
+  echo "  ❌ Failed cloning repository: $REPO"
+  exit 1
+fi
+
+gh_create_issue_idempotent () {
+  EXISTING_ISSUES=$(gh api "repos/$ORG/$REPO/issues" --paginate --jq "map(select(.title == \"$1\" and .body == \"$2\")) | .[].number")
+  if [ -z "$EXISTING_ISSUES" ]; then
+    gh issue create --repo "$ORG/$REPO" --title "$1" --body "$2"
+  else
+    for ISSUE_NUMBER in $EXISTING_ISSUES; do
+      echo "    ⚠️ Existing issue: https://github.com/$ORG/$REPO/issues/$ISSUE_NUMBER"
+    done
+  fi
+
+}
 
 for TARGET_FILE in $TARGETS; do
     echo "  ➤ Processing target: $TARGET_FILE"
@@ -74,8 +113,10 @@ for TARGET_FILE in $TARGETS; do
     if [[ ! -f "$TARGET_FILE" ]]; then
         echo "    ❌ File not found: $TARGET_FILE"
 
-        gh issue create --repo "$ORG/$REPO" --title "Backstage location target not found: $TARGET_FILE" \
-            --body "When scanning this repository, we encountered an invalid reference to a file in the root catalog file. The file '$TARGET_FILE' does not exist. Please update this reference."
+        ISSUE_TITLE="Backstage location target not found: $TARGET_FILE"
+        ISSUE_BODY="When scanning this repository, we encountered an invalid reference to a file in the root catalog file. The file '$TARGET_FILE' does not exist. Please update this reference."
+
+        gh_create_issue_idempotent "$ISSUE_TITLE" "$ISSUE_BODY"
         continue
     fi
 
@@ -93,13 +134,15 @@ for TARGET_FILE in $TARGETS; do
         git reset --hard > /dev/null
         git clean -fd > /dev/null
         podman pull $CONTAINER_IMAGE
-        podman run --rm -v "${PWD}:/src" -w "/src/$(dirname $TARGET_FILE)" -u "$(id -u):$(id -g)" --entrypoint yo $CONTAINER_IMAGE nr-repository-composer:"$VALUE" --headless --force
+        podman run --rm -v "${PWD}:/src" -w "/src/$(dirname $TARGET_FILE)" -u "$(id -u):$(id -g)" --userns=keep-id --entrypoint yo $CONTAINER_IMAGE nr-repository-composer:"$VALUE" --headless --force
 
         if [[ $? -ne 0 ]]; then
             echo "    ⚠️ Docker failed for $VALUE"
 
-            gh issue create --repo "$ORG/$REPO" --title "Composer [$VALUE]: Out of date" \
-                --body "This composer must be run manually to update it. Please see instructions."
+            ISSUE_TITLE="Composer [$VALUE]: Out of date"
+            ISSUE_BODY="This composer must be run manually to update it. Please see instructions."
+
+            gh_create_issue_idempotent "$ISSUE_TITLE" "$ISSUE_BODY"
         else
             if [[ -n "$(git status --porcelain)" ]]; then
                 BRANCH_NAME="composer/update-${TARGET_SERVICE}-${VALUE}"

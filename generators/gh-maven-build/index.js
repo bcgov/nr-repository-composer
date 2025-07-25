@@ -14,6 +14,9 @@ import {
   PROMPT_ALT_APP_DIR_NAME,
   PROMPT_CLIENT_ID,
   PROMPT_DEPLOY_ON_PREM,
+  PROMPT_CONFIGURE_NR_ARTIFACTORY,
+  PROMPT_MAVEN_SETTINGS_ROOT,
+  PROMPT_MAVEN_BUILD_COMMAND,
   PROMPT_POM_ROOT,
   PROMPT_GITHUB_PACKAGES,
   PROMPT_GITHUB_OWNER_PACK,
@@ -62,6 +65,16 @@ const questions = [
     when: (answers) => !answers.gitHubPackages,
   },
   PROMPT_DEPLOY_ON_PREM,
+  PROMPT_CONFIGURE_NR_ARTIFACTORY,
+  {
+    ...PROMPT_MAVEN_SETTINGS_ROOT,
+    when: (answers) => answers.configureNrArtifactory,
+  },
+  {
+    ...PROMPT_MAVEN_BUILD_COMMAND,
+    default: (answers) =>
+      `--batch-mode -Dmaven.test.skip=true -P${answers.gitHubPackages ? 'github' : 'artifactory'} deploy${answers.configureNrArtifactory ? ` --settings ${answers.mavenSettingsRoot}settings.xml ` : ' '}--file ${answers.pomRoot}pom.xml`,
+  },
   PROMPT_DEPLOY_JASPER_REPORTS,
   {
     ...PROMPT_JASPER_PROJECT_NAME,
@@ -190,6 +203,8 @@ export default class extends Generator {
         artifactoryPackageType: this.answers.artifactoryPackageType,
         gitHubOwnerPack: this.answers.gitHubOwnerPack,
         relativePath,
+        configureNrArtifactory: this.answers.configureNrArtifactory,
+        mavenBuildCommand: this.answers.mavenBuildCommand,
       },
     );
     copyCommonBuildWorkflows(this, {
@@ -230,6 +245,17 @@ export default class extends Generator {
         'nr-repository-composer:pd-java-playbook',
         java_playbook_args,
         java_playbook_options,
+      );
+    }
+    if (this.answers.configureNrArtifactory) {
+      const maven_args = [this.answers.projectName, this.answers.serviceName];
+      const maven_options = {
+        mavenSettingsRoot: this.answers.mavenSettingsRoot,
+      };
+      this.composeWith(
+        'nr-repository-composer:pd-maven',
+        maven_args,
+        maven_options,
       );
     }
     if (this.answers.deployJasperReports) {

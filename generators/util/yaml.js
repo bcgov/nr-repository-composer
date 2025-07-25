@@ -92,6 +92,34 @@ export const pathToProps = [
     prop: 'deployOnPrem',
     writeEmpty: false,
   },
+  // Maven
+  {
+    path: [
+      'metadata',
+      'annotations',
+      'playbook.io.nrs.gov.bc.ca/configureNrArtifactory',
+    ],
+    prop: 'configureNrArtifactory',
+    writeEmpty: false,
+  },
+  {
+    path: [
+      'metadata',
+      'annotations',
+      'playbook.io.nrs.gov.bc.ca/mavenSettingsRoot',
+    ],
+    prop: 'mavenSettingsRoot',
+    writeEmpty: false,
+  },
+  {
+    path: [
+      'metadata',
+      'annotations',
+      'playbook.io.nrs.gov.bc.ca/mavenBuildCommand',
+    ],
+    prop: 'mavenBuildCommand',
+    writeEmpty: false,
+  },
   // Jasper
   {
     path: [

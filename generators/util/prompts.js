@@ -160,6 +160,23 @@ export const PROMPT_ARTIFACTORY_PACKAGE_TYPE = {
   message: 'Artifactory Package Type (maven, ivy, npm):',
   default: 'maven',
 };
+export const PROMPT_CONFIGURE_NR_ARTIFACTORY = {
+  type: 'confirm',
+  name: 'configureNrArtifactory',
+  message: 'Configure NR Artifactory:',
+  default: false,
+};
+export const PROMPT_MAVEN_SETTINGS_ROOT = {
+  type: 'input',
+  name: 'mavenSettingsRoot',
+  message: 'Maven settings.xml root:',
+  default: './',
+};
+export const PROMPT_MAVEN_BUILD_COMMAND = {
+  type: 'input',
+  name: 'mavenBuildCommand',
+  message: 'Maven arguments',
+};
 export const PROMPT_DEPLOY_JASPER_REPORTS = {
   type: 'confirm',
   name: 'deployJasperReports',
@@ -310,6 +327,18 @@ export const PROMPT_TO_USAGE = {
   },
   artifactoryPackageType: {
     description: 'The Artifactory package type to use (e.g. maven, ivy, npm)',
+  },
+  configureNrArtifactory: {
+    description: 'Whether to use NR Artifactory to resolve maven dependencies',
+  },
+  mavenSettingsRoot: {
+    description: 'The path to the settings.xml file',
+    example: './',
+  },
+  mavenBuildCommand: {
+    description: 'Arguments to pass to mvn',
+    example:
+      '--batch-mode -Dmaven.test.skip=true -Partifactory deploy --settings <%= mavenSettingsRoot %>settings.xml --file <%= pomRoot %>pom.xml',
   },
   deployJasperReports: {
     description: 'Whether to deploy Jasper Reports or not',

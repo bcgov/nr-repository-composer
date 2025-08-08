@@ -152,6 +152,15 @@ export const pathToProps = [
     path: [
       'metadata',
       'annotations',
+      'playbook.io.nrs.gov.bc.ca/jasperSourcePath',
+    ],
+    prop: 'jasperSourcePath',
+    writeEmpty: false,
+  },
+  {
+    path: [
+      'metadata',
+      'annotations',
       'playbook.io.nrs.gov.bc.ca/jasperServerInstance',
     ],
     prop: 'jasperServerInstance',

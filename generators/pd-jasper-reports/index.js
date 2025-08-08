@@ -27,6 +27,10 @@ export default class extends BaseGenerator {
       type: String,
       description: 'Broker JWT',
     });
+    this.option('jasperSourcePath', {
+      type: String,
+      descritpion: 'Path to jasper source',
+    });
   }
 
   // Generate files
@@ -82,6 +86,7 @@ export default class extends BaseGenerator {
         projectNameUpperCase: this.options.jasperProjectName.toUpperCase(),
         jasperServerInstanceUpperCase:
           this.options.jasperServerInstance.toUpperCase(),
+        jasperSourcePath: this.options.jasperSourcePath,
         jasperPauseSeconds: this.options.jasperPauseSeconds,
       },
     );

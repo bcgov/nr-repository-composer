@@ -29,7 +29,7 @@ export default class extends BaseGenerator {
     });
     this.option('jasperSourcePath', {
       type: String,
-      descritpion: 'Path to jasper source',
+      description: 'Path to jasper source',
     });
   }
 

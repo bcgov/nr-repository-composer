@@ -26,6 +26,7 @@ import {
   PROMPT_JASPER_PAUSE_SECONDS,
   PROMPT_JASPER_PROJECT_NAME,
   PROMPT_JASPER_SERVICE_NAME,
+  PROMPT_JASPER_SOURCE_PATH,
   PROMPT_JASPER_SERVER_INSTANCE,
   PROMPT_LICENSE,
   PROMPT_PLAYBOOK_PATH,
@@ -84,6 +85,10 @@ const questions = [
   {
     ...PROMPT_JASPER_SERVICE_NAME,
     default: (answers) => `${answers.projectName}-jasper-reports`,
+    when: (answers) => answers.deployJasperReports,
+  },
+  {
+    ...PROMPT_JASPER_SOURCE_PATH,
     when: (answers) => answers.deployJasperReports,
   },
   {
@@ -267,6 +272,7 @@ export default class extends Generator {
       const jasper_playbook_options = {
         jasperProjectName: this.answers.jasperProjectName,
         jasperServerInstance: this.answers.jasperServerInstance,
+        jasperSourcePath: this.answers.jasperSourcePath,
         jasperPauseSeconds: this.answers.jasperPauseSeconds,
         brokerJwt: brokerJwt,
       };

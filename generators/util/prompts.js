@@ -193,6 +193,12 @@ export const PROMPT_JASPER_SERVICE_NAME = {
   name: 'jasperServiceName',
   message: 'Jasper Service Name:',
 };
+export const PROMPT_JASPER_SOURCE_PATH = {
+  type: 'input',
+  name: 'jasperSourcePath',
+  message: 'Jasper source path:',
+  default: '{{ playbook_dir }}/../src',
+};
 export const PROMPT_JASPER_SERVER_INSTANCE = {
   type: 'input',
   name: 'jasperServerInstance',
@@ -349,6 +355,10 @@ export const PROMPT_TO_USAGE = {
   jasperServiceName: {
     description:
       'The Jasper service name to use (e.g. jasper-project-backend-war)',
+  },
+  jasperSourcePath: {
+    description:
+      'The relative path to the jasper source (e.g. {{ playbook_dir }}/../src)',
   },
   jasperServerInstance: {
     description: 'The Jasper server instance to use (e.g. JCRS, JRS, etc.)',

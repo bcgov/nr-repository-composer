@@ -27,6 +27,7 @@ import {
   PROMPT_JASPER_PROJECT_NAME,
   PROMPT_JASPER_SERVICE_NAME,
   PROMPT_JASPER_SOURCE_PATH,
+  PROMPT_JASPER_ADDITIONAL_DATA_SOURCES,
   PROMPT_JASPER_SERVER_INSTANCE,
   PROMPT_LICENSE,
   PROMPT_PLAYBOOK_PATH,
@@ -89,6 +90,10 @@ const questions = [
   },
   {
     ...PROMPT_JASPER_SOURCE_PATH,
+    when: (answers) => answers.deployJasperReports,
+  },
+  {
+    ...PROMPT_JASPER_ADDITIONAL_DATA_SOURCES,
     when: (answers) => answers.deployJasperReports,
   },
   {
@@ -274,6 +279,7 @@ export default class extends Generator {
         jasperServerInstance: this.answers.jasperServerInstance,
         jasperSourcePath: this.answers.jasperSourcePath,
         jasperPauseSeconds: this.answers.jasperPauseSeconds,
+        jasperAdditionalDataSources: this.answers.jasperAdditionalDataSources,
         brokerJwt: brokerJwt,
       };
       this.composeWith(

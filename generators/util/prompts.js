@@ -205,6 +205,12 @@ export const PROMPT_JASPER_SERVER_INSTANCE = {
   message: 'Jasper Reports server instance:',
   default: 'JCRS',
 };
+export const PROMPT_JASPER_ADDITIONAL_DATA_SOURCES = {
+  type: 'input',
+  name: 'jasperAdditionalDataSources',
+  message: 'Additional Jasper Reports data sources:',
+  default: '',
+};
 export const PROMPT_JASPER_PAUSE_SECONDS = {
   type: 'input',
   name: 'jasperPauseSeconds',
@@ -362,6 +368,9 @@ export const PROMPT_TO_USAGE = {
   },
   jasperServerInstance: {
     description: 'The Jasper server instance to use (e.g. JCRS, JRS, etc.)',
+  },
+  jasperAdditionalDataSources: {
+    description: '(Optional) Additional data sources for Jasper',
   },
   jasperPauseSeconds: {
     description:

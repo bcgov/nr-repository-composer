@@ -367,6 +367,7 @@ jobs:
           --data-urlencode "downloadUrl=${DOWNLOAD_URL}" \
           --data-urlencode "downloadType=<% if (gitHubPackages) { -%>GITHUB<% } else { -%>ARTIFACTORY<% } -%>" \
           --data-urlencode "envLong=${{ inputs.environment }}" \
+          --data-urlencode "triggerUrl=https://github.com/${{ github.repository }}/actions/runs/${{ github.run_id }}" \
           --data-urlencode "deploymentApprover=${DEPLOYMENT_APPROVER}" \
           -H "Connection: close" \
           ${{ env.URL }}/${{ env.JOB }}

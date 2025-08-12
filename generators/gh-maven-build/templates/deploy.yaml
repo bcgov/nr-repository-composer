@@ -73,14 +73,15 @@ jobs:
             echo "Exiting..."
             exit 1
           fi
-          if [ "$(echo "$RESPONSE" | jq '.data | length')" -eq 0 ]; then
+          if [ "$(echo "$RESPONSE" | jq '.data | length')" -eq 0 ] || \
+             [ "$(echo "$RESPONSE" | jq '.data[].actions[].artifacts | length')" -eq 0 ]; then
             echo
             echo "============================================================"
             echo "Error: Broker API response data is empty."
             echo "------------------------------------------------------------"
             echo "Explanation: No build information was found for this commit."
             echo "Why it matters: The deployment cannot proceed without build metadata."
-            echo "Check if the build completed and published to Broker."
+            echo "Check if the most recent build completed and published the artifact to Broker."
             echo "--- Broker API response below ---"
             echo "$RESPONSE"
             echo "============================================================"
@@ -217,14 +218,15 @@ jobs:
             echo "Exiting..."
             exit 1
           fi
-          if [ "$(echo "$RESPONSE" | jq '.data | length')" -eq 0 ]; then
+          if [ "$(echo "$RESPONSE" | jq '.data | length')" -eq 0 ] || \
+             [ "$(echo "$RESPONSE" | jq '.data[].actions[].artifacts | length')" -eq 0 ]; then
             echo
             echo "============================================================"
             echo "Error: Broker API response data is empty."
             echo "------------------------------------------------------------"
             echo "Explanation: No build information was found for this tag."
             echo "Why it matters: The deployment cannot proceed without build metadata."
-            echo "Check if the build completed and published to Broker."
+            echo "Check if the most recent build completed and published the artifact to Broker."
             echo "--- Broker API response below ---"
             echo "$RESPONSE"
             echo "============================================================"

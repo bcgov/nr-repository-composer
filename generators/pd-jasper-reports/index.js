@@ -31,6 +31,11 @@ export default class extends BaseGenerator {
       type: String,
       description: 'Path to jasper source',
     });
+    this.option('jasperAdditionalDataSources', {
+      type: String,
+      description:
+        'Comma separated list of additional data sources for Jasper Reports',
+    });
   }
 
   // Generate files
@@ -88,6 +93,7 @@ export default class extends BaseGenerator {
           this.options.jasperServerInstance.toUpperCase(),
         jasperSourcePath: this.options.jasperSourcePath,
         jasperPauseSeconds: this.options.jasperPauseSeconds,
+        jasperAdditionalDataSources: this.options.jasperAdditionalDataSources,
       },
     );
     this.fs.copyTpl(
@@ -99,6 +105,7 @@ export default class extends BaseGenerator {
         projectNameUpperCase: this.options.jasperProjectName.toUpperCase(),
         jasperServerInstanceUpperCase:
           this.options.jasperServerInstance.toUpperCase(),
+        jasperAdditionalDataSources: this.options.jasperAdditionalDataSources,
       },
     );
   }

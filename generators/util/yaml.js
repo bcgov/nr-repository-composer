@@ -170,6 +170,15 @@ export const pathToProps = [
     path: [
       'metadata',
       'annotations',
+      'playbook.io.nrs.gov.bc.ca/jasperAdditionalDataSources',
+    ],
+    prop: 'jasperAdditionalDataSources',
+    writeEmpty: true,
+  },
+  {
+    path: [
+      'metadata',
+      'annotations',
       'playbook.io.nrs.gov.bc.ca/jasperPauseSeconds',
     ],
     prop: 'jasperPauseSeconds',

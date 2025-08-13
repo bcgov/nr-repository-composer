@@ -2,7 +2,12 @@
   "event": {
     "provider": "EVENT_PROVIDER",
     "reason": "Job triggered",
-    "url": "JOB_URL"
+    "url": "JOB_URL",
+    "trigger": {
+      "id": "trigger-id",
+      "name": "GitHub Action",
+      "url": "trigger-url"
+    }
   },
   "actions": [
     {

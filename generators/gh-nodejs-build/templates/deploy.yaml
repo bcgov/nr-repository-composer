@@ -271,6 +271,7 @@ jobs:
           --data-urlencode "downloadUrl=${DOWNLOAD_URL}" \
           --data-urlencode "downloadType=OCI" \
           --data-urlencode "envLong=${{ inputs.environment }}" \
+          --data-urlencode "triggerUrl=https://github.com/${{ github.repository }}/actions/runs/${{ github.run_id }}" \
           --data-urlencode "deploymentApprover=${DEPLOYMENT_APPROVER}" \
           -H "Connection: close" \
           ${{ env.URL }}/${{ env.JOB }}
@@ -291,9 +292,5 @@ jobs:
           GH_TASK_START: ${{ steps.submit-job.outputs.gh_task_start }}
           BROKER_URL: https://broker.io.nrs.gov.bc.ca
           BROKER_JWT: ${{ secrets.<%= brokerJwt %> }}
-          SERVICE_PROJECT: ${{ env.SERVICE_PROJECT }}
           SERVICE_NAME: ${{ env.SERVICE_NAME }}
-          ACTION_NAME: "package-installation"
-          PROVIDER_NAME: "polaris-deploy"
           GITHUB_RUN_ID: ${{ github.run_id }}
-          ENVIRONMENT: ${{ inputs.environment }}

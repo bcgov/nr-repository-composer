@@ -9,7 +9,7 @@ MAX_WAIT=30
 
 TRIGGER_ID=$(echo -n "${SERVICE_NAME} ${GITHUB_RUN_ID}" | jq -sRr @uri)
 
-QUERY_URL="${BROKER_URL}/v1/intention/search?where=%7B%22actions.action%22%3A%22${ACTION_NAME}%22%2C%22event.trigger.id%22%3A%22${TRIGGER_ID}%22%2C%22actions.service.project%22%3A%22${SERVICE_PROJECT}%22%2C%22actions.service.name%22%3A%22${SERVICE_NAME}%22%2C%22actions.service.environment%22%3A%22${ENVIRONMENT}%22%2C%22event.provider%22%3A%22${PROVIDER_NAME}%22%7D&offset=0&limit=1"
+QUERY_URL="${BROKER_URL}/v1/intention/search?where=%7B%22event.trigger.id%22%3A%22${TRIGGER_ID}%22%7D&offset=0&limit=1"
 
 # Wait for the Jenkins deployment job to be triggered (max 90s)
 for ((i=1; i<=MAX_WAIT; i++)); do

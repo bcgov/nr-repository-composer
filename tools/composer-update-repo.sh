@@ -15,6 +15,7 @@ fi
 CONTAINER_IMAGE="ghcr.io/bcgov/nr-repository-composer:latest"
 #CONTAINER_IMAGE="nr-repository-composer"
 ANNOTATION_KEY="composer.io.nrs.gov.bc.ca/generators"
+SKIP_KEY="composer.io.nrs.gov.bc.ca/skipAutomatedScan"
 REPO=$2
 
 # Check dependencies
@@ -122,10 +123,14 @@ for TARGET_FILE in $TARGETS; do
 
     TARGET_ANNOTATION=$(yq eval ".metadata.annotations.\"$ANNOTATION_KEY\"" "$TARGET_FILE")
     TARGET_SERVICE=$(yq eval ".metadata.name" "$TARGET_FILE")
+    TARGET_SKIP=$(yq eval ".metadata.annotations.\"$SKIP_KEY\"" "$TARGET_FILE")
 
     if [[ -z "$TARGET_ANNOTATION" || "$TARGET_ANNOTATION" == "null" ]]; then
         echo "    ⚠️ Annotation not found in $TARGET_FILE"
-    continue
+        continue
+    elif [[ -n "$TARGET_SKIP" && "$TARGET_SKIP" == "true" ]]; then
+        echo "    ⚠️ Skip annotation found in $TARGET_FILE"
+        continue
     fi
 
     IFS=',' read -ra VALUES <<< "$TARGET_ANNOTATION"

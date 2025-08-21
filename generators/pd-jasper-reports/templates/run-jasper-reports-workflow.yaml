@@ -1,4 +1,4 @@
-name: Run <%= projectName %> Jasper Report Deploy
+name: Deploy Jasper Report Pipeline - <%= projectName %>
 
 on:
   workflow_dispatch:
@@ -21,16 +21,16 @@ permissions:
   pull-requests: read
 
 jobs:
-  check-token-expiration:
-    name: Check token expiration
-    uses: ./.github/workflows/check-token.yaml
+  preflight:
+    name: Preflight
+    uses: ./.github/reusable/preflight.yaml
     secrets:
       token: ${{ secrets.<%= brokerJwt %> }}
 
   deploy-development:
     name: Deploy to development
-    uses: ./.github/workflows/<%= jasperReportsWorkflowFile %>
-    needs: check-token-expiration
+    uses: ./.github/reusable/<%= jasperReportsWorkflowFile %>
+    needs: preflight
     with:
       environment: development
     secrets: inherit
@@ -49,7 +49,7 @@ jobs:
     if: |
       github.event.inputs.environment == 'test' ||
       github.event.inputs.environment == 'production'
- 
+
   deploy-production:
     name: Deploy to production
     needs: deploy-test

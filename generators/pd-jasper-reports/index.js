@@ -57,7 +57,7 @@ export default class extends BaseGenerator {
     );
     this.fs.copyTpl(
       this.templatePath('jasper-reports-workflow.yaml'),
-      destinationGitPath(`.github/workflows/${jasperReportsWorkflowFile}`),
+      destinationGitPath(`.github/reusable/${jasperReportsWorkflowFile}`),
       {
         projectName: this.options.projectName,
         serviceName: this.options.serviceName,

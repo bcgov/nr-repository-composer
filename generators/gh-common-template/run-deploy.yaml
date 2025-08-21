@@ -1,10 +1,10 @@
-name: Run <%= serviceName %> Deploy
+name: Deploy pipeline - <%= serviceName %>
 
 on:
   workflow_dispatch:
     inputs:
       environment:
-        description: 'Target environment (dev, test, prod)'
+        description: 'Deploy artifact from previous selection until this environment'
         required: true
         type: choice
         options:
@@ -12,7 +12,7 @@ on:
           - test
           - production
       config_branch:
-        description: 'Use branch for testing configuration changes'
+        description: 'Use playbook folder from different branch (optional)'
         required: false
         type: string
 
@@ -23,16 +23,16 @@ permissions:
   pull-requests: read
 
 jobs:
-  check-token-expiration:
-    name: Check token expiration
-    uses: ./.github/workflows/check-token.yaml
+  preflight:
+    name: Preflight
+    uses: ./.github/reusable/preflight.yaml
     secrets:
       token: ${{ secrets.<%= brokerJwt %> }}
 
   deploy-development:
     name: Deploy to development
-    uses: ./.github/workflows/deploy.yaml
-    needs: check-token-expiration
+    uses: ./.github/resuable/<%= deployWorkflowFile %>
+    needs: preflight
     with:
       environment: development
       config_branch: ${{ github.event.inputs.config_branch }}
@@ -45,7 +45,7 @@ jobs:
   deploy-test:
     name: Deploy to test
     needs: deploy-development
-    uses: ./.github/workflows/deploy.yaml
+    uses: ./.github/resuable/<%= deployWorkflowFile %>
     with:
       environment: test
       config_branch: ${{ github.event.inputs.config_branch }}
@@ -53,11 +53,11 @@ jobs:
     if: |
       github.event.inputs.environment == 'test' ||
       github.event.inputs.environment == 'production'
- 
+
   deploy-production:
     name: Deploy to production
     needs: deploy-test
-    uses: ./.github/workflows/deploy.yaml
+    uses: ./.github/resuable/<%= deployWorkflowFile %>
     with:
       environment: production
       config_branch: ${{ github.event.inputs.config_branch }}

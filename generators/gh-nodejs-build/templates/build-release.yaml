@@ -22,7 +22,7 @@ env:
 jobs:
   preflight:
     name: Preflight
-    uses: ./.github/reusable/preflight.yaml
+    uses: ./.github/workflows/preflight.yaml
     permissions: {}
     secrets:
       token: ${{ secrets.<%= brokerJwt %> }}

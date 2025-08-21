@@ -11,6 +11,6 @@ permissions: {}
 jobs:
   check-jwt:
     name: Check broker token
-    uses: ./.github/reusable/check-token.yaml
+    uses: ./.github/workflows/check-token.yaml
     secrets:
       token: ${{ secrets.token }}

@@ -1,4 +1,4 @@
-name: Deploy - <%= serviceName %>
+name: 'Deploy - <%= serviceName %>'
 
 on:
   workflow_call:

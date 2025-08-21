@@ -1,4 +1,4 @@
-name: Deploy Jasper Report Pipeline - <%= projectName %>
+name: 'Deploy Jasper Report Pipeline - <%= projectName %>'
 
 on:
   workflow_dispatch:
@@ -23,13 +23,13 @@ permissions:
 jobs:
   preflight:
     name: Preflight
-    uses: ./.github/reusable/preflight.yaml
+    uses: ./.github/workflows/preflight.yaml
     secrets:
       token: ${{ secrets.<%= brokerJwt %> }}
 
   deploy-development:
     name: Deploy to development
-    uses: ./.github/reusable/<%= jasperReportsWorkflowFile %>
+    uses: ./.github/workflows/<%= jasperReportsWorkflowFile %>
     needs: preflight
     with:
       environment: development

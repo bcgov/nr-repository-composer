@@ -31,11 +31,11 @@ export function copyCommonBuildWorkflows(generator, answers) {
 
   generator.fs.copyTpl(
     generator.templatePath(`${commonTemplatePath}/preflight.yaml`),
-    destinationGitPath('.github/reusable/preflight.yaml'),
+    destinationGitPath('.github/workflows/preflight.yaml'),
   );
   generator.fs.copyTpl(
     generator.templatePath(`${commonTemplatePath}/check-token.yaml`),
-    destinationGitPath('.github/reusable/check-token.yaml'),
+    destinationGitPath('.github/workflows/check-token.yaml'),
   );
 }
 

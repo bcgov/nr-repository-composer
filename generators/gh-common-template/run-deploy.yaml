@@ -1,4 +1,4 @@
-name: Deploy pipeline - <%= serviceName %>
+name: 'Deploy pipeline - <%= serviceName %>'
 
 on:
   workflow_dispatch:
@@ -25,13 +25,13 @@ permissions:
 jobs:
   preflight:
     name: Preflight
-    uses: ./.github/reusable/preflight.yaml
+    uses: ./.github/workflows/preflight.yaml
     secrets:
       token: ${{ secrets.<%= brokerJwt %> }}
 
   deploy-development:
     name: Deploy to development
-    uses: ./.github/reusable/<%= deployWorkflowFile %>
+    uses: ./.github/workflows/<%= deployWorkflowFile %>
     needs: preflight
     with:
       environment: development
@@ -45,7 +45,7 @@ jobs:
   deploy-test:
     name: Deploy to test
     needs: deploy-development
-    uses: ./.github/reusable/<%= deployWorkflowFile %>
+    uses: ./.github/workflows/<%= deployWorkflowFile %>
     with:
       environment: test
       config_branch: ${{ github.event.inputs.config_branch }}
@@ -57,7 +57,7 @@ jobs:
   deploy-production:
     name: Deploy to production
     needs: deploy-test
-    uses: ./.github/reusable/<%= deployWorkflowFile %>
+    uses: ./.github/workflows/<%= deployWorkflowFile %>
     with:
       environment: production
       config_branch: ${{ github.event.inputs.config_branch }}

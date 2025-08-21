@@ -31,7 +31,7 @@ jobs:
 
   deploy-development:
     name: Deploy to development
-    uses: ./.github/resuable/<%= deployWorkflowFile %>
+    uses: ./.github/reusable/<%= deployWorkflowFile %>
     needs: preflight
     with:
       environment: development
@@ -45,7 +45,7 @@ jobs:
   deploy-test:
     name: Deploy to test
     needs: deploy-development
-    uses: ./.github/resuable/<%= deployWorkflowFile %>
+    uses: ./.github/reusable/<%= deployWorkflowFile %>
     with:
       environment: test
       config_branch: ${{ github.event.inputs.config_branch }}
@@ -57,7 +57,7 @@ jobs:
   deploy-production:
     name: Deploy to production
     needs: deploy-test
-    uses: ./.github/resuable/<%= deployWorkflowFile %>
+    uses: ./.github/reusable/<%= deployWorkflowFile %>
     with:
       environment: production
       config_branch: ${{ github.event.inputs.config_branch }}

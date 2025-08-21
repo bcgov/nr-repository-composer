@@ -140,7 +140,7 @@ export default class extends Generator {
       this.fs.copyTpl(
         this.templatePath('deploy.yaml'),
         destinationGitPath(
-          `.github/resuable/deploy${relativePath ? `-${this.answers.serviceName}` : ''}.yaml`,
+          `.github/reusable/deploy${relativePath ? `-${this.answers.serviceName}` : ''}.yaml`,
         ),
         {
           projectName: this.answers.projectName,

@@ -32,7 +32,7 @@ jobs:
     if: ${{ ! startsWith(github.ref, 'refs/tags/v') }}
     uses: <%= unitTestsPath %>
 <% } -%>
-  build-publish
+  build-publish:
     name: Build and publish
     runs-on: ubuntu-latest
 <% if (unitTestsPath) { -%>

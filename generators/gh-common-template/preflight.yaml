@@ -13,4 +13,4 @@ jobs:
     name: Check broker token
     uses: ./.github/reusable/check-token.yaml
     secrets:
-      token: ${{ secrets.<%= brokerJwt %> }}
+      token: ${{ secrets.token }}

@@ -128,6 +128,7 @@ export default class extends Generator {
         projectName: this.answers.projectName,
         serviceName: this.answers.serviceName,
         brokerJwt,
+        gitHubOwnerPack: this.answers.gitHubOwnerPack,
         unitTestsPath: this.answers.unitTestsPath,
         publishArtifactSuffix: this.answers.publishArtifactSuffix,
         relativePath,

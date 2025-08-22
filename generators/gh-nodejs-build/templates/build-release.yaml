@@ -48,12 +48,26 @@ jobs:
       intention_id: ${{ steps.set-intention-id.outputs.intention_id }}
       branch: $${{ steps.set-version.outputs.branch }}
     steps:
+      - name: Lookup PR Merge Ref
+        id: lookup-pr-merge-ref
+        run: |
+          if [[ "${{ github.ref_type }}" == "tag" ]]; then
+            echo "checkout_ref=${{ github.ref }}" >> $GITHUB_OUTPUT
+          elif [[ ${{ github.ref_name != 'main' }} = true ]]; then
+            RESPONSE=$(curl -s "https://api.github.com/repos/<%= gitHubOwnerPack %>/pulls?head=<%= gitHubOwnerPack.split('/')[0] %>:${{ github.head_ref || github.ref_name }}&state=open&base=main" \
+              -H "Authorization: token ${{ secrets.GITHUB_TOKEN }}" \
+              -H "Accept: application/vnd.github+json")
+            PULL_REQUEST_NUMBER=$(echo ${RESPONSE} | jq-r .[0].number)
+            echo "checkout_ref=refs/pull/$PULL_REQUEST_NUMBER/merge" >> $GITHUB_OUTPUT
+          else
+            echo "checkout_ref=${{ github.ref_name }}" >> $GITHUB_OUTPUT
+          fi
       - name: Checkout repository
         uses: actions/checkout@v4
         with:
             fetch-depth: 0
             fetch-tags: true
-            ref: ${{ github.ref }}
+            ref: ${{ steps.lookup-pr-merge-ref.outputs.checkout_ref }}
       - name: Setup ORAS
         uses: oras-project/setup-oras@v1
       - name: Set up Node

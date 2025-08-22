@@ -15,6 +15,7 @@ import {
   PROMPT_UNIT_TESTS_PATH,
   PROMPT_PUBLISH_ARTIFACT_SUFFIX,
   PROMPT_DEPLOY_ON_PREM,
+  PROMPT_GITHUB_OWNER_PACK,
   PROMPT_PLAYBOOK_PATH,
   getPromptToUsage,
 } from '../util/prompts.js';
@@ -37,6 +38,7 @@ const questions = [
   PROMPT_UNIT_TESTS_PATH,
   PROMPT_PUBLISH_ARTIFACT_SUFFIX,
   PROMPT_DEPLOY_ON_PREM,
+  PROMPT_GITHUB_OWNER_PACK,
   {
     ...PROMPT_PLAYBOOK_PATH,
     when: (answers) => {
@@ -146,6 +148,7 @@ export default class extends Generator {
           projectName: this.answers.projectName,
           serviceName: this.answers.serviceName,
           brokerJwt,
+          gitHubOwnerPack: this.answers.gitHubOwnerPack,
         },
       );
       copyCommonDeployWorkflows(this, this.answers);

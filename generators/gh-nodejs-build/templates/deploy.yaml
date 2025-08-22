@@ -44,7 +44,7 @@ jobs:
         id: lookup-pr-merge-ref
         run: |
           if [[ ${{ github.ref_name != 'main' }} = true ]]; then
-            RESPONSE=$(curl -s "https://api.github.com/repos/bcgov/nodejs-sample/pulls?head=bcgov:${{ github.ref_name }}&state=open&base=main" \
+            RESPONSE=$(curl -s "https://api.github.com/repos/<%= gitHubOwnerPack %>/pulls?head=<%= gitHubOwnerPack.split('/')[0] %>:${{ github.ref_name }}&state=open&base=main" \
               -H "Authorization: token ${{ secrets.GITHUB_TOKEN }}" \
               -H "Accept: application/vnd.github+json")
             PR_NUMBER=$(echo "${RESPONSE}" | jq -r '.[0].number')

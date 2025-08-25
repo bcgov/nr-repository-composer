@@ -145,7 +145,7 @@ for TARGET_FILE in $TARGETS; do
             echo "    ⚠️ Docker failed for $VALUE"
 
             ISSUE_TITLE="Composer [$VALUE]: Out of date"
-            ISSUE_BODY="This composer must be run manually to update it. Please see instructions."
+            ISSUE_BODY="This composer must be run manually to update it. Please see [instructions](https://github.com/bcgov/nr-repository-composer/blob/main/README.md) for the composer to run the $VALUE generator."
 
             gh_create_issue_idempotent "$ISSUE_TITLE" "$ISSUE_BODY"
         else

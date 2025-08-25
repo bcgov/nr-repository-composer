@@ -30,6 +30,10 @@ export function copyCommonBuildWorkflows(generator, answers) {
   );
 
   generator.fs.copyTpl(
+    generator.templatePath(`${commonTemplatePath}/preflight.yaml`),
+    destinationGitPath('.github/workflows/preflight.yaml'),
+  );
+  generator.fs.copyTpl(
     generator.templatePath(`${commonTemplatePath}/check-token.yaml`),
     destinationGitPath('.github/workflows/check-token.yaml'),
   );
@@ -77,6 +81,7 @@ export function copyCommonDeployWorkflows(generator, answers) {
     {
       serviceName: answers.serviceName,
       brokerJwt,
+      deployWorkflowFile: `deploy${relativePath ? `-${answers.serviceName}` : ''}.yaml`,
     },
   );
 }

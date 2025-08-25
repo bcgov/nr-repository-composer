@@ -1,0 +1,16 @@
+name: Preflight
+
+on:
+  workflow_call:
+    secrets:
+      token:
+        description: "The Broker token"
+        required: true
+permissions: {}
+
+jobs:
+  check-jwt:
+    name: Check broker token
+    uses: ./.github/workflows/check-token.yaml
+    secrets:
+      token: ${{ secrets.token }}

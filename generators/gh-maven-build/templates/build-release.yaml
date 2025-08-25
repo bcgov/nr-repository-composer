@@ -1,4 +1,4 @@
-name: Build and release - <%= serviceName %>
+name: 'Build and publish - <%= serviceName %>'
 
 on:
   push:
@@ -22,25 +22,24 @@ env:
   SERVICE_NAME: <%= serviceName %>
 
 jobs:
-  check-token-expiration:
-    name: Check token expiration
-    uses: ./.github/workflows/check-token.yaml
+  preflight:
+    name: Preflight
+    uses: ./.github/workflows/preflight.yaml
     permissions: {}
     secrets:
       token: ${{ secrets.<%= brokerJwt %> }}
 <% if (unitTestsPath) { -%>
   test:
     name: Test
-    if: ${{ ! startsWith(github.ref, 'refs/tags/v') }}
     uses: <%= unitTestsPath %>
 <% } -%>
-  build-release:
-    name: Build and release
+  build-publish:
+    name: Build and publish
     runs-on: ubuntu-latest
 <% if (unitTestsPath) { -%>
-    needs: [check-token-expiration, test]
+    needs: [preflight, test]
 <% } else { -%>
-    needs: check-token-expiration
+    needs: preflight
 <% } -%>
     permissions:
       contents: read

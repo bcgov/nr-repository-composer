@@ -1,6 +1,6 @@
 
 ---
-- name: Deploy <%= projectNameUpperCase %> Jasper Reports
+- name: Deploy Jasper Reports - <%= projectNameUpperCase %>
   hosts: localhost
   connection: local
   collections:

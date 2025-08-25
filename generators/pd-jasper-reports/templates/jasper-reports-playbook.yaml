@@ -21,7 +21,12 @@
     jasper_deployer_url: "{{ lookup('ansible.builtin.env', 'PODMAN_cfg_jasper_deployer_url') | default('') }}"
     jasper_deployer_user: "{{ lookup('ansible.builtin.env', 'PODMAN_cfg_jasper_deployer_user') | default('') }}"
     jasper_deployer_password: "{{ lookup('ansible.builtin.env', 'PODMAN_cfg_jasper_deployer_password') | default('') }}"
-    # If you have additional datasource templates, you can add them to the jasper_datasource_folders list below.
+
+    # To add more datasource templates, update jasperAdditionalDataSources with the comma separated list of additional datasources, and run the composer to generate the pipeline files from template.
+    # Templates for each datasource xml must be added to playbooks/vars/templates/<%= jasperServerInstanceUpperCase %>_<%= projectNameUpperCase %>_<Datasource_Name>.xml.j2.
+    # See playbooks/vars/templates/<%= jasperServerInstanceUpperCase %>_<%= projectNameUpperCase %>xml.j2 for an example.
+    # Be sure to update the `jasper_ds_<INDEX>_(url|user|password)` keys in the template with the correct index in the order listed here, where <%= jasperServerInstanceUpperCase %>_<%= projectNameUpperCase %> has INDEX=0, and each row increments by one.
+    # These `jasper_ds_<INDEX>_(url|user|password)` secrets must be added to Vault.
     jasper_datasource_folders:
       - <%= jasperServerInstanceUpperCase %>_<%= projectNameUpperCase %>
 <% if (jasperAdditionalDataSources) { -%>

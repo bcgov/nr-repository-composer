@@ -151,6 +151,17 @@ for TARGET_FILE in $TARGETS; do
         else
             if [[ -n "$(git status --porcelain)" ]]; then
                 BRANCH_NAME="composer/update-${TARGET_SERVICE}-${VALUE}"
+                PULL_REQUEST_BODY=(
+                  "This PR updates generated files for $TARGET_SERVICE using the $VALUE generator from $TARGET_FILE."
+                  ""
+                  "✅ This PR is ready to be merged."
+                  ""
+                  "If this PR has merge conflicts, please refer to the [instructions](https://github.com/bcgov/nr-repository-composer/blob/main/README.md) to run the composer manually and update this branch."
+                  ""
+                  "After merging this PR:"
+                  " - a new release should be tagged on the [releases](https://github.com/$ORG/$REPO/releases) page"
+                  " - any actively developed branches should be updated to include these changes"
+                )
                 echo "    🪄 Creating branch: $BRANCH_NAME"
                 git checkout -b "$BRANCH_NAME"
                 git add .
@@ -158,7 +169,7 @@ for TARGET_FILE in $TARGETS; do
                 git push origin "$BRANCH_NAME"
                 gh pr create --base main --head "$BRANCH_NAME" \
                     --title "Update generated files for $TARGET_SERVICE : $VALUE ($TARGET_FILE)" \
-                    --body "This PR updates generated files for $TARGET_SERVICE using the $VALUE generator from $TARGET_FILE."
+                    --body "$(printf '%s\n' "${PULL_REQUEST_BODY[@]}")"
             else
                 echo "    ✅ No changes detected for $VALUE"
             fi

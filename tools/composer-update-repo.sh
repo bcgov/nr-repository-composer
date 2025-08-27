@@ -16,6 +16,7 @@ CONTAINER_IMAGE="ghcr.io/bcgov/nr-repository-composer:latest"
 #CONTAINER_IMAGE="nr-repository-composer"
 ANNOTATION_KEY="composer.io.nrs.gov.bc.ca/generators"
 SKIP_KEY="composer.io.nrs.gov.bc.ca/skipAutomatedScan"
+GITHUB_LABEL_HEX_COLOUR="8de25a"
 REPO=$2
 
 # Check dependencies
@@ -93,16 +94,27 @@ else
   exit 1
 fi
 
+# $1: Issue Title
+# $2: Issue Body
+# $3: Label Name
 gh_create_issue_idempotent () {
   EXISTING_ISSUES=$(gh api "repos/$ORG/$REPO/issues" --paginate --jq "map(select(.title == \"$1\" and .body == \"$2\")) | .[].number")
   if [ -z "$EXISTING_ISSUES" ]; then
-    gh issue create --repo "$ORG/$REPO" --title "$1" --body "$2"
+    gh issue create --repo "$ORG/$REPO" --title "$1" --body "$2" --label "$3"
   else
     for ISSUE_NUMBER in $EXISTING_ISSUES; do
       echo "    ⚠️ Existing issue: https://github.com/$ORG/$REPO/issues/$ISSUE_NUMBER"
     done
   fi
+}
 
+# $1: Label Name
+# $2: Label Description
+gh_create_label_idempotent () {
+  EXISTING_LABELS=$(gh api "repos/$ORG/$REPO/labels" --paginate --jq "map(select(.name == \"$1\" and .description == \"$2\")) | .[].id")
+  if [ -z "$EXISTING_LABELS" ]; then
+    gh label create "$1" --description "$2" --color "$GITHUB_LABEL_HEX_COLOUR"
+  fi
 }
 
 for TARGET_FILE in $TARGETS; do
@@ -114,10 +126,14 @@ for TARGET_FILE in $TARGETS; do
     if [[ ! -f "$TARGET_FILE" ]]; then
         echo "    ❌ File not found: $TARGET_FILE"
 
+        LABEL_NAME="nr-repository-composer"
+        LABEL_DESCRIPTION="Related to bcgov/nr-repository-composer"
+        gh_create_label_idempotent "$LABEL_NAME" "$LABEL_DESCRIPTION"
+
         ISSUE_TITLE="Backstage location target not found: $TARGET_FILE"
         ISSUE_BODY="When scanning this repository, we encountered an invalid reference to a file in the root catalog file. The file '$TARGET_FILE' does not exist. Please update this reference."
 
-        gh_create_issue_idempotent "$ISSUE_TITLE" "$ISSUE_BODY"
+        gh_create_issue_idempotent "$ISSUE_TITLE" "$ISSUE_BODY" "$LABEL_NAME"
         continue
     fi
 
@@ -136,6 +152,11 @@ for TARGET_FILE in $TARGETS; do
     IFS=',' read -ra VALUES <<< "$TARGET_ANNOTATION"
     for VALUE in "${VALUES[@]}"; do
         echo "    🎯 Running generator: $VALUE"
+
+        LABEL_NAME="nr-repository-composer:$VALUE"
+        LABEL_DESCRIPTION="Related to bcgov/nr-repository-composer $VALUE generator"
+        gh_create_label_idempotent "$LABEL_NAME" "$LABEL_DESCRIPTION"
+
         git reset --hard > /dev/null
         git clean -fd > /dev/null
         podman pull $CONTAINER_IMAGE
@@ -147,7 +168,8 @@ for TARGET_FILE in $TARGETS; do
             ISSUE_TITLE="Composer [$VALUE]: Out of date"
             ISSUE_BODY="This composer must be run manually to update it. Please see [instructions](https://github.com/bcgov/nr-repository-composer/blob/main/README.md) for the composer to run the $VALUE generator."
 
-            gh_create_issue_idempotent "$ISSUE_TITLE" "$ISSUE_BODY"
+            gh_create_issue_idempotent "$ISSUE_TITLE" "$ISSUE_BODY" "$LABEL_NAME"
+
         else
             if [[ -n "$(git status --porcelain)" ]]; then
                 BRANCH_NAME="composer/update-${TARGET_SERVICE}-${VALUE}"
@@ -169,7 +191,8 @@ for TARGET_FILE in $TARGETS; do
                 git push origin "$BRANCH_NAME"
                 gh pr create --base main --head "$BRANCH_NAME" \
                     --title "Update generated files for $TARGET_SERVICE : $VALUE ($TARGET_FILE)" \
-                    --body "$(printf '%s\n' "${PULL_REQUEST_BODY[@]}")"
+                    --body "$(printf '%s\n' "${PULL_REQUEST_BODY[@]}")" \
+                    --label "$LABEL_NAME"
             else
                 echo "    ✅ No changes detected for $VALUE"
             fi

@@ -12,8 +12,10 @@ if [[ ! "$ORG" =~ ^(bcgov|bcgov-nr|bcgov-c)$ ]]; then
     echo "Error: Organization must be one of [bcgov, bcgov-nr, bcgov-c]"
     exit 1
 fi
-CONTAINER_IMAGE="ghcr.io/bcgov/nr-repository-composer:latest"
-#CONTAINER_IMAGE="nr-repository-composer"
+
+CONTAINER_IMAGE="ghcr.io/bcgov/nr-repository-composer"
+CONTAINER_IMAGE_TAG="latest"
+CONTAINER_IMAGE_REF="$CONTAINER_IMAGE:$CONTAINER_IMAGE_TAG"
 ANNOTATION_KEY="composer.io.nrs.gov.bc.ca/generators"
 SKIP_KEY="composer.io.nrs.gov.bc.ca/skipAutomatedScan"
 GITHUB_LABEL_HEX_COLOUR="8de25a"
@@ -153,20 +155,21 @@ for TARGET_FILE in $TARGETS; do
     for VALUE in "${VALUES[@]}"; do
         echo "    🎯 Running generator: $VALUE"
 
+        git reset --hard > /dev/null
+        git clean -fd > /dev/null
+        podman pull $CONTAINER_IMAGE_REF
+        CONTAINER_VERSION=$(podman image inspect "$CONTAINER_IMAGE" | jq -r .[0].Config.Labels."\"org.opencontainers.image.version\"")
+        podman run --rm -v "${PWD}:/src" -w "/src/$(dirname $TARGET_FILE)" -u "$(id -u):$(id -g)" --userns=keep-id --entrypoint yo $CONTAINER_IMAGE_REF nr-repository-composer:"$VALUE" --headless --force
+
         LABEL_NAME="nr-repository-composer:$VALUE"
         LABEL_DESCRIPTION="Related to bcgov/nr-repository-composer $VALUE generator"
         gh_create_label_idempotent "$LABEL_NAME" "$LABEL_DESCRIPTION"
-
-        git reset --hard > /dev/null
-        git clean -fd > /dev/null
-        podman pull $CONTAINER_IMAGE
-        podman run --rm -v "${PWD}:/src" -w "/src/$(dirname $TARGET_FILE)" -u "$(id -u):$(id -g)" --userns=keep-id --entrypoint yo $CONTAINER_IMAGE nr-repository-composer:"$VALUE" --headless --force
 
         if [[ $? -ne 0 ]]; then
             echo "    ⚠️ Docker failed for $VALUE"
 
             ISSUE_TITLE="Composer [$VALUE]: Out of date"
-            ISSUE_BODY="This composer must be run manually to update it. Please see [instructions](https://github.com/bcgov/nr-repository-composer/blob/main/README.md) for the composer to run the $VALUE generator."
+            ISSUE_BODY="Composer Version: $CONTAINER_VERSION\nThis composer must be run manually to update it. Please see [instructions](https://github.com/bcgov/nr-repository-composer/blob/main/README.md) for the composer to run the $VALUE generator."
 
             gh_create_issue_idempotent "$ISSUE_TITLE" "$ISSUE_BODY" "$LABEL_NAME"
 
@@ -175,6 +178,8 @@ for TARGET_FILE in $TARGETS; do
                 BRANCH_NAME="composer/update-${TARGET_SERVICE}-${VALUE}"
                 PULL_REQUEST_BODY=(
                   "This PR updates generated files for $TARGET_SERVICE using the $VALUE generator from $TARGET_FILE."
+                  ""
+                  "Composer Version: $CONTAINER_VERSION"
                   ""
                   "✅ This PR is ready to be merged."
                   ""

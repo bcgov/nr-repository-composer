@@ -49,24 +49,24 @@ REPO=$2
 
 # Check dependencies
 if ! command yq > /dev/null 2>&1; then
-  echo "Unable to find yq dependency."
-  exit 1
+    echo "Unable to find yq dependency."
+    exit 1
 fi
 
 # Check git user.name
 if { ! { git config --global user.name &>/dev/null ;} ;} \
   && { [ -z "$GIT_AUTHOR_NAME" ] || [ -z "$GIT_COMMITTER_NAME" ] ;}; then
-  echo 'Git user is not configured for committing.'
-  echo 'Please set `git config --global user.name` or use both environment variables `GIT_AUTHOR_NAME` and `GIT_COMMITTER_NAME`'
-  exit 1
+    echo 'Git user is not configured for committing.'
+    echo 'Please set `git config --global user.name` or use both environment variables `GIT_AUTHOR_NAME` and `GIT_COMMITTER_NAME`'
+    exit 1
 fi
 
 # Check git user.email
 if { ! { git config --global user.email &>/dev/null ;} ;} \
   && { [ -z "$GIT_AUTHOR_EMAIL" ] || [ -z "$GIT_COMMITTER_EMAIL" ] ;}; then
-  echo 'Git email is not configured for committing.'
-  echo 'Please set `git config --global user.email` or use both environment variables `GIT_AUTHOR_EMAIL` and `GIT_COMMITTER_EMAIL`'
-  exit 1
+    echo 'Git email is not configured for committing.'
+    echo 'Please set `git config --global user.email` or use both environment variables `GIT_AUTHOR_EMAIL` and `GIT_COMMITTER_EMAIL`'
+    exit 1
 fi
 
 # Check if already logged in
@@ -116,33 +116,33 @@ fi
 echo "  Cloning repository: $REPO"
 
 if gh repo clone "$ORG/$REPO" "$REPO" -- -q; then
-  cd "$REPO"
+    cd "$REPO"
 else
-  echo "  ❌ Failed cloning repository: $REPO"
-  exit 1
+    echo "  ❌ Failed cloning repository: $REPO"
+    exit 1
 fi
 
 # $1: Issue Title
 # $2: Issue Body
 # $3: Label Name
 gh_create_issue_idempotent () {
-  EXISTING_ISSUES=$(gh api "repos/$ORG/$REPO/issues" --paginate --jq "map(select(.title == \"$1\" and .body == \"$2\")) | .[].number")
-  if [ -z "$EXISTING_ISSUES" ]; then
-    gh issue create --repo "$ORG/$REPO" --title "$1" --body "$2" --label "$3"
-  else
-    for ISSUE_NUMBER in $EXISTING_ISSUES; do
-      echo "    ⚠️ Existing issue: https://github.com/$ORG/$REPO/issues/$ISSUE_NUMBER"
-    done
-  fi
+    EXISTING_ISSUES=$(gh api "repos/$ORG/$REPO/issues" --paginate --jq "map(select(.title == \"$1\" and .body == \"$2\")) | .[].number")
+    if [ -z "$EXISTING_ISSUES" ]; then
+        gh issue create --repo "$ORG/$REPO" --title "$1" --body "$2" --label "$3"
+    else
+        for ISSUE_NUMBER in $EXISTING_ISSUES; do
+            echo "    ⚠️ Existing issue: https://github.com/$ORG/$REPO/issues/$ISSUE_NUMBER"
+        done
+    fi
 }
 
 # $1: Label Name
 # $2: Label Description
 gh_create_label_idempotent () {
-  EXISTING_LABELS=$(gh api "repos/$ORG/$REPO/labels" --paginate --jq "map(select(.name == \"$1\" and .description == \"$2\")) | .[].id")
-  if [ -z "$EXISTING_LABELS" ]; then
-    gh label create "$1" --description "$2" --color "$GITHUB_LABEL_HEX_COLOUR"
-  fi
+    EXISTING_LABELS=$(gh api "repos/$ORG/$REPO/labels" --paginate --jq "map(select(.name == \"$1\" and .description == \"$2\")) | .[].id")
+    if [ -z "$EXISTING_LABELS" ]; then
+      gh label create "$1" --description "$2" --color "$GITHUB_LABEL_HEX_COLOUR"
+    fi
 }
 
 for TARGET_FILE in $TARGETS; do

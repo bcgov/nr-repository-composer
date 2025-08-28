@@ -1,6 +1,7 @@
 #!/bin/bash
 
 SCRIPT_NAME="$(basename $0)"
+BASE_PATH="$(dirname $(realpath $0))"
 
 print_usage() {
     echo "Usage: $SCRIPT_NAME [ -l | --list ] <organization>"
@@ -66,9 +67,15 @@ for REPO in $REPOS; do
     fi
 
     if [[ $OPT_LIST ]]; then
-        ./composer-update-repo.sh "$ORG" "$REPO" --list
+        $BASE_PATH/composer-update-repo.sh "$ORG" "$REPO" --list
     else
-        ./composer-update-repo.sh "$ORG" "$REPO"
+      read -p "Update $REPO? [Y/n]:" -n 1 -r
+      echo
+      if [[ "$REPLY" =~ ^[Yy]$ ]]; then
+        $BASE_PATH/composer-update-repo.sh "$ORG" "$REPO"
+      else
+        echo "Skipping repository: $REPO"
+      fi
     fi
 done
 

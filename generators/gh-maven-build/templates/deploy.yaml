@@ -114,6 +114,7 @@ jobs:
           cache: maven
       - name: Set download URL
         id: set-download-url
+        working-directory: ./<%= relativePath %>
 <% if (gitHubPackages) { -%>
         run: |
           set -e
@@ -258,6 +259,7 @@ jobs:
           cache: maven
       - name: Set download URL
         id: set-download-url
+        working-directory: ./<%= relativePath %>
         run: |
           set -e
           sudo apt-get update

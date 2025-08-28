@@ -1,16 +1,42 @@
 #!/bin/bash
 
+SCRIPT_NAME="$(basename $0)"
+
+print_usage() {
+    echo "Usage: $SCRIPT_NAME [ -l | --list ] <organization>"
+    echo "Example: $SCRIPT_NAME bcgov-c"
+}
+
+# Parse options
+PARSED_OPTIONS=$(getopt -o l --long list -- "$@")
+if [[ $? -ne 0 ]]; then
+    print_usage
+    exit 1;
+fi
+
+eval set -- "$PARSED_OPTIONS"
+
+# Consume options
+while :
+do
+    case "$1" in
+        -l | --list) OPT_LIST=1; shift ;;
+        --) shift; break ;;
+        *) echo "Unexpected option: $1 - review $SCRIPT_NAME option parsing."; print_usage ;;
+    esac
+done
+
 # Check if the required arguments are provided
 if [[ -z "$1" ]]; then
-  echo "Usage: $0 <organization>"
-  echo "Example: $0 bcgov-c"
-  exit 1
+    echo "$SCRIPT_NAME: missing <organization>"
+    print_usage
+    exit 1
 fi
 
 ORG="$1"
 if [[ ! "$ORG" =~ ^(bcgov|bcgov-nr|bcgov-c)$ ]]; then
-  echo "Error: Organization must be one of [bcgov, bcgov-nr, bcgov-c]"
-  exit 1
+    echo "Error: Organization must be one of [bcgov, bcgov-nr, bcgov-c]"
+    exit 1
 fi
 
 ANNOTATION_KEY="composer.io.nrs.gov.bc.ca/generators"
@@ -39,7 +65,11 @@ for REPO in $REPOS; do
         continue
     fi
 
-   ./composer-update-repo.sh "$ORG" "$REPO"
+    if [[ $OPT_LIST ]]; then
+        ./composer-update-repo.sh "$ORG" "$REPO" --list
+    else
+        ./composer-update-repo.sh "$ORG" "$REPO"
+    fi
 done
 
 echo "Scan complete."

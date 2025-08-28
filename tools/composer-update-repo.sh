@@ -1,9 +1,35 @@
 #!/bin/bash
 
+SCRIPT_NAME="$(basename $0)"
+
+print_usage() {
+    echo "Usage: $SCRIPT_NAME [ -l | --list ] <organization> <repository>"
+    echo "Example: $SCRIPT_NAME bcgov-c nr-msd"
+}
+
+# Parse options
+PARSED_OPTIONS=$(getopt -o l --long list -- "$@")
+if [[ $? -ne 0 ]]; then
+    print_usage
+    exit 1;
+fi
+
+eval set -- "$PARSED_OPTIONS"
+
+# Consume options
+while :
+do
+    case "$1" in
+        -l | --list) OPT_LIST=1; shift ;;
+        --) shift; break ;;
+        *) echo "Unexpected option: $1 - review $SCRIPT_NAME option parsing."; print_usage ;;
+    esac
+done
+
 # Check if the required arguments are provided
 if [[ -z "$1" || -z "$2" ]]; then
-    echo "Usage: $0 <organization> <repository>"
-    echo "Example: $0 bcgov-c nr-msd"
+    echo "$SCRIPT_NAME: missing <organization> or <repository>"
+    print_usage
     exit 1
 fi
 

@@ -54,7 +54,8 @@ if ! command yq > /dev/null 2>&1; then
 fi
 
 # Check git user.name
-if { ! { git config --global user.name &>/dev/null ;} ;} \
+if [[ ! "$OPT_LIST" ]] \
+  && { ! { git config --global user.name &>/dev/null ;} ;} \
   && { [ -z "$GIT_AUTHOR_NAME" ] || [ -z "$GIT_COMMITTER_NAME" ] ;}; then
     echo 'Git user is not configured for committing.'
     echo 'Please set `git config --global user.name` or use both environment variables `GIT_AUTHOR_NAME` and `GIT_COMMITTER_NAME`'
@@ -62,7 +63,8 @@ if { ! { git config --global user.name &>/dev/null ;} ;} \
 fi
 
 # Check git user.email
-if { ! { git config --global user.email &>/dev/null ;} ;} \
+if [[ ! "$OPT_LIST" ]] \
+  && { ! { git config --global user.email &>/dev/null ;} ;} \
   && { [ -z "$GIT_AUTHOR_EMAIL" ] || [ -z "$GIT_COMMITTER_EMAIL" ] ;}; then
     echo 'Git email is not configured for committing.'
     echo 'Please set `git config --global user.email` or use both environment variables `GIT_AUTHOR_EMAIL` and `GIT_COMMITTER_EMAIL`'
@@ -70,29 +72,31 @@ if { ! { git config --global user.email &>/dev/null ;} ;} \
 fi
 
 # Check if already logged in
-echo "Checking GitHub CLI authentication..."
+[[ ! "$OPT_LIST" ]] && echo "Checking GitHub CLI authentication..."
 if ! gh auth status &>/dev/null; then
-    echo "Logging into GitHub CLI..."
+    [[ ! "$OPT_LIST" ]] && echo "Logging into GitHub CLI..."
     gh auth login
 else
-    echo "Already logged into GitHub CLI."
+    [[ ! "$OPT_LIST" ]] && echo "Already logged into GitHub CLI."
 fi
 
 # Get the authenticated user token
 TOKEN=$(gh auth token)
 
-# Get all repositories in the organization
-# REPOS=$(gh repo list $ORG --limit 1000 --json name --jq '.[].name')
-
-echo "Scanning repository $REPO..."
-
-
 if [[ ! $REPO =~ ^nr ]]; then
-    echo "Skipping repository: $REPO"
+    [[ ! "$OPT_LIST" ]] && echo "Skipping repository: $REPO"
+    exit 0
+fi
+echo "Scanning repository: $REPO"
+
+# --list
+# Print the list of issues and pull requests with composer labels
+# Exits early (at the end of this if block) to skip composer templating
+if [[ "$OPT_LIST" ]]; then
+    gh api "repos/$ORG/$REPO/issues" --paginate --jq 'map(select(.labels[].name | index("nr-repository-composer"))) | .[].html_url'
     exit 0
 fi
 
-echo "Checking repository: $REPO"
 FILE_URL="https://raw.githubusercontent.com/$ORG/$REPO/main/catalog-info.yaml"
 
 # Fetch the catalog-info.yaml file with authentication

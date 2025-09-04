@@ -69,13 +69,7 @@ for REPO in $REPOS; do
     if [[ $OPT_LIST ]]; then
         $BASE_PATH/composer-update-repo.sh "$ORG" "$REPO" --list
     else
-      read -p "Update $REPO? [Y/n]:" -n 1 -r
-      echo
-      if [[ "$REPLY" =~ ^[Yy]$ ]]; then
         $BASE_PATH/composer-update-repo.sh "$ORG" "$REPO"
-      else
-        echo "Skipping repository: $REPO"
-      fi
     fi
 done
 

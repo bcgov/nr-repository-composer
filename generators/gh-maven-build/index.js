@@ -19,7 +19,7 @@ import {
   PROMPT_MAVEN_BUILD_COMMAND,
   PROMPT_POM_ROOT,
   PROMPT_GITHUB_PACKAGES,
-  PROMPT_GITHUB_OWNER_PACK,
+  PROMPT_GITHUB_PROJECT_SLUG,
   PROMPT_ARTIFACTORY_PROJECT,
   PROMPT_ARTIFACTORY_PACKAGE_TYPE,
   PROMPT_DEPLOY_JASPER_REPORTS,
@@ -55,7 +55,7 @@ const questions = [
   PROMPT_UNIT_TESTS_PATH,
   PROMPT_GITHUB_PACKAGES,
   {
-    ...PROMPT_GITHUB_OWNER_PACK,
+    ...PROMPT_GITHUB_PROJECT_SLUG,
     when: (answers) => answers.gitHubPackages,
   },
   {
@@ -211,7 +211,7 @@ export default class extends Generator {
         unitTestsPath: this.answers.unitTestsPath,
         gitHubPackages: this.answers.gitHubPackages,
         artifactoryPackageType: this.answers.artifactoryPackageType,
-        gitHubOwnerPack: this.answers.gitHubOwnerPack,
+        gitHubProjectSlug: this.answers.gitHubProjectSlug,
         relativePath,
         configureNrArtifactory: this.answers.configureNrArtifactory,
         mavenBuildCommand: this.answers.mavenBuildCommand,
@@ -236,7 +236,7 @@ export default class extends Generator {
           pomRoot: this.answers.pomRoot,
           gitHubPackages: this.answers.gitHubPackages,
           artifactoryPackageType: this.answers.artifactoryPackageType,
-          gitHubOwnerPack: this.answers.gitHubOwnerPack,
+          gitHubProjectSlug: this.answers.gitHubProjectSlug,
           relativePath,
         },
       );

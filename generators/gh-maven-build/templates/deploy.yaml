@@ -20,7 +20,7 @@ env:
   JOB: buildByToken/buildWithParameters?job=<%= projectName %>/<%= serviceName %>
   URL: https://cd.io.nrs.gov.bc.ca
 <% if (gitHubPackages) { -%>
-  PACKAGE_REPO: https://maven.pkg.github.com/<%= gitHubOwnerPack %>
+  PACKAGE_REPO: https://maven.pkg.github.com/<%= gitHubProjectSlug %>
 <% } else { -%>
   PACKAGE_REPO: https://artifacts.developer.gov.bc.ca/artifactory/<%= artifactoryProject %>-<%= projectName %>-<%= artifactoryPackageType %>-local
 <% } -%>
@@ -47,7 +47,7 @@ jobs:
         id: lookup-pr-merge-ref
         run: |
           if [[ ${{ github.ref_name != 'main' }} = true ]]; then
-            RESPONSE=$(curl -s "https://api.github.com/repos/<%= gitHubOwnerPack %>/pulls?head=<%= gitHubOwnerPack.split('/')[0] %>:${{ github.ref_name }}&state=open&base=main" \
+            RESPONSE=$(curl -s "https://api.github.com/repos/<%= gitHubProjectSlug %>/pulls?head=<%= gitHubProjectSlug.split('/')[0] %>:${{ github.ref_name }}&state=open&base=main" \
               -H "Authorization: token ${{ secrets.GITHUB_TOKEN }}" \
               -H "Accept: application/vnd.github+json")
             echo "build_sha=$(echo ${RESPONSE} | jq -r .[0].merge_commit_sha)" >> $GITHUB_OUTPUT

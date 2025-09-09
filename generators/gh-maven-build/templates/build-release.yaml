@@ -6,9 +6,17 @@ on:
       - 'v*'
     branches:
       - 'main'
+<% if (relativePath) { -%>
+    paths:
+      - '<%= relativePath %>/**'
+<% } -%>
   pull_request:
     branches:
       - main
+<% if (relativePath) { -%>
+    paths:
+      - '<%= relativePath %>/**'
+<% } -%>
   workflow_dispatch:
 
 concurrency:

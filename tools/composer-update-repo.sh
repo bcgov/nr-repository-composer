@@ -189,19 +189,24 @@ for TARGET_FILE in $TARGETS; do
         git clean -fd > /dev/null
         podman pull $CONTAINER_IMAGE_REF
         CONTAINER_VERSION=$(podman image inspect "$CONTAINER_IMAGE" | jq -r .[0].Config.Labels."\"org.opencontainers.image.version\"")
-        podman run --rm -v "${PWD}:/src" -w "/src/$(dirname $TARGET_FILE)" -u "$(id -u):$(id -g)" --userns=keep-id --entrypoint yo $CONTAINER_IMAGE_REF nr-repository-composer:"$VALUE" --headless --force
 
         LABEL_NAME="nr-repository-composer:$VALUE"
         LABEL_DESCRIPTION="Related to bcgov/nr-repository-composer $VALUE generator"
         gh_create_label_idempotent "$LABEL_NAME" "$LABEL_DESCRIPTION"
 
-        if [[ $? -ne 0 ]]; then
+        podman run --rm -v "${PWD}:/src" -w "/src/$(dirname $TARGET_FILE)" -u "$(id -u):$(id -g)" --userns=keep-id --entrypoint yo $CONTAINER_IMAGE_REF nr-repository-composer:"$VALUE" --headless --force
+        COMPOSER_EXIT_STATUS="$?"
+
+        if [[ "$COMPOSER_EXIT_STATUS" -ne 0 ]]; then
             echo "    ⚠️ Docker failed for $VALUE"
 
             ISSUE_TITLE="Composer [$VALUE]: Out of date"
-            ISSUE_BODY="Composer Version: $CONTAINER_VERSION\nThis composer must be run manually to update it. Please see [instructions](https://github.com/bcgov/nr-repository-composer/blob/main/README.md) for the composer to run the $VALUE generator."
-
-            gh_create_issue_idempotent "$ISSUE_TITLE" "$ISSUE_BODY" "$LABEL_NAME"
+            ISSUE_BODY=(
+              "Composer Version: $CONTAINER_VERSION"
+              ""
+              "This composer must be run manually to update it. Please see [instructions](https://github.com/bcgov/nr-repository-composer/blob/main/README.md) for the composer to run the $VALUE generator."
+            )
+            gh_create_issue_idempotent "$ISSUE_TITLE" "$(printf '%s\n' "${ISSUE_BODY[@]}")" "$LABEL_NAME"
 
         else
             if [[ -n "$(git status --porcelain)" ]]; then

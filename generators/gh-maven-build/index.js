@@ -183,7 +183,10 @@ export default class extends Generator {
             !headless && askAnswered,
           ),
         )
-        .filter((question) => question.when && question.when(this.answers)),
+        .filter(
+          (question) =>
+            question.when === undefined || question.when(this.answers),
+        ),
       headless,
     );
     this.answers = await this.prompt(questions, 'config');

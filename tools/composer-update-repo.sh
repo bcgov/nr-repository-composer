@@ -201,9 +201,12 @@ for TARGET_FILE in $TARGETS; do
             echo "    ⚠️ Docker failed for $VALUE"
 
             ISSUE_TITLE="Composer [$VALUE]: Out of date"
-            ISSUE_BODY="Composer Version: $CONTAINER_VERSION\nThis composer must be run manually to update it. Please see [instructions](https://github.com/bcgov/nr-repository-composer/blob/main/README.md) for the composer to run the $VALUE generator."
-
-            gh_create_issue_idempotent "$ISSUE_TITLE" "$ISSUE_BODY" "$LABEL_NAME"
+            ISSUE_BODY=(
+              "Composer Version: $CONTAINER_VERSION"
+              ""
+              "This composer must be run manually to update it. Please see [instructions](https://github.com/bcgov/nr-repository-composer/blob/main/README.md) for the composer to run the $VALUE generator."
+            )
+            gh_create_issue_idempotent "$ISSUE_TITLE" "$(printf '%s\n' "${ISSUE_BODY[@]}")" "$LABEL_NAME"
 
         else
             if [[ -n "$(git status --porcelain)" ]]; then

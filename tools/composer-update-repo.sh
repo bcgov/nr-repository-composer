@@ -199,7 +199,6 @@ for TARGET_FILE in $TARGETS; do
 
         if [[ "$COMPOSER_EXIT_STATUS" -ne 0 ]]; then
             echo "    ⚠️ Docker failed for $VALUE"
-            exit 0 #DEBUG
 
             ISSUE_TITLE="Composer [$VALUE]: Out of date"
             ISSUE_BODY="Composer Version: $CONTAINER_VERSION\nThis composer must be run manually to update it. Please see [instructions](https://github.com/bcgov/nr-repository-composer/blob/main/README.md) for the composer to run the $VALUE generator."

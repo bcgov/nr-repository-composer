@@ -15,7 +15,7 @@ import {
   PROMPT_UNIT_TESTS_PATH,
   PROMPT_PUBLISH_ARTIFACT_SUFFIX,
   PROMPT_DEPLOY_ON_PREM,
-  PROMPT_GITHUB_OWNER_PACK,
+  PROMPT_GITHUB_PROJECT_SLUG,
   PROMPT_PLAYBOOK_PATH,
   getPromptToUsage,
 } from '../util/prompts.js';
@@ -38,7 +38,7 @@ const questions = [
   PROMPT_UNIT_TESTS_PATH,
   PROMPT_PUBLISH_ARTIFACT_SUFFIX,
   PROMPT_DEPLOY_ON_PREM,
-  PROMPT_GITHUB_OWNER_PACK,
+  PROMPT_GITHUB_PROJECT_SLUG,
   {
     ...PROMPT_PLAYBOOK_PATH,
     when: (answers) => {
@@ -128,7 +128,7 @@ export default class extends Generator {
         projectName: this.answers.projectName,
         serviceName: this.answers.serviceName,
         brokerJwt,
-        gitHubOwnerPack: this.answers.gitHubOwnerPack,
+        gitHubProjectSlug: this.answers.gitHubProjectSlug,
         unitTestsPath: this.answers.unitTestsPath,
         publishArtifactSuffix: this.answers.publishArtifactSuffix,
         relativePath,
@@ -149,7 +149,7 @@ export default class extends Generator {
           projectName: this.answers.projectName,
           serviceName: this.answers.serviceName,
           brokerJwt,
-          gitHubOwnerPack: this.answers.gitHubOwnerPack,
+          gitHubProjectSlug: this.answers.gitHubProjectSlug,
         },
       );
       copyCommonDeployWorkflows(this, this.answers);

@@ -65,7 +65,7 @@ jobs:
             echo "checkout_ref=${{ github.ref }}" >> $GITHUB_OUTPUT
             echo "version_modifier=${{ github.ref_name }}" >> $GITHUB_OUTPUT
           elif [[ ${{ github.ref_name != 'main' }} = true ]]; then
-            RESPONSE=$(curl -s "https://api.github.com/repos/<%= gitHubOwnerPack %>/pulls?head=<%= gitHubOwnerPack.split('/')[0] %>:${{ github.head_ref || github.ref_name }}&state=open&base=main" \
+            RESPONSE=$(curl -s "https://api.github.com/repos/<%= gitHubProjectSlug %>/pulls?head=<%= gitHubProjectSlug.split('/')[0] %>:${{ github.head_ref || github.ref_name }}&state=open&base=main" \
               -H "Authorization: token ${{ secrets.GITHUB_TOKEN }}" \
               -H "Accept: application/vnd.github+json")
             PULL_REQUEST_NUMBER=$(echo ${RESPONSE} | jq -r .[0].number)

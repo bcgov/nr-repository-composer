@@ -38,7 +38,7 @@ export const pathToProps = [
   // Github
   {
     path: ['metadata', 'annotations', 'github.com/project-slug'],
-    prop: 'githubProjectSlug',
+    prop: 'gitHubProjectSlug',
     writeEmpty: false,
   },
   // Playbook
@@ -58,15 +58,6 @@ export const pathToProps = [
       'playbook.io.nrs.gov.bc.ca/gitHubPackages',
     ],
     prop: 'gitHubPackages',
-    writeEmpty: false,
-  },
-  {
-    path: [
-      'metadata',
-      'annotations',
-      'playbook.io.nrs.gov.bc.ca/gitHubOwnerPack',
-    ],
-    prop: 'gitHubOwnerPack',
     writeEmpty: false,
   },
   {

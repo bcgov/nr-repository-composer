@@ -65,7 +65,7 @@ export const PROMPT_OWNER = {
 
 export const PROMPT_GITHUB_PROJECT_SLUG = {
   type: 'input',
-  name: 'githubProjectSlug',
+  name: 'gitHubProjectSlug',
   message: 'GitHub Slug (<organization or owner>/<repository>):',
   default: extractGitHubSlug(getGitRepoOriginUrl()) ?? '',
 };
@@ -142,11 +142,6 @@ export const PROMPT_GITHUB_PACKAGES = {
   name: 'gitHubPackages',
   message: 'Publish to GitHub Packages:',
   default: false,
-};
-export const PROMPT_GITHUB_OWNER_PACK = {
-  type: 'input',
-  name: 'gitHubOwnerPack',
-  message: 'GitHub Owner with repo path (e.g. bcgov-c/nr-results):',
 };
 export const PROMPT_ARTIFACTORY_PROJECT = {
   type: 'input',
@@ -282,7 +277,7 @@ export const PROMPT_TO_USAGE = {
   owner: {
     description: 'The owner of the service (e.g. bcgov)',
   },
-  githubProjectSlug: {
+  gitHubProjectSlug: {
     description:
       'The GitHub slug of the service. If not provided, will be auto-detected from the git remote URL',
     example: 'bcgov-c/edqa-war',
@@ -328,11 +323,6 @@ export const PROMPT_TO_USAGE = {
   },
   gitHubPackages: {
     description: 'Whether to publish to GitHub Packages or not',
-  },
-  gitHubOwnerPack: {
-    description:
-      'The GitHub owner with repo path (e.g. bcgov-c/nr-results). If not provided, will be auto-detected from the git remote URL',
-    example: 'bcgov-c/nr-results',
   },
   artifactoryProject: {
     description: 'The Artifactory project to use (e.g. cc20)',

@@ -185,8 +185,7 @@ export default class extends Generator {
         )
         .filter(
           (question) =>
-            question.when == undefined ||
-            (question.when && question.when(this.answers)),
+            question.when === undefined || question.when(this.answers),
         ),
       headless,
     );

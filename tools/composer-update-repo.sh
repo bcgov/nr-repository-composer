@@ -39,9 +39,7 @@ if [[ ! "$ORG" =~ ^(bcgov|bcgov-nr|bcgov-c)$ ]]; then
     exit 1
 fi
 
-CONTAINER_IMAGE="ghcr.io/bcgov/nr-repository-composer"
-CONTAINER_IMAGE_TAG="latest"
-CONTAINER_IMAGE_REF="$CONTAINER_IMAGE:$CONTAINER_IMAGE_TAG"
+CONTAINER_IMAGE_REF="ghcr.io/bcgov/nr-repository-composer:latest"
 ANNOTATION_KEY="composer.io.nrs.gov.bc.ca/generators"
 SKIP_KEY="composer.io.nrs.gov.bc.ca/skipAutomatedScan"
 GITHUB_LABEL_HEX_COLOUR="8de25a"
@@ -129,13 +127,14 @@ fi
 # $1: Issue Title
 # $2: Issue Body
 # $3: Label Name
-gh_create_issue_idempotent () {
-    EXISTING_ISSUES=$(gh api "repos/$ORG/$REPO/issues" --paginate --jq "map(select(.title == \"$1\" and .body == \"$2\")) | .[].number")
+gh_create_update_issue_idempotent () {
+    EXISTING_ISSUES=$(gh api "repos/$ORG/$REPO/issues" --paginate --jq "map(select(.title == \"$1\" and .labels.[].name == \"$3\")) | .[].number")
     if [ -z "$EXISTING_ISSUES" ]; then
         gh issue create --repo "$ORG/$REPO" --title "$1" --body "$2" --label "$3"
     else
         for ISSUE_NUMBER in $EXISTING_ISSUES; do
-            echo "    ⚠️ Existing issue: https://github.com/$ORG/$REPO/issues/$ISSUE_NUMBER"
+            gh issue edit "$ISSUE_NUMBER" --repo "$ORG/$REPO" --body "$2"
+            echo "    ⚠️ Updated existing issue: https://github.com/$ORG/$REPO/issues/$ISSUE_NUMBER"
         done
     fi
 }
@@ -165,7 +164,7 @@ for TARGET_FILE in $TARGETS; do
         ISSUE_TITLE="Backstage location target not found: $TARGET_FILE"
         ISSUE_BODY="When scanning this repository, we encountered an invalid reference to a file in the root catalog file. The file '$TARGET_FILE' does not exist. Please update this reference."
 
-        gh_create_issue_idempotent "$ISSUE_TITLE" "$ISSUE_BODY" "$LABEL_NAME"
+        gh_create_update_issue_idempotent "$ISSUE_TITLE" "$ISSUE_BODY" "$LABEL_NAME"
         continue
     fi
 
@@ -188,17 +187,28 @@ for TARGET_FILE in $TARGETS; do
         git reset --hard > /dev/null
         git clean -fd > /dev/null
         podman pull $CONTAINER_IMAGE_REF
-        CONTAINER_VERSION=$(podman image inspect "$CONTAINER_IMAGE" | jq -r .[0].Config.Labels."\"org.opencontainers.image.version\"")
+        CONTAINER_VERSION=$(podman image inspect "$CONTAINER_IMAGE_REF" | jq -r .[0].Config.Labels."\"org.opencontainers.image.version\"")
 
         LABEL_NAME="nr-repository-composer:$VALUE"
         LABEL_DESCRIPTION="Related to bcgov/nr-repository-composer $VALUE generator"
         gh_create_label_idempotent "$LABEL_NAME" "$LABEL_DESCRIPTION"
 
+
+        BRANCH_NAME="composer/update-${TARGET_SERVICE}-${VALUE}"
+        [[ "$BRANCH_NAME" == "$(gh api "repos/$ORG/$REPO/branches/$BRANCH_NAME" --jq .name 2>/dev/null)" ]]
+        REMOTE_BRANCH_EXISTS=$?
+        if [[ "$REMOTE_BRANCH_EXISTS" -eq 0 ]]; then
+            git checkout "$BRANCH_NAME"
+        fi
         podman run --rm -v "${PWD}:/src" -w "/src/$(dirname $TARGET_FILE)" -u "$(id -u):$(id -g)" --userns=keep-id --entrypoint yo $CONTAINER_IMAGE_REF nr-repository-composer:"$VALUE" --headless --force
         COMPOSER_EXIT_STATUS="$?"
 
         if [[ "$COMPOSER_EXIT_STATUS" -ne 0 ]]; then
             echo "    ⚠️ Docker failed for $VALUE"
+
+            if [[ "$REMOTE_BRANCH_EXISTS" -eq 0 ]]; then
+                gh pr close "$BRANCH_NAME" --repo "$ORG/$REPO" --delete-branch --comment "Composer [$VALUE]: Out of date for composer version $CONTAINER_VERSION."
+            fi
 
             ISSUE_TITLE="Composer [$VALUE]: Out of date"
             ISSUE_BODY=(
@@ -206,33 +216,45 @@ for TARGET_FILE in $TARGETS; do
               ""
               "This composer must be run manually to update it. Please see [instructions](https://github.com/bcgov/nr-repository-composer/blob/main/README.md) for the composer to run the $VALUE generator."
             )
-            gh_create_issue_idempotent "$ISSUE_TITLE" "$(printf '%s\n' "${ISSUE_BODY[@]}")" "$LABEL_NAME"
+            gh_create_update_issue_idempotent "$ISSUE_TITLE" "$(printf '%s\n' "${ISSUE_BODY[@]}")" "$LABEL_NAME"
 
         else
             if [[ -n "$(git status --porcelain)" ]]; then
-                BRANCH_NAME="composer/update-${TARGET_SERVICE}-${VALUE}"
-                PULL_REQUEST_BODY=(
-                  "This PR updates generated files for $TARGET_SERVICE using the $VALUE generator from $TARGET_FILE."
-                  ""
-                  "Composer Version: $CONTAINER_VERSION"
-                  ""
-                  "✅ This PR is ready to be merged."
-                  ""
-                  "If this PR has merge conflicts, please refer to the [instructions](https://github.com/bcgov/nr-repository-composer/blob/main/README.md) to run the composer manually and update this branch."
-                  ""
-                  "After merging this PR:"
-                  " - a new release should be tagged on the [releases](https://github.com/$ORG/$REPO/releases) page"
-                  " - any actively developed branches should be updated to include these changes"
-                )
-                echo "    🪄 Creating branch: $BRANCH_NAME"
-                git checkout -b "$BRANCH_NAME"
+                if [[ "$REMOTE_BRANCH_EXISTS" -ne 0 ]]; then
+                    echo "    🪄 Creating branch: $BRANCH_NAME"
+                    git checkout -b "$BRANCH_NAME"
+                fi
                 git add .
-                git commit -m "Chore: Automated update of composer files for $TARGET_SERVICE : $VALUE ($TARGET_FILE)"
+                git commit -m "Chore: Automated update of composer $CONTAINER_VERSION files for $TARGET_SERVICE : $VALUE ($TARGET_FILE)"
                 git push origin "$BRANCH_NAME"
-                gh pr create --base main --head "$BRANCH_NAME" \
-                    --title "Update generated files for $TARGET_SERVICE : $VALUE ($TARGET_FILE)" \
-                    --body "$(printf '%s\n' "${PULL_REQUEST_BODY[@]}")" \
-                    --label "$LABEL_NAME"
+
+                PULL_REQUEST_BODY=(
+                    "This PR updates generated files for $TARGET_SERVICE using the $VALUE generator from $TARGET_FILE."
+                    ""
+                    "Composer Version: $CONTAINER_VERSION"
+                    ""
+                    "✅ This PR is ready to be merged."
+                    ""
+                    "If this PR has merge conflicts, please refer to the [instructions](https://github.com/bcgov/nr-repository-composer/blob/main/README.md) to run the composer manually and update this branch."
+                    ""
+                    "After merging this PR:"
+                    " - a new release should be tagged on the [releases](https://github.com/$ORG/$REPO/releases) page"
+                    " - any actively developed branches should be updated to include these changes"
+                )
+                if [[ "$REMOTE_BRANCH_EXISTS" -ne 0 ]]; then
+                    gh pr create --base main --head "$BRANCH_NAME" \
+                        --title "Update generated files for $TARGET_SERVICE : $VALUE ($TARGET_FILE)" \
+                        --body "$(printf '%s\n' "${PULL_REQUEST_BODY[@]}")" \
+                        --label "$LABEL_NAME"
+
+                elif [[ "$REMOTE_BRANCH_EXISTS" -eq 0 ]]; then
+                    gh pr edit "$BRANCH_NAME" --body "$(printf '%s\n' "${PULL_REQUEST_BODY[@]}")"
+                    echo "    ✅ Updated pull request"
+                fi
+
+                for ISSUE_NUMBER in $(gh issue list --repo "$ORG/$REPO" --label "$LABEL_NAME" --json number --jq ".[].number"); do
+                    gh issue close "$ISSUE_NUMBER" --repo "$ORG/$REPO" --comment "Composer [$VALUE]: Updated for composer version $CONTAINER_VERSION."
+                done
             else
                 echo "    ✅ No changes detected for $VALUE"
             fi

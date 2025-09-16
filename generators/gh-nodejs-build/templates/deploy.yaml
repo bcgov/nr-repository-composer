@@ -47,7 +47,13 @@ jobs:
             RESPONSE=$(curl -s "https://api.github.com/repos/<%= gitHubProjectSlug %>/pulls?head=<%= gitHubProjectSlug.split('/')[0] %>:${{ github.ref_name }}&state=open&base=main" \
               -H "Authorization: token ${{ secrets.GITHUB_TOKEN }}" \
               -H "Accept: application/vnd.github+json")
+            MERGEABLE=$(echo "${RESPONSE}" | jq -r .[0].mergeable)
             PR_NUMBER=$(echo "${RESPONSE}" | jq -r '.[0].number')
+            if [[ "$MERGEABLE" != "true" ]]; then
+              echo "::error ::Pull request #$PR_NUMBER is not mergeable… aborted."
+              echo "This error can be fixed by resolving the merge conflict with the main branch."
+              exit 1
+            fi
             echo "build_sha=$(echo ${RESPONSE} | jq -r .[0].merge_commit_sha)" >> $GITHUB_OUTPUT
             echo "checkout_ref=refs/pull/${PR_NUMBER}/merge" >> $GITHUB_OUTPUT
             echo "package_tag=${PR_NUMBER}-merge" >> $GITHUB_OUTPUT

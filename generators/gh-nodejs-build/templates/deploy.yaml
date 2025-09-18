@@ -48,7 +48,7 @@ jobs:
               -H "Authorization: token ${{ secrets.GITHUB_TOKEN }}" \
               -H "Accept: application/vnd.github+json")
             PR_NUMBER=$(echo "${RESPONSE}" | jq -r '.[0].number')
-        RESPONSE=$(curl -s "https://api.github.com/repos/<%= gitHubProjectSlug %>/pulls/$PR_NUMBER" \
+            RESPONSE=$(curl -s "https://api.github.com/repos/<%= gitHubProjectSlug %>/pulls/$PR_NUMBER" \
               -H "Authorization: token ${{ secrets.GITHUB_TOKEN }}" \
               -H "Accept: application/vnd.github+json")
             MERGEABLE=$(echo "${RESPONSE}" | jq -r .mergeable)

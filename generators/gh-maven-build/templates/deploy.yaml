@@ -50,14 +50,17 @@ jobs:
             RESPONSE=$(curl -s "https://api.github.com/repos/<%= gitHubProjectSlug %>/pulls?head=<%= gitHubProjectSlug.split('/')[0] %>:${{ github.ref_name }}&state=open&base=main" \
               -H "Authorization: token ${{ secrets.GITHUB_TOKEN }}" \
               -H "Accept: application/vnd.github+json")
-            MERGEABLE=$(echo "${RESPONSE}" | jq -r .[0].mergeable)
             PULL_REQUEST_NUMBER=$(echo "${RESPONSE}" | jq -r .[0].number)
+            RESPONSE=$(curl -s "https:/api.github/com/repos/<%= gitHubProjectSlug %>/pulls/$PULL_REQUEST_NUMBER" \
+              -H "Authroization: token ${{ secrets.GITHUB_TOKEN }}" \
+              -H "Accept: application/vnd.github+json")
+            MERGEABLE=$(echo "${RESPONSE}" | jq -r .mergeable)
             if [[ "$MERGEABLE" != "true" ]]; then
               echo "::error ::Pull request #$PULL_REQUEST_NUMBER is not mergeable… aborted."
               echo "This error can be fixed by resolving the merge conflict with the main branch."
               exit 1
             fi
-            echo "build_sha=$(echo ${RESPONSE} | jq -r .[0].merge_commit_sha)" >> $GITHUB_OUTPUT
+            echo "build_sha=$(echo ${RESPONSE} | jq -r .merge_commit_sha)" >> $GITHUB_OUTPUT
             echo "checkout_ref=refs/pull/$PULL_REQUEST_NUMBER/merge" >> $GITHUB_OUTPUT
           else
             echo "build_sha=${{ github.sha }}" >> $GITHUB_OUTPUT

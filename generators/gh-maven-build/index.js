@@ -33,6 +33,7 @@ import {
   PROMPT_PLAYBOOK_PATH,
   PROMPT_TOMCAT_CONTEXT,
   PROMPT_UNIT_TESTS_PATH,
+  PROMPT_POST_DEPLOY_TESTS_PATH,
   PROMPT_USE_ALT_APP_DIR_NAME,
   getPromptToUsage,
 } from '../util/prompts.js';
@@ -53,6 +54,7 @@ const questions = [
   PROMPT_CLIENT_ID,
   PROMPT_POM_ROOT,
   PROMPT_UNIT_TESTS_PATH,
+  PROMPT_POST_DEPLOY_TESTS_PATH,
   PROMPT_GITHUB_PACKAGES,
   {
     ...PROMPT_GITHUB_PROJECT_SLUG,
@@ -241,6 +243,7 @@ export default class extends Generator {
           artifactoryPackageType: this.answers.artifactoryPackageType,
           gitHubProjectSlug: this.answers.gitHubProjectSlug,
           relativePath,
+          postDeployTestsPath: this.answers.postDeployTestsPath,
         },
       );
       copyCommonDeployWorkflows(this, this.answers);

@@ -55,6 +55,15 @@ export const pathToProps = [
     path: [
       'metadata',
       'annotations',
+      'playbook.io.nrs.gov.bc.ca/postDeployTestsPath',
+    ],
+    prop: 'postDeployTestsPath',
+    writeEmpty: true,
+  },
+  {
+    path: [
+      'metadata',
+      'annotations',
       'playbook.io.nrs.gov.bc.ca/gitHubPackages',
     ],
     prop: 'gitHubPackages',

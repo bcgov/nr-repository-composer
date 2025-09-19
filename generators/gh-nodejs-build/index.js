@@ -13,6 +13,7 @@ import {
   PROMPT_LIFECYCLE,
   PROMPT_CLIENT_ID,
   PROMPT_UNIT_TESTS_PATH,
+  PROMPT_POST_DEPLOY_TESTS_PATH,
   PROMPT_PUBLISH_ARTIFACT_SUFFIX,
   PROMPT_DEPLOY_ON_PREM,
   PROMPT_GITHUB_PROJECT_SLUG,
@@ -36,6 +37,7 @@ const questions = [
   PROMPT_LIFECYCLE,
   PROMPT_CLIENT_ID,
   PROMPT_UNIT_TESTS_PATH,
+  PROMPT_POST_DEPLOY_TESTS_PATH,
   PROMPT_PUBLISH_ARTIFACT_SUFFIX,
   PROMPT_DEPLOY_ON_PREM,
   PROMPT_GITHUB_PROJECT_SLUG,
@@ -153,6 +155,7 @@ export default class extends Generator {
           serviceName: this.answers.serviceName,
           brokerJwt,
           gitHubProjectSlug: this.answers.gitHubProjectSlug,
+          postDeployTestsPath: this.answers.postDepoyTestsPath,
         },
       );
       copyCommonDeployWorkflows(this, this.answers);

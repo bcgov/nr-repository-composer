@@ -403,3 +403,15 @@ jobs:
           BROKER_JWT: ${{ secrets.<%= brokerJwt %> }}
           SERVICE_NAME: ${{ env.SERVICE_NAME }}
           GITHUB_RUN_ID: ${{ github.run_id }}
+<% if (postDeployTestsPath) { -%>
+  post-deploy-test:
+    name: Post-deploy Test
+    permissions: {}
+    if: |
+      always() &&
+      needs.submit-deployment-job.result == 'success'
+    needs: submit-deployment-job
+    uses: <%= postDeployTestsPath %>
+    with:
+      environment: ${{ inputs.environment }}
+<% } -%>

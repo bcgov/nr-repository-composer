@@ -15,7 +15,6 @@ import {
   PROMPT_CLIENT_ID,
   PROMPT_DEPLOY_ON_PREM,
   PROMPT_CONFIGURE_NR_ARTIFACTORY,
-  PROMPT_MAVEN_SETTINGS_ROOT,
   PROMPT_MAVEN_BUILD_COMMAND,
   PROMPT_POM_ROOT,
   PROMPT_GITHUB_PACKAGES,
@@ -69,13 +68,9 @@ const questions = [
   PROMPT_DEPLOY_ON_PREM,
   PROMPT_CONFIGURE_NR_ARTIFACTORY,
   {
-    ...PROMPT_MAVEN_SETTINGS_ROOT,
-    when: (answers) => answers.configureNrArtifactory,
-  },
-  {
     ...PROMPT_MAVEN_BUILD_COMMAND,
     default: (answers) =>
-      `--batch-mode -Dmaven.test.skip=true -P${answers.gitHubPackages ? 'github' : 'artifactory'} deploy${answers.configureNrArtifactory ? ` --settings ${relativeGitPath() ? "../".repeat(relativeGitPath().split('/').length) : ''}${answers.mavenSettingsRoot}settings.xml ` : ' '}--file ${answers.pomRoot}pom.xml`,
+      `--batch-mode -Dmaven.test.skip=true -P${answers.gitHubPackages ? 'github' : 'artifactory'} deploy${answers.configureNrArtifactory ? ` --settings ${relativeGitPath() ? "../".repeat(relativeGitPath().split('/').length) : ''}.github/workflows/polaris-maven-settings.xml ` : ' '}--file ${answers.pomRoot}pom.xml`,
   },
   PROMPT_DEPLOY_JASPER_REPORTS,
   {
@@ -262,13 +257,9 @@ export default class extends Generator {
     }
     if (this.answers.configureNrArtifactory) {
       const maven_args = [this.answers.projectName, this.answers.serviceName];
-      const maven_options = {
-        mavenSettingsRoot: this.answers.mavenSettingsRoot,
-      };
       this.composeWith(
         'nr-repository-composer:pd-maven',
-        maven_args,
-        maven_options,
+        maven_args,       
       );
     }
     if (this.answers.deployJasperReports) {

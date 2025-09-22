@@ -16,8 +16,8 @@ export default class extends BaseGenerator {
   writing() {
     this.log('Generating files');
     this.fs.copyTpl(
-      this.templatePath('settings.xml'),
-      destinationGitPath(`${this.options.mavenSettingsRoot}/settings.xml`),
+      this.templatePath('polaris-maven-settings.xml'),
+      destinationGitPath('.github/polaris-maven-settings.xml'),
       {},
     );
   }

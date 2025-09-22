@@ -97,15 +97,6 @@ export const pathToProps = [
     path: [
       'metadata',
       'annotations',
-      'playbook.io.nrs.gov.bc.ca/mavenSettingsRoot',
-    ],
-    prop: 'mavenSettingsRoot',
-    writeEmpty: false,
-  },
-  {
-    path: [
-      'metadata',
-      'annotations',
       'playbook.io.nrs.gov.bc.ca/mavenBuildCommand',
     ],
     prop: 'mavenBuildCommand',

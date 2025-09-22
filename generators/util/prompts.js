@@ -165,7 +165,7 @@ export const PROMPT_MAVEN_SETTINGS_ROOT = {
   type: 'input',
   name: 'mavenSettingsRoot',
   message: 'Maven settings.xml root:',
-  default: './.github/workflows/',
+  default: './',
 };
 export const PROMPT_MAVEN_BUILD_COMMAND = {
   type: 'input',

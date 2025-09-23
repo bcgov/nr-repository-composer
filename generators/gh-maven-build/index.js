@@ -260,10 +260,7 @@ export default class extends Generator {
     }
     if (this.answers.configureNrArtifactory) {
       const maven_args = [this.answers.projectName, this.answers.serviceName];
-      this.composeWith(
-        'nr-repository-composer:pd-maven',
-        maven_args,       
-      );
+      this.composeWith('nr-repository-composer:pd-maven', maven_args);
     }
     if (this.answers.deployJasperReports) {
       const jasper_reports_args = [

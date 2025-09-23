@@ -336,7 +336,7 @@ export const PROMPT_TO_USAGE = {
     description: 'The Artifactory package type to use (e.g. maven, ivy, npm)',
   },
   configureNrArtifactory: {
-    description: 'Whether to use NR Artifactory to resolve maven dependencies',
+    description: 'Whether to include NR Artifactory settings or not',
   },
   mavenBuildCommand: {
     description: 'Arguments to pass to mvn',

@@ -84,6 +84,13 @@ export const PROMPT_UNIT_TESTS_PATH = {
   default: '',
 };
 
+export const PROMPT_POST_DEPLOY_TESTS_PATH = {
+  type: 'input',
+  name: 'postDeployTestsPath',
+  message: 'Path to post deploy tests (./.github/workflows/postDeploy.yaml):',
+  default: '',
+};
+
 export const PROMPT_PUBLISH_ARTIFACT_SUFFIX = {
   type: 'input',
   name: 'publishArtifactSuffix',
@@ -289,6 +296,10 @@ export const PROMPT_TO_USAGE = {
   unitTestsPath: {
     description:
       'The path to the unit tests (e.g. .github/workflows/test.yaml)',
+  },
+  postDeployTestsPath: {
+    description:
+      'The path to the post deploy tests (e.g. .github/workflows/postDeploy.yaml)',
   },
   schemaName: {
     description:

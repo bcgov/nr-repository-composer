@@ -168,12 +168,6 @@ export const PROMPT_CONFIGURE_NR_ARTIFACTORY = {
   message: 'Configure NR Artifactory:',
   default: false,
 };
-export const PROMPT_MAVEN_SETTINGS_ROOT = {
-  type: 'input',
-  name: 'mavenSettingsRoot',
-  message: 'Maven settings.xml root:',
-  default: './.github/workflows/',
-};
 export const PROMPT_MAVEN_BUILD_COMMAND = {
   type: 'input',
   name: 'mavenBuildCommand',
@@ -344,14 +338,10 @@ export const PROMPT_TO_USAGE = {
   configureNrArtifactory: {
     description: 'Whether to use NR Artifactory to resolve maven dependencies',
   },
-  mavenSettingsRoot: {
-    description: 'The path to the settings.xml file',
-    example: './',
-  },
   mavenBuildCommand: {
     description: 'Arguments to pass to mvn',
     example:
-      '--batch-mode -Dmaven.test.skip=true -Partifactory deploy --settings <%= mavenSettingsRoot %>settings.xml --file <%= pomRoot %>pom.xml',
+      '--batch-mode -Dmaven.test.skip=true -Partifactory deploy --settings ./.github/polaris-maven-settings.xml --file <%= pomRoot %>pom.xml',
   },
   deployJasperReports: {
     description: 'Whether to deploy Jasper Reports or not',

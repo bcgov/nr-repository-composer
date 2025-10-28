@@ -45,7 +45,7 @@ export class BackstageStorage {
     fs.writeFileSync(this.path, this.backstageDoc.toString());
   }
 
-  getPath(path) {
+  getPath(path, option = '') {
     const docPath = Array.isArray(path) ? path : propRecord[path]?.path;
     if (!docPath) {
       throw new Error(`Mapping from "${path}" to YAML document path not found`);
@@ -54,7 +54,11 @@ export class BackstageStorage {
     //   `Getting path "${docPath}: ${this.backstageDoc.getIn(docPath)}"`,
     // );
     const val = this.backstageDoc.getIn(docPath);
-    return val && isSeq(val) ? val.toJSON().join() : val;
+    return val && isSeq(val)
+      ? option === 'json'
+        ? val.toJSON()
+        : val.toJSON().join()
+      : val;
   }
 
   get(key) {

@@ -72,7 +72,7 @@ const questions = [
   {
     ...PROMPT_MAVEN_BUILD_COMMAND,
     default: (answers) =>
-      `--batch-mode -Dmaven.test.skip=true -P${answers.gitHubPackages ? 'github' : 'artifactory'} deploy${answers.configureNrArtifactory ? ` --settings ${relativeGitPath() ? "../".repeat(relativeGitPath().split('/').length) : ''}.github/polaris-maven-settings.xml ` : ' '}--file ${answers.pomRoot}pom.xml`,
+      `--batch-mode -Dmaven.test.skip=true -P${answers.gitHubPackages ? 'github' : 'artifactory'} deploy${answers.configureNrArtifactory ? ` --settings ${relativeGitPath() ? '../'.repeat(relativeGitPath().split('/').length) : ''}.github/polaris-maven-settings.xml ` : ' '}--file ${answers.pomRoot}pom.xml`,
   },
   PROMPT_DEPLOY_JASPER_REPORTS,
   {

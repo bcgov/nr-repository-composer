@@ -2,14 +2,10 @@
 import chalk from 'chalk';
 import Generator from 'yeoman-generator';
 import { BackstageStorage } from '../util/backstage.storage.js';
-import {
-  BACKSTAGE_FILENAME,
-  BACKSTAGE_KIND_LOCATION,
-  generateSetAnswerPropPredicate,
-} from '../util/yaml.js';
+import { BACKSTAGE_FILENAME, BACKSTAGE_KIND_LOCATION } from '../util/yaml.js';
 import { nrsay } from '../util/nrsay.js';
 import { OPTION_HEADLESS, OPTION_HELP_PROMPTS } from '../util/options.js';
-import { bailOnAnyQuestions } from '../util/process.js';
+import { bailOnUnansweredQuestions } from '../util/process.js';
 import {
   PROMPT_LOCATION_NAME,
   PROMPT_LOCATION_TARGETS,
@@ -69,17 +65,7 @@ export default class extends Generator {
       );
     }
 
-    bailOnAnyQuestions(
-      questions
-        .filter(
-          generateSetAnswerPropPredicate(
-            this.answers,
-            !headless && askAnswered,
-          ),
-        )
-        .filter((question) => question.when && question.when(this.answers)),
-      headless,
-    );
+    bailOnUnansweredQuestions(questions, this.answers, headless, askAnswered);
     this.answers = await this.prompt(questions, 'config');
   }
 

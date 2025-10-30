@@ -300,6 +300,18 @@ export function addGeneratorToDoc(doc, generator) {
   }
 }
 
+/**
+ * Create a predicate that determines whether a value with a given name should be considered
+ * for setting an "answer" property based on an existing answers map and a flag.
+ *
+ * The returned predicate accepts an object expected to have a `name` property and returns:
+ * - true if the name is not present in the `answers` object, or
+ * - true if `keepAnswered` is true (allowing already-answered names), otherwise false.
+ *
+ * @param {Object} answers - Map/object of existing answers (keys are answer names).
+ * @param {boolean} keepAnswered - If true, do not filter out values whose names already exist in `answers`.
+ * @returns {(val: { name: string }) => boolean} Predicate that returns whether the provided value should be kept.
+ */
 export function generateSetAnswerPropPredicate(answers, keepAnswered) {
   return (val) => {
     return !(val.name in answers) || keepAnswered;

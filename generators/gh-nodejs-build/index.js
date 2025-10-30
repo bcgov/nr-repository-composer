@@ -5,7 +5,11 @@ import { nrsay } from '../util/nrsay.js';
 import { BackstageStorage } from '../util/backstage.storage.js';
 import { OPTION_HEADLESS, OPTION_HELP_PROMPTS } from '../util/options.js';
 import { bailOnUnansweredQuestions } from '../util/process.js';
-import { destinationGitPath, relativeGitPath } from '../util/git.js';
+import {
+  destinationGitPath,
+  isMonoRepo,
+  relativeGitPath,
+} from '../util/git.js';
 import {
   PROMPT_PROJECT,
   PROMPT_SERVICE,
@@ -124,6 +128,7 @@ export default class extends Generator {
         unitTestsPath: this.answers.unitTestsPath,
         publishArtifactSuffix: this.answers.publishArtifactSuffix,
         relativePath,
+        isMonoRepo: isMonoRepo(),
       },
     );
     copyCommonBuildWorkflows(this, {

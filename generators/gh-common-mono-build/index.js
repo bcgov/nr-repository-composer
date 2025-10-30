@@ -34,16 +34,22 @@ export default class extends Generator {
     });
 
     const serviceNeeds = {};
-    const serviceNames = [];
+    const serviceNames = docs.map((doc) => {
+      return doc.getPath(['metadata', 'name']);
+    });
 
     for (const doc of docs) {
       const serviceName = doc.getPath(['metadata', 'name']);
-      serviceNames.push(serviceName);
       // this.log(serviceName);
       const subcomponents = doc.getPath(['spec', 'subcomponentOf'], 'json');
       if (subcomponents) {
         for (const subcomponent of subcomponents) {
           const subServiceName = subcomponent.split(':')[1];
+          if (serviceNames.indexOf(subServiceName) === -1) {
+            throw new Error(
+              `Subcomponent ${subServiceName} not found in mono-repo`,
+            );
+          }
           if (!serviceNeeds[subServiceName]) {
             serviceNeeds[subServiceName] = [];
           }

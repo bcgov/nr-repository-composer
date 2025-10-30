@@ -1,5 +1,6 @@
-import { extractGitHubSlug, getGitRepoOriginUrl } from '../util/git.js';
 import chalk from 'chalk';
+import { extractGitHubSlug, getGitRepoOriginUrl } from '../util/git.js';
+import { alphaDashValidate } from '../util/github.js';
 
 export const PROMPT_LOCATION_NAME = {
   type: 'input',
@@ -19,12 +20,14 @@ export const PROMPT_PROJECT = {
   type: 'input',
   name: 'projectName',
   message: 'Project:',
+  validate: alphaDashValidate,
 };
 
 export const PROMPT_SERVICE = {
   type: 'input',
   name: 'serviceName',
   message: 'Service:',
+  validate: alphaDashValidate,
 };
 
 export const PROMPT_DESCRIPTION = {

@@ -4,8 +4,12 @@ import chalk from 'chalk';
 import { nrsay } from '../util/nrsay.js';
 import { BackstageStorage } from '../util/backstage.storage.js';
 import { OPTION_HEADLESS, OPTION_HELP_PROMPTS } from '../util/options.js';
-import { bailOnAnyQuestions } from '../util/process.js';
+import { bailOnUnansweredQuestions } from '../util/process.js';
 import { destinationGitPath, relativeGitPath } from '../util/git.js';
+import {
+  makeWorkflowBuildPublishPath,
+  makeWorkflowDeployPath,
+} from '../util/github.js';
 
 import {
   PROMPT_PROJECT,
@@ -36,11 +40,7 @@ import {
   PROMPT_USE_ALT_APP_DIR_NAME,
   getPromptToUsage,
 } from '../util/prompts.js';
-import {
-  BACKSTAGE_FILENAME,
-  BACKSTAGE_KIND_COMPONENT,
-  generateSetAnswerPropPredicate,
-} from '../util/yaml.js';
+import { BACKSTAGE_FILENAME, BACKSTAGE_KIND_COMPONENT } from '../util/yaml.js';
 import {
   copyCommonBuildWorkflows,
   copyCommonDeployWorkflows,
@@ -172,20 +172,7 @@ export default class extends Generator {
       );
     }
 
-    bailOnAnyQuestions(
-      questions
-        .filter(
-          generateSetAnswerPropPredicate(
-            this.answers,
-            !headless && askAnswered,
-          ),
-        )
-        .filter(
-          (question) =>
-            question.when === undefined || question.when(this.answers),
-        ),
-      headless,
-    );
+    bailOnUnansweredQuestions(questions, this.answers, headless, askAnswered);
     this.answers = await this.prompt(questions, 'config');
   }
   // Generate GitHub workflows and NR Broker intention files
@@ -200,7 +187,7 @@ export default class extends Generator {
     this.fs.copyTpl(
       this.templatePath('build-release.yaml'),
       destinationGitPath(
-        `.github/workflows/build-release${relativePath ? `-${this.answers.serviceName}` : ''}.yaml`,
+        makeWorkflowBuildPublishPath(this.answers.serviceName, !!relativePath),
       ),
       {
         projectName: this.answers.projectName,
@@ -226,7 +213,7 @@ export default class extends Generator {
       this.fs.copyTpl(
         this.templatePath('deploy.yaml'),
         destinationGitPath(
-          `.github/workflows/deploy${relativePath ? `-${this.answers.serviceName}` : ''}.yaml`,
+          makeWorkflowDeployPath(this.answers.serviceName, !!relativePath),
         ),
         {
           projectName: this.answers.projectName,

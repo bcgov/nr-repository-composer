@@ -7,6 +7,7 @@ import {
 } from '../util/yaml.js';
 import { BackstageStorage } from '../util/backstage.storage.js';
 import { destinationGitPath } from '../util/git.js';
+import { makeWorkflowBuildPublishPath } from '../util/github.js';
 
 export default class extends Generator {
   constructor(args, opts) {
@@ -34,8 +35,12 @@ export default class extends Generator {
     });
 
     const serviceNeeds = {};
-    const serviceNames = docs.map((doc) => {
-      return doc.getPath(['metadata', 'name']);
+    const services = docs.map((doc) => {
+      const name = doc.getPath(['metadata', 'name']);
+      return {
+        name,
+        workflow: makeWorkflowBuildPublishPath(name, true),
+      };
     });
 
     for (const doc of docs) {
@@ -45,7 +50,10 @@ export default class extends Generator {
       if (subcomponents) {
         for (const subcomponent of subcomponents) {
           const subServiceName = subcomponent.split(':')[1];
-          if (serviceNames.indexOf(subServiceName) === -1) {
+          if (
+            services.findIndex((service) => service.name === subServiceName) ===
+            -1
+          ) {
             throw new Error(
               `Subcomponent ${subServiceName} not found in mono-repo`,
             );
@@ -64,8 +72,8 @@ export default class extends Generator {
       this.templatePath('build-release.yaml'),
       destinationGitPath(`.github/workflows/build-release.yaml`),
       {
-        serviceNames,
-        serviceNeeds: serviceNeeds,
+        services,
+        serviceNeeds,
       },
     );
   }

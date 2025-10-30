@@ -5,7 +5,11 @@ import { nrsay } from '../util/nrsay.js';
 import { BackstageStorage } from '../util/backstage.storage.js';
 import { OPTION_HEADLESS, OPTION_HELP_PROMPTS } from '../util/options.js';
 import { bailOnUnansweredQuestions } from '../util/process.js';
-import { destinationGitPath, relativeGitPath } from '../util/git.js';
+import {
+  destinationGitPath,
+  isMonoRepo,
+  relativeGitPath,
+} from '../util/git.js';
 import {
   makeWorkflowBuildPublishPath,
   makeWorkflowDeployPath,
@@ -200,6 +204,7 @@ export default class extends Generator {
         artifactoryPackageType: this.answers.artifactoryPackageType,
         gitHubProjectSlug: this.answers.gitHubProjectSlug,
         relativePath,
+        isMonoRepo: isMonoRepo(),
         configureNrArtifactory: this.answers.configureNrArtifactory,
         mavenBuildCommand: this.answers.mavenBuildCommand,
       },

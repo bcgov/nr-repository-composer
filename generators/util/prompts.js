@@ -1,5 +1,6 @@
-import { extractGitHubSlug, getGitRepoOriginUrl } from '../util/git.js';
 import chalk from 'chalk';
+import { extractGitHubSlug, getGitRepoOriginUrl } from '../util/git.js';
+import { alphaDashValidate } from '../util/github.js';
 
 export const PROMPT_LOCATION_NAME = {
   type: 'input',
@@ -19,12 +20,14 @@ export const PROMPT_PROJECT = {
   type: 'input',
   name: 'projectName',
   message: 'Project:',
+  validate: alphaDashValidate,
 };
 
 export const PROMPT_SERVICE = {
   type: 'input',
   name: 'serviceName',
   message: 'Service:',
+  validate: alphaDashValidate,
 };
 
 export const PROMPT_DESCRIPTION = {
@@ -336,7 +339,7 @@ export const PROMPT_TO_USAGE = {
     description: 'The Artifactory package type to use (e.g. maven, ivy, npm)',
   },
   configureNrArtifactory: {
-    description: 'Whether to use NR Artifactory to resolve maven dependencies',
+    description: 'Whether to include NR Artifactory settings or not',
   },
   mavenBuildCommand: {
     description: 'Arguments to pass to mvn',

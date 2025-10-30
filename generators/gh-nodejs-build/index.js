@@ -4,8 +4,12 @@ import chalk from 'chalk';
 import { nrsay } from '../util/nrsay.js';
 import { BackstageStorage } from '../util/backstage.storage.js';
 import { OPTION_HEADLESS, OPTION_HELP_PROMPTS } from '../util/options.js';
-import { bailOnAnyQuestions } from '../util/process.js';
-import { destinationGitPath, relativeGitPath } from '../util/git.js';
+import { bailOnUnansweredQuestions } from '../util/process.js';
+import {
+  destinationGitPath,
+  isMonoRepo,
+  relativeGitPath,
+} from '../util/git.js';
 import {
   PROMPT_PROJECT,
   PROMPT_SERVICE,
@@ -20,15 +24,15 @@ import {
   PROMPT_PLAYBOOK_PATH,
   getPromptToUsage,
 } from '../util/prompts.js';
-import {
-  BACKSTAGE_FILENAME,
-  BACKSTAGE_KIND_COMPONENT,
-  generateSetAnswerPropPredicate,
-} from '../util/yaml.js';
+import { BACKSTAGE_FILENAME, BACKSTAGE_KIND_COMPONENT } from '../util/yaml.js';
 import {
   copyCommonBuildWorkflows,
   copyCommonDeployWorkflows,
 } from '../util/copyworkflows.js';
+import {
+  makeWorkflowBuildPublishPath,
+  makeWorkflowDeployPath,
+} from '../util/github.js';
 
 const questions = [
   PROMPT_PROJECT,
@@ -98,20 +102,7 @@ export default class extends Generator {
       );
     }
 
-    bailOnAnyQuestions(
-      questions
-        .filter(
-          generateSetAnswerPropPredicate(
-            this.answers,
-            !headless && askAnswered,
-          ),
-        )
-        .filter(
-          (question) =>
-            question.when === undefined || question.when(this.answers),
-        ),
-      headless,
-    );
+    bailOnUnansweredQuestions(questions, this.answers, headless, askAnswered);
     this.answers = await this.prompt(questions, 'config');
   }
 
@@ -127,7 +118,7 @@ export default class extends Generator {
     this.fs.copyTpl(
       this.templatePath('build-release.yaml'),
       destinationGitPath(
-        `.github/workflows/build-release${relativePath ? `-${this.answers.serviceName}` : ''}.yaml`,
+        makeWorkflowBuildPublishPath(this.answers.serviceName, !!relativePath),
       ),
       {
         projectName: this.answers.projectName,
@@ -137,6 +128,7 @@ export default class extends Generator {
         unitTestsPath: this.answers.unitTestsPath,
         publishArtifactSuffix: this.answers.publishArtifactSuffix,
         relativePath,
+        isMonoRepo: isMonoRepo(),
       },
     );
     copyCommonBuildWorkflows(this, {
@@ -148,7 +140,7 @@ export default class extends Generator {
       this.fs.copyTpl(
         this.templatePath('deploy.yaml'),
         destinationGitPath(
-          `.github/workflows/deploy${relativePath ? `-${this.answers.serviceName}` : ''}.yaml`,
+          makeWorkflowDeployPath(this.answers.serviceName, !!relativePath),
         ),
         {
           projectName: this.answers.projectName,

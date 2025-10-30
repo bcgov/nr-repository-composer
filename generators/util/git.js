@@ -55,10 +55,35 @@ export function destinationGitPath(...dest) {
   return filepath;
 }
 
+/**
+ * Compute a path relative to the repository's git destination directory.
+ *
+ * Joins the provided path segments into a single filepath and returns the path
+ * relative to destinationGitPath('.').
+ *
+ * @param {...string} dest - One or more path segments to join into the target filepath.
+ * @returns {string} The relative path from the repository git destination root to the joined filepath.
+ */
 export function relativeGitPath(...dest) {
   let filepath = path.join.apply(path, dest);
 
   return path.relative(destinationGitPath('.'), filepath);
+}
+
+/**
+ * Determine whether the current repository is a monorepo.
+ *
+ * This function infers monorepo status by calling `relativeGitPath()` and
+ * coercing its result to a boolean. If `relativeGitPath()` returns a truthy
+ * value (e.g., a non-empty path), this function returns `true`; otherwise it
+ * returns `false`.
+ *
+ * @returns {boolean} `true` if the repository appears to be a monorepo, `false` otherwise.
+ *
+ * @see relativeGitPath
+ */
+export function isMonoRepo() {
+  return !!relativeGitPath();
 }
 
 export function getGitRepoOriginUrl() {

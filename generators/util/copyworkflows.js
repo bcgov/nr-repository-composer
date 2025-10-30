@@ -54,7 +54,7 @@ export function copyCommonDeployWorkflows(generator, answers) {
 
   generator.fs.copyTpl(
     generator.templatePath(`${commonTemplatePath}/deployment-intention.json`),
-    generator.destinationPath(
+    destinationGitPath(
       `.jenkins/${answers.serviceName}-deployment-intention.json`,
     ),
     {

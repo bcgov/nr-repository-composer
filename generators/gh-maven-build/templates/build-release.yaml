@@ -1,6 +1,7 @@
 name: 'Build and publish - <%= serviceName %>'
 
 on:
+<% if (!isMonoRepo) { -%>
   push:
     tags:
       - 'v*'
@@ -18,6 +19,8 @@ on:
       - '<%= relativePath %>/**'
 <% } -%>
   workflow_dispatch:
+<% } -%>
+  workflow_call:
 
 concurrency:
   group: ci-${{ github.workflow }}-${{ github.ref }}

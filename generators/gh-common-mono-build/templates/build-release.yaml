@@ -1,0 +1,23 @@
+name: Build and publish
+
+on:
+  push:
+    tags:
+      - 'v*'
+  pull_request:
+    branches:
+      - main
+  workflow_dispatch:
+
+concurrency:
+  group: ci-${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+<% for (const service of services) { -%>
+  <%= service.name %>:
+    uses: <%= service.workflow %>
+<% if (serviceNeeds[service.name]) { -%>
+    needs: [<%= serviceNeeds[service.name] %>]
+<% } -%>
+<% } -%>

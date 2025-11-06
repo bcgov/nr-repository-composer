@@ -1,13 +1,26 @@
 name: Build and publish - <%= serviceName %>
 
 on:
+<% if (!isMonoRepo) { -%>
   push:
     tags:
       - 'v*'
+    branches:
+      - 'main'
+<% if (relativePath) { -%>
+    paths:
+      - '<%= relativePath %>/**'
+<% } -%>
   pull_request:
     branches:
       - main
+<% if (relativePath) { -%>
+    paths:
+      - '<%= relativePath %>/**'
+<% } -%>
   workflow_dispatch:
+<% } -%>
+  workflow_call:
 
 concurrency:
   group: ci-${{ github.workflow }}-${{ github.ref }}

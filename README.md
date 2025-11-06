@@ -22,6 +22,46 @@ All software should run this generator at the root folder of your service in you
 
 Single service repositories should run this (and create the file) at the root of the repository.If you have a component file not located at the root of the repository, you must use `backstage-location` which builds a file that describe where to look for the catalog data.
 
+Developers should manually define the relationships `subcomponentOf`, `consumesApis` and `dependsOn`. The relationship `subcomponentOf` is used to determine build dependencies.
+
+| Field | What it expresses / semantics | Use cases / when to use it | What it does *not* do  |
+| ----------- | ----------- | ----------- | ----------- |
+| **`spec.subcomponentOf`** | States that a component is part of a larger component. | Use when your software architecture has components that are “parts” of other components. For example: a mobile app component might have subcomponents (UI framework, plugin modules etc.), or a larger system composed of many smaller deployable pieces where you want to reflect that part-of hierarchy. It helps with determining build order, visualization, and understanding boundaries. | It does *not* imply API dependency, or runtime dependency necessarily. It’s about composition or structure (“this is part of that”) rather than “using”, “invoking”, or “depending on”. |
+| **`spec.consumesApis`** | States that a component uses (calls) one or more APIs. | When your component needs to call external APIs (internal or third-party) and you want to document that dependency: e.g. “this service consumes the User API”, “this frontend calls the Payments API”. Good for tracking API dependencies, understanding coupling, impact analysis. If an API changes, you can trace what components will be impacted. | It does *not* capture all dependencies (for instance low-level infrastructure or resources) and doesn't imply subcomponent relationship. Also doesn’t capture “resource” dependencies like databases, storage, etc.—those are better done via `dependsOn`. Also, it’s not about “part of” structure but about “uses / invokes”. |
+| **`spec.dependsOn`** | States that a component (or resource) depends on other components or resources. | Use this when your component needs something else to operate, but that thing is *not* necessarily an API: e.g. a database, a message queue, another service, infrastructural resource, or even another component for build-time or runtime dependency. It covers both resource kind entities and component kind entities. | It’s less specific: doesn’t distinguish *how* the dependency is used (“via API”, “via sharing library”, etc.). And doesn’t imply “is part of”. Also, if an API dependency is relevant, using `consumesApis` gives semantics that are more specific / meaningful in API-centric views. |
+
+#### Example website with a dependent library component
+
+```yaml
+apiVersion: backstage.io/v1alpha1
+kind: Component
+metadata:
+  name: artist-web
+  description: The place to be, for great artists
+spec:
+  type: website
+  lifecycle: production
+  owner: artist-relations-team
+  consumesApis:
+    - component:artist-api
+  dependsOn:
+    - resource:artists-db
+```
+
+```yaml
+apiVersion: backstage.io/v1alpha1
+kind: Component
+metadata:
+  name: artist-common
+  description: Common library for artist portal
+spec:
+  type: library
+  lifecycle: production
+  owner: artist-relations-team
+  subcomponentOf:
+    - component:artist-web
+```
+
 ### Backstage: `backstage-location`
 
 This builds a Backstage location entity and outputs it to the file `./catalog-info.yaml` so that your repository can be added to software catalogs.

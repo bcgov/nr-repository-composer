@@ -19,13 +19,13 @@ on:
       - '<%= relativePath %>/**'
 <% } -%>
   workflow_dispatch:
-<% } -%>
-  workflow_call:
-
 concurrency:
   group: ci-${{ github.workflow }}-${{ github.ref }}
   cancel-in-progress: true
-
+<% } else { -%>
+  workflow_call:
+<% } -%>
+  
 env:
   BROKER_URL: https://broker.io.nrs.gov.bc.ca
   BROKER_JWT: ${{ secrets.<%= brokerJwt %> }}
@@ -112,7 +112,11 @@ jobs:
       - name: Update pom.xml
         id: update-repo
         shell: bash
+<% if (!isMonoRepo) { -%>
         working-directory: ./<%= relativePath %>
+<% } else { -%>
+        working-directory: ./
+<% } -%>
         run: |
           if [[ ${{ startsWith(github.ref, 'refs/tags/v') }} = true ]]; then
             TAG=${{ github.ref_name }}

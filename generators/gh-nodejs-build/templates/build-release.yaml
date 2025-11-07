@@ -19,12 +19,12 @@ on:
       - '<%= relativePath %>/**'
 <% } -%>
   workflow_dispatch:
-<% } -%>
-  workflow_call:
-
 concurrency:
   group: ci-${{ github.workflow }}-${{ github.ref }}
   cancel-in-progress: true
+<% } else { -%>
+  workflow_call:
+<% } -%>
 
 env:
   BROKER_URL: https://broker.io.nrs.gov.bc.ca

@@ -16,8 +16,9 @@ concurrency:
 jobs:
 <% for (const service of services) { -%>
   <%= service.name %>:
-    uses: <%= service.workflow %>
+    uses: ./<%= service.workflow %>
 <% if (serviceNeeds[service.name]) { -%>
     needs: [<%= serviceNeeds[service.name] %>]
 <% } -%>
+    secrets: inherit
 <% } -%>

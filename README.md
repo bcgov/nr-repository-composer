@@ -16,13 +16,13 @@ The generators are created using [Yeoman](http://yeoman.io). For distribution, i
 
 ### Backstage: `backstage`
 
-This builds a Backstage component entity and outputs it to the file `./catalog-info.yaml` so that your repository can be added to software catalogs. A Backstage component is equivalent to a NR Broker service.
+This builds a Backstage component entity and outputs it to the file `./catalog-info.yaml`. A Backstage component entity is equivalent to a NR Broker service. Automation and software catalogs will read this file to understand your component.
 
-All software should run this generator at the root folder of your service in your repository. The generator will prompt you for various information about your service. Other generators for your service will read from the catalog file and may store additional information in this file.
+Single component (service) repositories should run this generator at the root of the repository. If you have monorepo (multiple components in a single repository), you should run the `backstage-location` generator at the root instead. This generator is then run in the individual directories for each component.
 
-Single service repositories should run this (and create the file) at the root of the repository.If you have a component file not located at the root of the repository, you must use `backstage-location` which builds a file that describe where to look for the catalog data.
+The generator will prompt you for various information about your component (service). Other generators will read from the catalog file and may store additional information in this file.
 
-Developers should manually define the relationships `subcomponentOf`, `consumesApis` and `dependsOn`. The relationship `subcomponentOf` is used to determine build dependencies.
+For each component entity, Developers should manually define the relationships `subcomponentOf`, `consumesApis` and `dependsOn`. The relationship `subcomponentOf` is used to determine build dependencies.
 
 | Field | What it expresses / semantics | Use cases / when to use it | What it does *not* do  |
 | ----------- | ----------- | ----------- | ----------- |
@@ -64,13 +64,11 @@ spec:
 
 ### Backstage: `backstage-location`
 
-This builds a Backstage location entity and outputs it to the file `./catalog-info.yaml` so that your repository can be added to software catalogs.
+This builds a Backstage location entity and outputs it to the file `./catalog-info.yaml`. A location entity is necessary if you have a monorepo with more than one service (component entity) in the repository. This file should always be at the root of the repository. This ensures that automation can locate and process information about all the components in your repository.
 
-This Backstage entity is necessary if you have a monorepo with more than one service in the repository or if you have a single service where you store the component entity file not at the repository root. This file should always be at the root of the repository.
+You will be asked to input the location of all component catalog files (targets) in your repository. All targets (spec.targets in the catalog-info.yaml) should be a relative path within the repository. Example: `./some-component/catalog-info.yaml`
 
-You will be asked to input the location of all component catalog files (targets) in your repository. All targets (spec.targets in the catalog-info.yaml) should be a relative path within the repository. Example: `./some/catalog-info.yaml`
-
-Remember to use the flag `--ask-answered` if you are adding additional targets.
+You can rerun this composer to add additional targets or manually edit the file. Remember to use the flag `--ask-answered` if you are adding additional targets.
 
 ### Github Maven Build: `gh-maven-build`
 

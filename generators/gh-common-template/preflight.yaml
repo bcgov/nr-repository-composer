@@ -14,3 +14,10 @@ jobs:
     uses: ./.github/workflows/check-token.yaml
     secrets:
       token: ${{ secrets.token }}
+
+  check-release-package:
+    name: Check release package
+    uses: ./.github/workflows/check-release-package.yaml
+    secrets:
+      token: ${{ secrets.token }}
+    if: ${{ github.ref_type == 'tag' }}

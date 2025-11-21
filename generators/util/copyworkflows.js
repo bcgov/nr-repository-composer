@@ -37,6 +37,15 @@ export function copyCommonBuildWorkflows(generator, answers) {
     generator.templatePath(`${commonTemplatePath}/check-token.yaml`),
     destinationGitPath('.github/workflows/check-token.yaml'),
   );
+
+  generator.fs.copyTpl(
+    generator.templatePath(`${commonTemplatePath}/check-release-package.yaml`),
+    destinationGitPath(`.github/workflows/check-release-package.yaml`),
+    {
+      projectName: answers.projectName,
+      serviceName: answers.serviceName,
+    },
+  );
 }
 
 export function copyCommonDeployWorkflows(generator, answers) {
@@ -50,15 +59,6 @@ export function copyCommonDeployWorkflows(generator, answers) {
   generator.fs.copyTpl(
     generator.templatePath(`${commonTemplatePath}/check-deploy-job-status.sh`),
     destinationGitPath('.github/workflows/check-deploy-job-status.sh'),
-  );
-
-  generator.fs.copyTpl(
-    generator.templatePath(`${commonTemplatePath}/check-release-package.yaml`),
-    destinationGitPath(`.github/workflows/check-release-package.yaml`),
-    {
-      projectName: answers.projectName,
-      serviceName: answers.serviceName,
-    },
   );
 
   generator.fs.copyTpl(

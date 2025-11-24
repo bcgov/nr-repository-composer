@@ -13,6 +13,11 @@ concurrency:
   group: ci-${{ github.workflow }}-${{ github.ref }}
   cancel-in-progress: true
 
+permissions:
+  contents: read
+  packages: write
+  pull-requests: read
+
 jobs:
 <% for (const service of services) { -%>
   <%= service.name %>:

@@ -23,9 +23,14 @@ jobs:
           RESPONSE=$(curl -s "https://api.github.com/repos/<%= gitHubProjectSlug %>/actions/workflows/${{ inputs.build_workflow }}/runs?head_sha=${{ github.sha }}&branch=${{ github.ref_name }}" \
             -H "Authorization: token ${{ secrets.GITHUB_TOKEN }}" \
             -H "Accept: application/vnd.github+json")
-          { read -r BUILD_ACTION_NAME; read -r BUILD_ACTION_STATUS; read -r BUILD_ACTION_URL; } < <(jq -r '.workflow_runs | sort_by(.run_number) | reverse | .[0] | .name, .conclusion, .html_url' <<< "$RESPONSE")
-          echo "Found Build action url: $BUILD_ACTION_URL"
+          { read -r BUILD_ACTION_NAME; read -r BUILD_ACTION_STATUS; read -r BUILD_ACTION_URL; } < <(jq -r '.workflow_runs | sort_by(.run_number) | reverse | .[0] | .name // "", .conclusion // "", .html_url // ""' <<< "$RESPONSE")
+          if [[ "$BUILD_ACTION_URL != "" ]]; then
+            echo "Found build action url: $BUILD_ACTION_URL"
+          else
+            echo "Unable to parse build action url."
+          fi
           if [[ "$BUILD_ACTION_STATUS" != "success" ]]; then
-            echo "::error ::Last '${BUILD_ACTION_NAME-'${{ inputs.build_workflow }}'}' was not 'success' or does not exist."
+            echo "::error ::Last '${BUILD_ACTION_NAME:-${{ inputs.build_workflow }}}' was not 'success' or does not exist."
             echo "This deploy was triggered on ${{ github.ref_name }} branch with the ${{ github.sha }} commit hash which does not have a successful build. Please examine the build output and ensure a build is successful before triggering a deploy."
+            exit 1
           fi

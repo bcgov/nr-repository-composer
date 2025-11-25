@@ -55,6 +55,9 @@ export function copyCommonDeployWorkflows(generator, answers) {
   generator.fs.copyTpl(
     generator.templatePath(`${commonTemplatePath}/check-build-artifact.yaml`),
     destinationGitPath('.github/workflows/check-build-artifact.yaml'),
+    {
+      gitHubProjectSlug: answers.gitHubProjectSlug,
+    },
   );
 
   generator.fs.copyTpl(

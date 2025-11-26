@@ -39,6 +39,8 @@ jobs:
     permissions: {}
     with:
       release_check: true
+      project_name: <%= projectName %>
+      service_name: <%= serviceName %>
     secrets:
       token: ${{ secrets.<%= brokerJwt %> }}
 <% if (unitTestsPath) { -%>

@@ -12,6 +12,16 @@ on:
         required: false
         default: false
         type: boolean
+      project_name:
+        description: "The project name"
+        type: string
+        default: ""
+        required: false
+      service_name:
+        description: "The service name"
+        type: string
+        default: ""
+        required: false
 permissions: {}
 
 jobs:
@@ -26,4 +36,7 @@ jobs:
     uses: ./.github/workflows/check-release-package.yaml
     secrets:
       token: ${{ secrets.token }}
-    if: ${{ github.ref_type == 'tag' && inputs.release_check == true }}
+    with:
+      service_name: ${{ inputs.service_name }}
+      project_name: ${{ inputs.project_name }}
+    if: ${{ inputs.release_check == true && github.ref_type == 'tag' }}

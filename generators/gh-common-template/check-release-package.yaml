@@ -9,12 +9,12 @@ on:
         type: string
       project_name:
         description: "The project name"
-        default: <%= projectName %>
         type: string
+        required: false
       service_name:
         description: "The service name"
-        default: <%= serviceName %>
         type: string
+        required: false
     secrets:
       token:
         description: "The Broker token"

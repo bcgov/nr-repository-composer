@@ -24,7 +24,7 @@ jobs:
             -H "Authorization: token ${{ secrets.GITHUB_TOKEN }}" \
             -H "Accept: application/vnd.github+json")
           { read -r BUILD_ACTION_NAME; read -r BUILD_ACTION_STATUS; read -r BUILD_ACTION_URL; } < <(jq -r '.workflow_runs | sort_by(.run_number) | reverse | .[0] | .name // "", .conclusion // "", .html_url // ""' <<< "$RESPONSE")
-          if [[ "$BUILD_ACTION_URL != "" ]]; then
+          if [[ "$BUILD_ACTION_URL" != "" ]]; then
             echo "Found build action url: $BUILD_ACTION_URL"
           else
             echo "Unable to parse build action url."

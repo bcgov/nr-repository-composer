@@ -39,7 +39,7 @@ jobs:
       token: ${{ secrets.token }}
 
   check-build-artifact:
-    name: Check build artifact:
+    name: Check build artifact
       uses: ./.github/workflows/check-build-artifact.yaml
       with:
         build_workflow: ${{ inputs.build_workflow }}

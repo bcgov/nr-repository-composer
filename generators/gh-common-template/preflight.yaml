@@ -40,10 +40,10 @@ jobs:
 
   check-build-artifact:
     name: Check build artifact
-      uses: ./.github/workflows/check-build-artifact.yaml
-      with:
-        build_workflow: ${{ inputs.build_workflow }}
-      if: inputs.preflight_context == 'deploy'
+    uses: ./.github/workflows/check-build-artifact.yaml
+    with:
+      build_workflow: ${{ inputs.build_workflow }}
+    if: inputs.preflight_context == 'deploy'
 
   check-release-package:
     name: Check and validate release package

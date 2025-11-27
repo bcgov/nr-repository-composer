@@ -39,8 +39,7 @@ jobs:
     permissions: {}
     with:
       release_check: true
-      project_name: <%= projectName %>
-      service_name: <%= serviceName %>
+      catalog_info: <%= relativePath %><%= relativePath ? '/' : '' %>catalog-info.yaml
     secrets:
       token: ${{ secrets.<%= brokerJwt %> }}
 <% if (unitTestsPath) { -%>

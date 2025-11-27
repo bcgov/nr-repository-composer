@@ -7,13 +7,10 @@ on:
         description: "The Broker URL"
         default: https://broker.io.nrs.gov.bc.ca
         type: string
-      project_name:
-        description: "The project name"
+      catalog_info:
+        description: "The catalog file"
         type: string
-        required: false
-      service_name:
-        description: "The service name"
-        type: string
+        default: "catalog-info.yaml"
         required: false
     secrets:
       token:
@@ -41,8 +38,15 @@ jobs:
           VERSION="${{ steps.tag.outputs.version }}"
           echo "Checking release: $VERSION"
           BROKER_URL="${{ inputs.url }}"
-          PROJECT_NAME="${{ inputs.project_name }}"
-          SERVICE_NAME="${{ inputs.service_name }}"
+          CATALOG_FILE="${{ inputs.catalog_info }}"
+          # Parse project (spec.system) and service (metadata.name) from the Backstage catalog-info YAML using yq
+          PROJECT_NAME="$(yq e '.spec.system // ""' "$CATALOG_FILE" | tr -d '\r')"
+          SERVICE_NAME="$(yq e '.metadata.name // ""' "$CATALOG_FILE" | tr -d '\r')"
+
+          if [ -z "$PROJECT_NAME" ] || [ -z "$SERVICE_NAME" ]; then
+            echo "Failed to parse project or service name from $CATALOG_FILE (spec.system=${PROJECT_NAME:-<empty>}, metadata.name=${SERVICE_NAME:-<empty>})"
+            exit 1
+          fi
 
           # build JSON where clause (include package-build and version)
           WHERE_JSON=$(jq -n --arg act "package-build" \
@@ -60,7 +64,7 @@ jobs:
             -H "accept: application/json" \
             -H 'Authorization: Bearer '"${{ secrets.token }}"'' \
             -d '')
-          
+
           # Check if data array is empty
           DATA_LENGTH=$(echo "$RESPONSE" | jq '.data | length')
           if [ "$DATA_LENGTH" -eq 0 ]; then

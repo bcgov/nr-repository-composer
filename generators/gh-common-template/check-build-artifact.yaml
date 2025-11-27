@@ -20,10 +20,21 @@ jobs:
       - name: Check build artifact
         shell: bash
         run: |
-          RESPONSE=$(curl -s "https://api.github.com/repos/<%= gitHubProjectSlug %>/actions/workflows/${{ inputs.build_workflow }}/runs?head_sha=${{ github.sha }}&branch=${{ github.ref_name }}" \
+          RESPONSE=$(curl -s "https://api.github.com/repos/<%= gitHubProjectSlug %>/actions/workflows/build-release.yaml/runs?head_sha=${{ github.sha }}&branch=${{ github.ref_name }}" \
             -H "Authorization: token ${{ secrets.GITHUB_TOKEN }}" \
             -H "Accept: application/vnd.github+json")
-          { read -r BUILD_ACTION_NAME; read -r BUILD_ACTION_STATUS; read -r BUILD_ACTION_URL; } < <(jq -r '.workflow_runs | sort_by(.run_number) | reverse | .[0] | .name // "", .conclusion // "", .html_url // ""' <<< "$RESPONSE")
+          if [[ ${{ inputs.build_workflow }} == "build-release.yaml" ]]; then
+            { read -r BUILD_ACTION_NAME; read -r BUILD_ACTION_STATUS; read -r BUILD_ACTION_URL; } < <(jq -r '.workflow_runs | sort_by(.run_number) | reverse | .[0] | .name // "", .conclusion // "", .html_url // ""' <<< "$RESPONSE")
+          else
+            # lookup monorepo build status by job id
+            { read -r BUILD_ACTION_ID; } < <(jq -r '.workflow_runs | sort_by(.run_number) | reverse | .[0] | .id // ""' <<< "$RESPONSE")
+            if [[ "$BUILD_ACTION_ID" != "" ]]; then
+              JOB_RESPONSE=$(curl -s "https://api.github.com/repos/<%= gitHubProjectSlug %>/actions/runs/$BUILD_ACTION_ID/jobs" \
+                -H "Authorization: token ${{ secrets.GITHUB_TOKEN }}" \
+                -H "Accept: application/vnd.github+json")
+              { read -r BUILD_ACTION_NAME; read -r BUILD_ACTION_STATUS; read -r BUILD_ACTION_URL; } < <(jq -r '.jobs | map(select(.name == "rrs-mono-api / Build and publish")).[] | .name // "", .conclusion // "", .html_url // ""' <<< "$JOB_RESPONSE")
+            fi
+          fi
           if [[ "$BUILD_ACTION_URL" != "" ]]; then
             echo "Found build action url: $BUILD_ACTION_URL"
           else

@@ -41,10 +41,6 @@ export function copyCommonBuildWorkflows(generator, answers) {
   generator.fs.copyTpl(
     generator.templatePath(`${commonTemplatePath}/check-release-package.yaml`),
     destinationGitPath(`.github/workflows/check-release-package.yaml`),
-    {
-      projectName: answers.projectName,
-      serviceName: answers.serviceName,
-    },
   );
 }
 

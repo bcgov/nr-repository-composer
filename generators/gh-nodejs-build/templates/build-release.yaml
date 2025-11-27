@@ -37,6 +37,9 @@ jobs:
     name: Preflight
     uses: ./.github/workflows/preflight.yaml
     permissions: {}
+    with:
+      release_check: true
+      catalog_info: <%= relativePath %><%= relativePath ? '/' : '' %>catalog-info.yaml
     secrets:
       token: ${{ secrets.<%= brokerJwt %> }}
 <% if (unitTestsPath) { -%>

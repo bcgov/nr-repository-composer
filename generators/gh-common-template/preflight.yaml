@@ -6,6 +6,17 @@ on:
       token:
         description: "The Broker token"
         required: true
+    inputs:
+      catalog_info:
+        description: "The catalog file"
+        type: string
+        default: "catalog-info.yaml"
+        required: false
+      release_check:
+        description: "Whether to run the release package check"
+        required: false
+        default: false
+        type: boolean
 permissions: {}
 
 jobs:
@@ -14,3 +25,12 @@ jobs:
     uses: ./.github/workflows/check-token.yaml
     secrets:
       token: ${{ secrets.token }}
+
+  check-release-package:
+    name: Check release package
+    uses: ./.github/workflows/check-release-package.yaml
+    secrets:
+      token: ${{ secrets.token }}
+    with:
+      catalog_info: ${{ inputs.catalog_info }}
+    if: ${{ inputs.release_check == true && github.ref_type == 'tag' }}

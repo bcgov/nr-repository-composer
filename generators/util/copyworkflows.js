@@ -37,6 +37,11 @@ export function copyCommonBuildWorkflows(generator, answers) {
     generator.templatePath(`${commonTemplatePath}/check-token.yaml`),
     destinationGitPath('.github/workflows/check-token.yaml'),
   );
+
+  generator.fs.copyTpl(
+    generator.templatePath(`${commonTemplatePath}/check-release-package.yaml`),
+    destinationGitPath(`.github/workflows/check-release-package.yaml`),
+  );
 }
 
 export function copyCommonDeployWorkflows(generator, answers) {

@@ -17,7 +17,8 @@ on:
         required: false
         default: false
         type: boolean
-permissions: {}
+permissions:
+  contents: read
 
 jobs:
   check-jwt:
@@ -27,7 +28,7 @@ jobs:
       token: ${{ secrets.token }}
 
   check-release-package:
-    name: Check release package
+    name: Check and validate release package
     uses: ./.github/workflows/check-release-package.yaml
     secrets:
       token: ${{ secrets.token }}

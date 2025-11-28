@@ -16,7 +16,8 @@ on:
       token:
         description: "The Broker token"
         required: true
-permissions: {}
+permissions:
+  contents: read
 
 jobs:
   check-release-package:
@@ -24,6 +25,21 @@ jobs:
     runs-on: ubuntu-latest
 
     steps:
+      - name: Checkout only catalog-info.yaml
+        uses: actions/checkout@v4
+        with:
+          sparse-checkout: |
+            ${{ inputs.catalog_info }}
+          sparse-checkout-cone-mode: false
+      
+      - name: Verify catalog file exists
+        run: |
+          if [[ ! -f "${{ inputs.catalog_info }}" ]]; then
+            echo "Error: catalog file not found at ${{ inputs.catalog_info }}"
+            exit 1
+          fi
+          echo "Catalog file found: ${{ inputs.catalog_info }}"
+
       - name: Extract Version From Tag
         id: tag
         run: |

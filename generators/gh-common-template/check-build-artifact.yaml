@@ -32,7 +32,11 @@ jobs:
               JOB_RESPONSE=$(curl -s "https://api.github.com/repos/<%= gitHubProjectSlug %>/actions/runs/$BUILD_ACTION_ID/jobs" \
                 -H "Authorization: token ${{ secrets.GITHUB_TOKEN }}" \
                 -H "Accept: application/vnd.github+json")
-              { read -r BUILD_ACTION_NAME; read -r BUILD_ACTION_STATUS; read -r BUILD_ACTION_URL; } < <(jq -r '.jobs | map(select(.name == "rrs-mono-api / Build and publish")).[] | .name // "", .conclusion // "", .html_url // ""' <<< "$JOB_RESPONSE")
+              SERVICE_NAME="${{ inputs.build_workflow }}"
+              # trim SERVICE_NAME from build_workflow (ex. build-release-<service_name>.yaml --> <service_name>)
+              # trim first 14 characters (build-release-) and last 5 characters (.yaml)
+              SERVICE_NAME="${SERVICE_NAME:14:$((${#SERVICE_NAME} - 19))}"
+              { read -r BUILD_ACTION_NAME; read -r BUILD_ACTION_STATUS; read -r BUILD_ACTION_URL; } < <(jq -r '.jobs | map(select(.name == "'"$SERVICE_NAME"' / Build and publish")).[] | .name // "", .conclusion // "", .html_url // ""' <<< "$JOB_RESPONSE")
             fi
           fi
           if [[ "$BUILD_ACTION_URL" != "" ]]; then

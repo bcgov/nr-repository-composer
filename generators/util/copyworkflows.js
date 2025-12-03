@@ -53,6 +53,14 @@ export function copyCommonDeployWorkflows(generator, answers) {
     : 'BROKER_JWT';
 
   generator.fs.copyTpl(
+    generator.templatePath(`${commonTemplatePath}/check-build-artifact.yaml`),
+    destinationGitPath('.github/workflows/check-build-artifact.yaml'),
+    {
+      gitHubProjectSlug: answers.gitHubProjectSlug,
+    },
+  );
+
+  generator.fs.copyTpl(
     generator.templatePath(`${commonTemplatePath}/check-deploy-job-status.sh`),
     destinationGitPath('.github/workflows/check-deploy-job-status.sh'),
   );
@@ -86,6 +94,7 @@ export function copyCommonDeployWorkflows(generator, answers) {
     {
       serviceName: answers.serviceName,
       brokerJwt,
+      buildWorkflowFile: `build-release${relativePath ? `-${answers.serviceName}` : ''}.yaml`,
       deployWorkflowFile: `deploy${relativePath ? `-${answers.serviceName}` : ''}.yaml`,
     },
   );

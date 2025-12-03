@@ -26,6 +26,9 @@ jobs:
   preflight:
     name: Preflight
     uses: ./.github/workflows/preflight.yaml
+    with:
+      preflight_context: deploy
+      build_workflow: <%= buildWorkflowFile %>
     secrets:
       token: ${{ secrets.<%= brokerJwt %> }}
 

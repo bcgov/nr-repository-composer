@@ -36,8 +36,10 @@ jobs:
   preflight:
     name: Preflight
     uses: ./.github/workflows/preflight.yaml
-    permissions: {}
+    permissions:
+      actions: read
     with:
+      preflight_context: build
       release_check: true
       catalog_info: <%= relativePath %><%= relativePath ? '/' : '' %>catalog-info.yaml
     secrets:

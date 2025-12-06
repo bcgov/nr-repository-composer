@@ -22,6 +22,10 @@ export default class extends BaseGenerator {
       type: String,
       description: 'Add Webade configuration',
     });
+    this.option('javaVersion', {
+      type: String,
+      description: 'Java version',
+    });
   }
 
   // Generate Ansible playbook and variable files
@@ -57,6 +61,7 @@ export default class extends BaseGenerator {
         tomcatContext: this.options.tomcatContext,
         altAppDirName: this.options.altAppDirName,
         addWebadeConfig: this.options.addWebadeConfig,
+        javaVersion: this.options.javaVersion,
       },
     );
   }

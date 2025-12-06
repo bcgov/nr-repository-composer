@@ -247,6 +247,7 @@ export default class extends Generator {
         tomcatContext: this.answers.tomcatContext,
         addWebadeConfig: this.answers.addWebadeConfig,
         altAppDirName: this.answers.altAppDirName,
+        javaVersion: this.answers.javaVersion,
       };
       this.composeWith(
         'nr-repository-composer:pd-java-playbook',

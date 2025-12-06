@@ -10,6 +10,7 @@ The generators are created using [Yeoman](http://yeoman.io). For distribution, i
 | ----------- | ----------- | ----------- | ----------- |
 | backstage | Catalog service | All | Backstage (kind: component) |
 | backstage-location | Catalog monorepo | All | Backstage (kind: location) |
+| gh-common-mono-build | Pipeline orchestration | GitHub | GitHub Actions |
 | gh-maven-build | Pipeline | GitHub | Java, GitHub Actions |
 | gh-nodejs-build | Pipeline | GitHub | NodeJS, GitHub Actions |
 | migrations | Database | All | FlyWay, Liquibase |
@@ -69,6 +70,14 @@ This builds a Backstage location entity and outputs it to the file `./catalog-in
 You will be asked to input the location of all component catalog files (targets) in your repository. All targets (spec.targets in the catalog-info.yaml) should be a relative path within the repository. Example: `./some-component/catalog-info.yaml`
 
 You can rerun this composer to add additional targets or manually edit the file. Remember to use the flag `--ask-answered` if you are adding additional targets.
+
+### Backstage: `gh-common-mono-build`
+
+This generates a unified build orchestration workflow for monorepos in GitHub. It reads all component catalog-info.yaml files defined in the root location entity and creates a single build workflow that coordinates the building of all components.
+
+The generator automatically determines the correct build order by analyzing spec.subcomponentOf relationships between components. If a component is a subcomponent of another, it will be built first to satisfy the build dependency.
+
+The generated workflow file appears in .github/workflows/build-release.yaml and delegates to each component's individual build workflow while managing job dependencies.
 
 ### Github Maven Build: `gh-maven-build`
 

@@ -129,7 +129,7 @@ jobs:
           echo "git_commit=$(git rev-parse --verify HEAD)" >> $GITHUB_OUTPUT
           echo "build_guid=uuid::$(uuidgen)" >> $GITHUB_OUTPUT
       - name: Build intention
-        run: sh ./.github/workflows/build-intention<% if (relativePath){ -%>-<%= serviceName %><% } -%>.sh
+        run: sh ./.github/workflows/build-intention-<%= serviceName %>.sh
         env:
           EVENT_REASON: Build ${{ github.ref_name }}
           GITHUB_REPOSITORY: ${{ github.repository}}

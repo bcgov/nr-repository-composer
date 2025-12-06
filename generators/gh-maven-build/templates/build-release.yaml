@@ -102,7 +102,7 @@ jobs:
       - name: Set up Java
         uses: actions/setup-java@v4
         with:
-          java-version: '8'
+          java-version: '<%= javaVersion %>'
           distribution: 'temurin'
           cache: maven
       - name: Set branch

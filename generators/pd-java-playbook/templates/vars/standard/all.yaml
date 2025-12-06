@@ -15,6 +15,8 @@ polaris_apps_project_version: "{{ lookup('ansible.builtin.env', 'PODMAN_PROJECT_
 polaris_apps_build_number: "{{ lookup('ansible.builtin.env', 'PODMAN_BUILD_NUMBER') }}"
 polaris_apps_service_install_name: "{{ polaris_apps_project_version }}-{{ polaris_apps_build_number }}"
 
+jdk_major_version: <%= javaVersion %>
+
 # The following properties are custom to each particular service
 <% if (tomcatContext) { -%>
 context: <%= tomcatContext %>

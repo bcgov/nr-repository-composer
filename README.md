@@ -167,60 +167,63 @@ The example commands will run the 'gh-maven-build' generator. This creates or up
 
 ## Container
 
-### Shell Alias Setup (Recommended)
+### Using the Shell Script (Recommended)
 
-The shell alias simplifies running the container. It will detect the git repository root and set the working directory.
-The developer should set the `IMAGE` variable in the file and periodically pull to recieve updated images.
+The `nr-repository-composer.sh` script is the easiest way to run the composer. It automatically detects whether you have Podman or Docker installed (preferring Podman) and handles all the container configuration for you.
 
 If you haven't cloned the repo, first download the shell script. As you may need to edit the image tag, you should save the file somewhere convenient.
 
-```
+**Download the script:**
+
+```bash
+# Download to current directory
 curl -o nr-repository-composer.sh https://raw.githubusercontent.com/bcgov-nr/nr-repository-composer/main/nr-repository-composer.sh
+chmod +x nr-repository-composer.sh
 ```
 
-For easier access, add an alias to your shell configuration:
+**Optional: Add to your PATH**
+
+For easier access from anywhere, move the script to a directory in your PATH.
+
+**Usage:**
 
 ```bash
-# For Podman users
-alias nr-compose='/path/to/nr-repository-composer/nr-repository-composer.sh podman'
+# If script is in your PATH
+cd /path/to/your/repo
+nr-repository-composer.sh . backstage-location
+nr-repository-composer.sh ./frontend backstage
+nr-repository-composer.sh ./frontend gh-maven-build --help
 
-# For Docker users
-alias nr-compose='/path/to/nr-repository-composer/nr-repository-composer.sh docker'
+# If running from the cloned repo or script in current directory
+./nr-repository-composer.sh /path/to/your/repo gh-nodejs-build --ask-answered
 ```
 
-After adding the alias and reloading your shell, you can run generators with simplified syntax:
+**How it works:**
+
+The script:
+- **Auto-detects container runtime** - Uses Podman if available, otherwise Docker
+- **Finds the git repository root** from your working directory and validates it
+- **Mounts the entire repository** as `/src` in the container
+- **Sets the working directory** to match your relative location within the repo
+- **Auto-prefixes generator names** - Adds `nr-repository-composer:` automatically (you can omit it)
+- **Pulls latest image** by default - Set `PULL_IMAGE="false"` in the script to disable
+- **Passes all options** to the generator
+
+**Configuration:**
+
+You can edit the script to customize behavior:
 
 ```bash
-# The parameters are the directory, generator name and then any options
-# The script automatically prepends 'nr-repository-composer:' to the generator name
-nr-compose . gh-maven-build
-nr-compose ~/my-project backstage --help
-nr-compose . gh-nodejs-build --ask-answered
+# Modify this to change the image version used
+IMAGE="ghcr.io/bcgov/nr-repository-composer:latest"
 
-# You can also use the full generator name if preferred
-nr-compose . nr-repository-composer:gh-maven-build
-```
-
-**How it works:** The `nr-repository-composer.sh` script:
-- Finds the git repository root from your working directory
-- Mounts the entire repository as `/src` in the container
-- Sets the container's working directory to match your relative location within the repo
-- Automatically adds the `nr-repository-composer:` prefix to generator names (unless already present)
-- Passes all additional options to the generator
-
-### Direct Usage Without Alias
-
-You can also use `nr-repository-composer.sh` directly:
-
-```bash
-./nr-repository-composer.sh podman /path/to/your/repo gh-maven-build
-./nr-repository-composer.sh docker . backstage
-./nr-repository-composer.sh podman ~/projects/my-app gh-nodejs-build --ask-answered
+# Set to "false" to skip pulling the latest image (uses cached version)
+PULL_IMAGE="true"
 ```
 
 ### Direct Container Commands
 
-For manual control, run the container directly:
+For manual control or CI/CD pipelines, you can run the container directly:
 
 ```bash
 # Podman

@@ -4,44 +4,45 @@ set -euo pipefail
 # Modify this to change the image version used
 IMAGE="ghcr.io/bcgov/nr-repository-composer:latest"
 
+# Set to "false" to skip pulling the latest image (uses cached version)
+PULL_IMAGE="true"
+
 # NR Repository Composer runner script
-# Usage: ./nr-repository-composer.sh <podman|docker> <working-directory> [generator] [options...]
+# Usage: ./nr-repository-composer.sh <working-directory> <generator> [options...]
 
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 
 # Check arguments
-if [ $# -lt 3 ]; then
-    echo "Usage: $0 <podman|docker> <working-directory> <generator> [options...]"
+if [ $# -lt 2 ]; then
+    echo "Usage: $0 <working-directory> <generator> [options...]"
     echo ""
     echo "Examples:"
-    echo "  $0 podman /path/to/repo backstage"
-    echo "  $0 docker . gh-maven-build --help"
-    echo "  $0 podman ~/projects/my-app gh-nodejs-build --ask-answered"
+    echo "  $0 /path/to/repo backstage"
+    echo "  $0 . gh-maven-build --help"
+    echo "  $0 ~/projects/my-app gh-nodejs-build --ask-answered"
     echo ""
     echo "Note: 'nr-repository-composer:' prefix is automatically added to the generator name"
     exit 1
 fi
 
-CONTAINER_CMD="$1"
-WORKING_DIR="$2"
-GENERATOR="$3"
-shift 3
+# Detect container runtime (prefer podman over docker)
+if command -v podman &> /dev/null; then
+    CONTAINER_CMD="podman"
+elif command -v docker &> /dev/null; then
+    CONTAINER_CMD="docker"
+else
+    echo "Error: Neither podman nor docker is installed or in PATH"
+    echo "Please install podman or docker to use this tool"
+    exit 1
+fi
+
+WORKING_DIR="$1"
+GENERATOR="$2"
+shift 2
 
 # Prepend nr-repository-composer: to generator name if not already present
 if [[ "$GENERATOR" != nr-repository-composer:* ]]; then
     GENERATOR="nr-repository-composer:$GENERATOR"
-fi
-
-# Validate container command
-if [ "$CONTAINER_CMD" != "podman" ] && [ "$CONTAINER_CMD" != "docker" ]; then
-    echo "Error: First argument must be 'podman' or 'docker'"
-    exit 1
-fi
-
-# Check if container command exists
-if ! command -v "$CONTAINER_CMD" &> /dev/null; then
-    echo "Error: $CONTAINER_CMD is not installed or not in PATH"
-    exit 1
 fi
 
 # Resolve working directory to absolute path
@@ -86,9 +87,18 @@ fi
 # Build container arguments
 CONTAINER_ARGS="run --rm -it -v ${GIT_ROOT}:/src -w ${CONTAINER_WORKDIR}"
 
-# Add userns keep-id for podman (better file permissions)
+# Add container runtime specific arguments
 if [ "$CONTAINER_CMD" = "podman" ]; then
     CONTAINER_ARGS="$CONTAINER_ARGS --userns keep-id"
+    # Add pull policy for podman
+    if [ "$PULL_IMAGE" = "true" ]; then
+        CONTAINER_ARGS="$CONTAINER_ARGS --pull newer"
+    fi
+else
+    # Docker: add pull policy
+    if [ "$PULL_IMAGE" = "true" ]; then
+        CONTAINER_ARGS="$CONTAINER_ARGS --pull always"
+    fi
 fi
 
 # Run the container with any additional arguments passed to the script

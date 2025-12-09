@@ -1,4 +1,8 @@
 import { destinationGitPath, relativeGitPath } from './git.js';
+import {
+  makeWorkflowBuildPublishFile,
+  makeWorkflowDeployFile,
+} from '../util/github.js';
 
 export function copyCommonBuildWorkflows(generator, answers) {
   const commonTemplatePath = '../../gh-common-template';
@@ -93,8 +97,8 @@ export function copyCommonDeployWorkflows(generator, answers) {
     {
       serviceName: answers.serviceName,
       brokerJwt,
-      buildWorkflowFile: `build-release-${answers.serviceName}.yaml`,
-      deployWorkflowFile: `deploy-${answers.serviceName}.yaml`,
+      buildWorkflowFile: makeWorkflowBuildPublishFile(answers.serviceName),
+      deployWorkflowFile: makeWorkflowDeployFile(answers.serviceName),
     },
   );
 }

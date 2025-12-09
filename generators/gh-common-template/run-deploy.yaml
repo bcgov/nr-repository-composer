@@ -29,6 +29,7 @@ jobs:
     with:
       preflight_context: deploy
       build_workflow: <%= buildWorkflowFile %>
+      service: <%= serviceName %>
     secrets:
       token: ${{ secrets.<%= brokerJwt %> }}
 

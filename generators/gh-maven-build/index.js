@@ -191,7 +191,7 @@ export default class extends Generator {
     this.fs.copyTpl(
       this.templatePath('build-release.yaml'),
       destinationGitPath(
-        makeWorkflowBuildPublishPath(this.answers.serviceName, !!relativePath),
+        makeWorkflowBuildPublishPath(this.answers.serviceName),
       ),
       {
         projectName: this.answers.projectName,
@@ -217,9 +217,7 @@ export default class extends Generator {
     if (this.answers.deployOnPrem) {
       this.fs.copyTpl(
         this.templatePath('deploy.yaml'),
-        destinationGitPath(
-          makeWorkflowDeployPath(this.answers.serviceName, !!relativePath),
-        ),
+        destinationGitPath(makeWorkflowDeployPath(this.answers.serviceName)),
         {
           projectName: this.answers.projectName,
           serviceName: this.answers.serviceName,

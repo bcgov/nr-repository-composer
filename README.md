@@ -1,8 +1,14 @@
 # NR Repository Composer
 
-The NR Repository Composer is a suite of generators for installing and updating NRIDS tooling. It can scaffold NRIDS applications using GitHub Actions for building and deploying them, add catalog files (Backstage), and more.
+The NR Repository Composer templates repositories with files for building, deploying and cataloging applications. Developers use its generators to both initially generate and then maintain their repository. Its primary purpose is to scaffold NRIDS applications.
 
-The generators are created using [Yeoman](http://yeoman.io). For distribution, it is packaged into a container image for running on a developer's machine using Docker or Podman.
+We recommend using the prebuilt container image to run the generators using Podman or Docker. Developers wanting to add new generators or make changes to existing ones should clone this repository and run the tool using NodeJS. The composer is built using [Yeoman](http://yeoman.io).
+
+## Where to start
+
+The composer's generators can be tested by creating a directory and initializing a Git repository. If you have multiple products (frontend, backend, and so on), in a single repository we consider that a monorepo and you should run the `backstage-location` generator to assist with placing a location catalog file at the root.
+
+The `backstage` generator is first step for most applications and is run at the root of the product within the repository. From here, additional generators are used to scaffold the application's pipeline.
 
 ## Generator Library
 
@@ -107,7 +113,7 @@ If true, show prompts for already configured options. Generators read informatio
 
 ### --force [Default: false]
 
-The option `--force` will allow Yoeman to automatically overwrite any existing files. Yoeman's built-in file comparison is redundant if you are running the composer on a clean repository. You can review the changes using git and in a pull request.
+The option `--force` will allow Yeoman to automatically overwrite any existing files. Yeoman's built-in file comparison is redundant if you are running the composer on a clean repository. You can review the changes using git and in a pull request.
 
 ### --headless [Default: false]
 
@@ -132,7 +138,9 @@ You will need to install one of the following. Either can run the composer using
 * [Podman](https://podman.io)
 * [Docker](https://www.docker.com)
 
-It is recommended that Windows users install and run the command using Node.js or Podman. Docker has a known issue with correctly modifying file permissions on mounted volumes. Since the tool needs to set permissions for files like bash scripts, commands will not execute properly on Windows when using Docker.
+It is recommended that Windows users install and run the command using Node.js or Podman. Docker has a known issue with correctly modifying file permissions on mounted volumes.
+
+**Note:** Windows Docker has an architectural issue with setting permissions for files mounted from volume.
 
 ## Using a local install
 
@@ -140,9 +148,9 @@ You will need to install node and clone this repository. You can checkout a vers
 
 * [Node 22](https://nodejs.org/en)
 
-The tool is build using [Yeoman](http://yeoman.io) which is a JavaScript library. You do not need to install Yoeman.
+The tool is build using [Yeoman](http://yeoman.io) which is a JavaScript library. You do not need to install Yeoman.
 
-Install the dependencies with `npm ci` and link it with `npm link` so Yoeman can find the local installation. If you make code changes, you do not need the re-link it.
+Install the dependencies with `npm ci` and link it with `npm link` so Yeoman can find the local installation. If you make code changes, you do not need to re-link it.
 
 ```bash
 npm ci

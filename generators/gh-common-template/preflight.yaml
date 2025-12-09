@@ -22,6 +22,11 @@ on:
         default: ''
         required: false
         type: string
+      service:
+        description: 'Service name.'
+        default: ''
+        required: false
+        type: string
       release_check:
         description: "Whether to run the release package check"
         required: false
@@ -42,7 +47,7 @@ jobs:
     name: Check build artifact
     uses: ./.github/workflows/check-build-artifact.yaml
     with:
-      build_workflow: ${{ inputs.build_workflow }}
+      service: ${{ inputs.service }}
     if: inputs.preflight_context == 'deploy'
 
   check-release-package:

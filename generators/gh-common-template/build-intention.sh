@@ -2,7 +2,7 @@
 
 echo "===> Create Intention"
 # Create intention
-cat ./.github/workflows/build-intention<% if (relativePath) { -%>-<%= serviceName %><% } -%>.json | jq "\
+cat ./.github/workflows/build-intention-<%= serviceName %>.json | jq "\
     .event.reason=\"${EVENT_REASON}\" | \
     .event.url=\"https://github.com/${GITHUB_REPOSITORY}/actions/runs/${GITHUB_RUN_ID}\" | \
     (.actions[] | select(.id == \"build\") .package.version) |= \"${PACKAGE_VERSION}\" | \

@@ -1,9 +1,17 @@
-export function makeWorkflowBuildPublishPath(serviceName, isMonoRepo) {
-  return `.github/workflows/build-release${isMonoRepo ? `-${serviceName}` : ''}.yaml`;
+export function makeWorkflowBuildPublishPath(serviceName) {
+  return `.github/workflows/${makeWorkflowBuildPublishFile(serviceName)}`;
 }
 
-export function makeWorkflowDeployPath(serviceName, isMonoRepo) {
-  return `.github/workflows/deploy${isMonoRepo ? `-${serviceName}` : ''}.yaml`;
+export function makeWorkflowBuildPublishFile(serviceName) {
+  return `build-release-${serviceName}.yaml`;
+}
+
+export function makeWorkflowDeployPath(serviceName) {
+  return `.github/workflows/${makeWorkflowDeployFile(serviceName)}`;
+}
+
+export function makeWorkflowDeployFile(serviceName) {
+  return `deploy-${serviceName}.yaml`;
 }
 
 export function alphaDashValidate(input) {

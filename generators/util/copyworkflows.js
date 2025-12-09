@@ -1,4 +1,8 @@
 import { destinationGitPath, relativeGitPath } from './git.js';
+import {
+  makeWorkflowBuildPublishFile,
+  makeWorkflowDeployFile,
+} from '../util/github.js';
 
 export function copyCommonBuildWorkflows(generator, answers) {
   const commonTemplatePath = '../../gh-common-template';
@@ -7,7 +11,7 @@ export function copyCommonBuildWorkflows(generator, answers) {
   generator.fs.copyTpl(
     generator.templatePath(`${commonTemplatePath}/build-intention.json`),
     destinationGitPath(
-      `.github/workflows/build-intention${relativePath ? `-${answers.serviceName}` : ''}.json`,
+      `.github/workflows/build-intention-${answers.serviceName}.json`,
     ),
     {
       projectName: answers.projectName,
@@ -21,7 +25,7 @@ export function copyCommonBuildWorkflows(generator, answers) {
   generator.fs.copyTpl(
     generator.templatePath(`${commonTemplatePath}/build-intention.sh`),
     destinationGitPath(
-      `.github/workflows/build-intention${relativePath ? `-${answers.serviceName}` : ''}.sh`,
+      `.github/workflows/build-intention-${answers.serviceName}.sh`,
     ),
     {
       serviceName: answers.serviceName,
@@ -46,7 +50,6 @@ export function copyCommonBuildWorkflows(generator, answers) {
 
 export function copyCommonDeployWorkflows(generator, answers) {
   const commonTemplatePath = '../../gh-common-template';
-  const relativePath = relativeGitPath();
 
   const brokerJwt = answers.clientId.trim()
     ? `broker-jwt:${answers.clientId.trim()}`.replace(/[^a-zA-Z0-9_]/g, '_')
@@ -89,13 +92,13 @@ export function copyCommonDeployWorkflows(generator, answers) {
   generator.fs.copyTpl(
     generator.templatePath(`${commonTemplatePath}/run-deploy.yaml`),
     destinationGitPath(
-      `.github/workflows/run-deploy${relativePath ? `-${answers.serviceName}` : ''}.yaml`,
+      `.github/workflows/run-deploy-${answers.serviceName}.yaml`,
     ),
     {
       serviceName: answers.serviceName,
       brokerJwt,
-      buildWorkflowFile: `build-release${relativePath ? `-${answers.serviceName}` : ''}.yaml`,
-      deployWorkflowFile: `deploy${relativePath ? `-${answers.serviceName}` : ''}.yaml`,
+      buildWorkflowFile: makeWorkflowBuildPublishFile(answers.serviceName),
+      deployWorkflowFile: makeWorkflowDeployFile(answers.serviceName),
     },
   );
 }

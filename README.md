@@ -146,7 +146,7 @@ It is recommended that Windows users install and run the command using Node.js o
 
 You will need to install node and clone this repository. You can checkout a version tag (vx.x.x) to run a specific release.
 
-* [Node 22](https://nodejs.org/en)
+* [Node 24](https://nodejs.org/en)
 
 The tool is build using [Yeoman](http://yeoman.io) which is a JavaScript library. You do not need to install Yeoman.
 
@@ -163,22 +163,83 @@ First, open a terminal and change the current working directory to the root of t
 
 The generators will output a file to save your answers and will update any `catalog-info.yaml` catalogue file. This is useful if you want to rerun the generator in the future to take advantage of any updated workflows.
 
-The example command will run the 'gh-maven-build' generator. This creates or updates the files for building and deploying a Maven (Java) application.
+The example commands will run the 'gh-maven-build' generator. This creates or updates the files for building and deploying a Maven (Java) application.
 
-### Container
+## Container
 
+### Using the Shell Script (Recommended)
+
+The `nr-repository-composer.sh` script is the easiest way to run the composer. It automatically detects whether you have Podman or Docker installed (preferring Podman) and handles all the container configuration for you.
+
+If you haven't cloned the repo, first download the shell script. As you may need to edit the image tag, you should save the file somewhere convenient.
+
+**Download the script:**
+
+```bash
+# Download to current directory
+curl -o nr-repository-composer.sh https://raw.githubusercontent.com/bcgov-nr/nr-repository-composer/main/nr-repository-composer.sh
+chmod +x nr-repository-composer.sh
 ```
+
+**Optional: Add to your PATH**
+
+For easier access from anywhere, move the script to a directory in your PATH.
+
+**Usage:**
+
+```bash
+# If script is in your PATH
+cd /path/to/your/repo
+nr-repository-composer.sh . backstage-location
+nr-repository-composer.sh ./frontend backstage
+nr-repository-composer.sh ./frontend gh-maven-build --help
+
+# If running from the cloned repo or script in current directory
+./nr-repository-composer.sh /path/to/your/repo gh-nodejs-build --ask-answered
+```
+
+**How it works:**
+
+The script:
+- **Auto-detects container runtime** - Uses Podman if available, otherwise Docker
+- **Finds the git repository root** from your working directory and validates it
+- **Mounts the entire repository** as `/src` in the container
+- **Sets the working directory** to match your relative location within the repo
+- **Auto-prefixes generator names** - Adds `nr-repository-composer:` automatically (you can omit it)
+- **Pulls latest image** by default - Set `PULL_IMAGE="false"` in the script to disable
+- **Passes all options** to the generator
+
+**Configuration:**
+
+You can edit the script to customize behavior:
+
+```bash
+# Modify this to change the image version used
+IMAGE="ghcr.io/bcgov/nr-repository-composer:latest"
+
+# Set to "false" to skip pulling the latest image (uses cached version)
+PULL_IMAGE="true"
+```
+
+### Direct Container Commands
+
+For manual control or CI/CD pipelines, you can run the container directly:
+
+```bash
+# Podman
 podman run --rm -it -v ${PWD}:/src --userns keep-id ghcr.io/bcgov/nr-repository-composer:latest nr-repository-composer:gh-maven-build
-```
-```
-docker run --rm -v ${PWD}:/src ghcr.io/bcgov/nr-repository-composer:latest nr-repository-composer:gh-maven-build
+
+# Docker
+docker run --rm -it -v ${PWD}:/src ghcr.io/bcgov/nr-repository-composer:latest nr-repository-composer:gh-maven-build
 ```
 
 The examples map the current working directory to the '/src' directory inside of the container image. The generator container image uses '/src' as its working directory and will read and write files at that location.
 
 The mounted `src` directory must always be the root of the repository. Use the "working directory" run argument (example: `-w /src/mydir`) to alter the working directory if you want to run the generator not at the root of the repository. The generators always need to be able to locate the `.git` folder as some files are output relative to it (not relative to the working directory).
 
-### Local
+## Local Install
+
+For development or if you prefer not to use containers:
 
 ```bash
 npx yo nr-repository-composer:gh-maven-build
@@ -190,7 +251,7 @@ npx yo nr-repository-composer:gh-maven-build
 
 The following are expected to be installed.
 
-* node (v22+)
+* node (v24+)
 * podman
 
 ## Building the image

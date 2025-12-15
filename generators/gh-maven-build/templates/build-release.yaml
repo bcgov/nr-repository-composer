@@ -41,7 +41,6 @@ jobs:
       actions: read
     with:
       preflight_context: build
-      release_check: true
       catalog_info: <%= relativePath %><%= relativePath ? '/' : '' %>catalog-info.yaml
     secrets:
       token: ${{ secrets.<%= brokerJwt %> }}
@@ -94,7 +93,7 @@ jobs:
             echo "version_modifier=${{ github.ref_name }}" >> $GITHUB_OUTPUT
           fi
       - name: Checkout repository
-        uses: actions/checkout@v4
+        uses: actions/checkout@v6
         with:
             fetch-depth: 0
             fetch-tags: true

@@ -20,9 +20,33 @@ jobs:
     permissions:
       actions: read
     steps:
+      - name: Checkout only catalog-info.yaml
+        uses: actions/checkout@v6
+        with:
+          sparse-checkout: |
+            ${{ inputs.catalog_info }}
+          sparse-checkout-cone-mode: false
+
+      - name: Verify catalog file exists
+        run: |
+          if [[ ! -f "${{ inputs.catalog_info }}" ]]; then
+            echo "Error: catalog file not found at ${{ inputs.catalog_info }}"
+            exit 1
+          fi
+          echo "Catalog file found: ${{ inputs.catalog_info }}"
+
       - name: Check build artifact
         shell: bash
         run: |
+          # Parse project (spec.system) and service (metadata.name) from the Backstage catalog-info YAML using yq
+          PROJECT_NAME="$(yq e '.spec.system // ""' "$CATALOG_FILE" | tr -d '\r')"
+          SERVICE_NAME="$(yq e '.metadata.name // ""' "$CATALOG_FILE" | tr -d '\r')"
+
+          if [ -z "$PROJECT_NAME" ] || [ -z "$SERVICE_NAME" ]; then
+            echo "Failed to parse project or service name from $CATALOG_FILE (spec.system=${PROJECT_NAME:-<empty>}, metadata.name=${SERVICE_NAME:-<empty>})"
+            exit 1
+          fi
+
           RESPONSE=$(curl -s "https://api.github.com/repos/<%= gitHubProjectSlug %>/actions/workflows/${{ inputs.build_workflow }}/runs?head_sha=${{ github.sha }}&branch=${{ github.ref_name }}" \
             -H "Authorization: token ${{ secrets.GITHUB_TOKEN }}" \
             -H "Accept: application/vnd.github+json")
@@ -36,7 +60,6 @@ jobs:
               JOB_RESPONSE=$(curl -s "https://api.github.com/repos/<%= gitHubProjectSlug %>/actions/runs/$BUILD_ACTION_ID/jobs" \
                 -H "Authorization: token ${{ secrets.GITHUB_TOKEN }}" \
                 -H "Accept: application/vnd.github+json")
-              SERVICE_NAME="${{ inputs.service }}"
               { read -r BUILD_ACTION_NAME; read -r BUILD_ACTION_STATUS; read -r BUILD_ACTION_URL; } < <(jq -r '.jobs | map(select(.name == "Build and publish - '"$SERVICE_NAME"'")).[] | .name // "", .conclusion // "", .html_url // ""' <<< "$JOB_RESPONSE")
             fi
           fi

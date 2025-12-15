@@ -13,7 +13,7 @@ on:
         default: "catalog-info.yaml"
         required: false
       preflight_context:
-        description: 'Determines which pre-flight checks to run. Must be in (build, deploy).'
+        description: 'Determines which pre-flight checks to run. Must be in (build, build-release, deploy).'
         default: ''
         required: true
         type: string
@@ -22,16 +22,6 @@ on:
         default: ''
         required: false
         type: string
-      service:
-        description: 'Service name.'
-        default: ''
-        required: false
-        type: string
-      release_check:
-        description: "Whether to run the release package check"
-        required: false
-        default: false
-        type: boolean
 permissions:
   contents: read
   actions: read
@@ -47,7 +37,7 @@ jobs:
     name: Check build artifact
     uses: ./.github/workflows/check-build-artifact.yaml
     with:
-      service: ${{ inputs.service }}
+      catalog_info: ${{ inputs.catalog_info }}
     if: inputs.preflight_context == 'deploy'
 
   check-release-package:
@@ -57,4 +47,4 @@ jobs:
       token: ${{ secrets.token }}
     with:
       catalog_info: ${{ inputs.catalog_info }}
-    if: ${{ inputs.release_check == true && github.ref_type == 'tag' }}
+    if: ${{ inputs.preflight_context == 'build' && github.ref_type == 'tag' }}

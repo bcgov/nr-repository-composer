@@ -13,12 +13,12 @@ on:
         default: "catalog-info.yaml"
         required: false
       preflight_context:
-        description: 'Determines which pre-flight checks to run. Must be in (build, build-release, deploy).'
+        description: 'Determines which pre-flight checks to run. Must be in (build, deploy).'
         default: ''
         required: true
         type: string
       build_workflow:
-        description: 'Build workflow used to validate the build artifact.'
+        description: 'Build workflow used to validate the build artifact. (Required if preflight_context is deploy)'
         default: ''
         required: false
         type: string
@@ -37,6 +37,7 @@ jobs:
     name: Check build artifact
     uses: ./.github/workflows/check-build-artifact.yaml
     with:
+      build_workflow: ${{ inputs.build_workflow }}
       catalog_info: ${{ inputs.catalog_info }}
     if: inputs.preflight_context == 'deploy'
 

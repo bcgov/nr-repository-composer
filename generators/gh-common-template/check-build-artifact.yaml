@@ -3,12 +3,13 @@ name: Check build artifact
 on:
   workflow_call:
     inputs:
+      catalog_info:
+        description: "The catalog file"
+        type: string
+        default: "catalog-info.yaml"
+        required: false
       build_workflow:
         description: "Build workflow used to validate the build artifact."
-        type: string
-        required: true
-      service:
-        description: "Service name for monorepo builds. Leave empty for top-level workflows."
         type: string
         required: true
 permissions: {}
@@ -38,6 +39,7 @@ jobs:
       - name: Check build artifact
         shell: bash
         run: |
+          CATALOG_FILE="${{ inputs.catalog_info }}"
           # Parse project (spec.system) and service (metadata.name) from the Backstage catalog-info YAML using yq
           PROJECT_NAME="$(yq e '.spec.system // ""' "$CATALOG_FILE" | tr -d '\r')"
           SERVICE_NAME="$(yq e '.metadata.name // ""' "$CATALOG_FILE" | tr -d '\r')"

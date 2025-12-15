@@ -37,6 +37,7 @@ jobs:
     name: Preflight
     uses: ./.github/workflows/preflight.yaml
     permissions:
+      contents: read
       actions: read
     with:
       preflight_context: build

@@ -50,6 +50,7 @@ export function copyCommonBuildWorkflows(generator, answers) {
 
 export function copyCommonDeployWorkflows(generator, answers) {
   const commonTemplatePath = '../../gh-common-template';
+  const relativePath = relativeGitPath();
 
   const brokerJwt = answers.clientId.trim()
     ? `broker-jwt:${answers.clientId.trim()}`.replace(/[^a-zA-Z0-9_]/g, '_')
@@ -98,6 +99,7 @@ export function copyCommonDeployWorkflows(generator, answers) {
       serviceName: answers.serviceName,
       brokerJwt,
       buildWorkflowFile: makeWorkflowBuildPublishFile(answers.serviceName),
+      relativePath,
       deployWorkflowFile: makeWorkflowDeployFile(answers.serviceName),
     },
   );

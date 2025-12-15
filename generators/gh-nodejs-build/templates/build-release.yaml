@@ -96,7 +96,7 @@ jobs:
       - name: Setup ORAS
         uses: oras-project/setup-oras@v1
       - name: Set up Node
-        uses: actions/setup-node@v4
+        uses: actions/setup-node@v6
         with:
           node-version: 22
           cache: 'npm'

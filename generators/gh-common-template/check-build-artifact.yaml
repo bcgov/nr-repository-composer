@@ -70,6 +70,11 @@ jobs:
           else
             echo "Unable to parse build action url."
           fi
+          if [[ "$BUILD_ACTION_STATUS" == "in_progress" || "$BUILD_ACTION_STATUS" == "queued" || "$BUILD_ACTION_STATUS" == "requested" ]]; then
+            echo "::error ::Last '${BUILD_ACTION_NAME:-build-release}' is in progress."
+            echo "This deploy was triggered on ${{ github.ref_name }} branch with the ${{ github.sha }} commit hash which does not have a successful build. Please wait for the build to complete successfully before triggering a deploy."
+            exit 1
+          fi
           if [[ "$BUILD_ACTION_STATUS" != "success" ]]; then
             echo "::error ::Last '${BUILD_ACTION_NAME:-build-release}' was not 'success' or does not exist."
             echo "This deploy was triggered on ${{ github.ref_name }} branch with the ${{ github.sha }} commit hash which does not have a successful build. Please examine the build output and ensure a build is successful before triggering a deploy."

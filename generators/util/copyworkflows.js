@@ -54,8 +54,14 @@ export function copyCommonBuildWorkflows(generator, answers) {
   );
 
   // Clean up old files if they exist (may remove in future)
-  rmIfExists(generator, generator.templatePath('build-intention.json'));
-  rmIfExists(generator, generator.templatePath('build-intention.sh'));
+  rmIfExists(
+    generator,
+    destinationGitPath('.github/workflows/build-intention.json'),
+  );
+  rmIfExists(
+    generator,
+    destinationGitPath('.github/workflows/build-intention.sh'),
+  );
 }
 
 export function copyCommonDeployWorkflows(generator, answers) {

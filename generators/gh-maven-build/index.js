@@ -275,10 +275,12 @@ export default class extends Generator {
     }
 
     // Clean up old files if they exist (may remove in future)
-    rmIfExists(
-      this,
-      destinationGitPath('.github/workflows/build-release.yaml'),
-    );
+    if (!isMonoRepo()) {
+      rmIfExists(
+        this,
+        destinationGitPath('.github/workflows/build-release.yaml'),
+      );
+    }
     rmIfExists(this, destinationGitPath('.github/workflows/deploy.yaml'));
     rmIfExists(this, destinationGitPath('.github/workflows/run-deploy.yaml'));
   }

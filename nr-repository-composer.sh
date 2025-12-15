@@ -31,8 +31,8 @@ if command -v podman &> /dev/null; then
 elif command -v docker &> /dev/null; then
     CONTAINER_CMD="docker"
 else
-    echo "Error: Neither podman nor docker is installed or in PATH"
-    echo "Please install podman or docker to use this tool"
+    echo "Error: Neither podman nor docker is installed or in PATH" >&2
+    echo "Please install podman or docker to use this tool" >&2
     exit 1
 fi
 
@@ -47,7 +47,7 @@ fi
 
 # Resolve working directory to absolute path
 if [ ! -d "$WORKING_DIR" ]; then
-    echo "Error: Directory '$WORKING_DIR' does not exist"
+    echo "Error: Directory '$WORKING_DIR' does not exist" >&2
     exit 1
 fi
 
@@ -66,10 +66,10 @@ find_git_root() {
     return 1
 }
 
-GIT_ROOT=$(find_git_root "$WORKING_DIR")
+GIT_ROOT=$(find_git_root "$WORKING_DIR") || true
 if [ -z "$GIT_ROOT" ]; then
-    echo "Error: No .git directory found in '$WORKING_DIR' or any parent directory"
-    echo "The composer must be run within a git repository"
+    echo "Error: No .git directory found in '$WORKING_DIR' or any parent directory" >&2
+    echo "The composer must be run within a git repository" >&2
     exit 1
 fi
 

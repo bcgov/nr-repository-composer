@@ -48,6 +48,7 @@ import { BACKSTAGE_FILENAME, BACKSTAGE_KIND_COMPONENT } from '../util/yaml.js';
 import {
   copyCommonBuildWorkflows,
   copyCommonDeployWorkflows,
+  rmIfExists,
 } from '../util/copyworkflows.js';
 
 const questions = [
@@ -272,6 +273,11 @@ export default class extends Generator {
         jasper_playbook_options,
       );
     }
+
+    // Clean up old files if they exist (may remove in future)
+    rmIfExists(this, destinationGitPath('build-release.yaml'));
+    rmIfExists(this, destinationGitPath('deploy.yaml'));
+    rmIfExists(this, destinationGitPath('run-deploy.yaml'));
   }
 
   writingBackstage() {

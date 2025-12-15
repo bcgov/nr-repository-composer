@@ -4,6 +4,12 @@ import {
   makeWorkflowDeployFile,
 } from '../util/github.js';
 
+export function rmIfExists(generator, path) {
+  if (generator.fs.exists(path)) {
+    generator.fs.delete(path);
+  }
+}
+
 export function copyCommonBuildWorkflows(generator, answers) {
   const commonTemplatePath = '../../gh-common-template';
   const relativePath = relativeGitPath();
@@ -46,6 +52,10 @@ export function copyCommonBuildWorkflows(generator, answers) {
     generator.templatePath(`${commonTemplatePath}/check-release-package.yaml`),
     destinationGitPath(`.github/workflows/check-release-package.yaml`),
   );
+
+  // Clean up old files if they exist (may remove in future)
+  rmIfExists(generator, generator.templatePath('build-intention.json'));
+  rmIfExists(generator, generator.templatePath('build-intention.sh'));
 }
 
 export function copyCommonDeployWorkflows(generator, answers) {
@@ -80,16 +90,6 @@ export function copyCommonDeployWorkflows(generator, answers) {
     },
   );
 
-  if (
-    generator.fs.exists(
-      generator.destinationPath('.jenkins/deployment-intention.json'),
-    )
-  ) {
-    generator.fs.delete(
-      generator.destinationPath('.jenkins/deployment-intention.json'),
-    );
-  }
-
   generator.fs.copyTpl(
     generator.templatePath(`${commonTemplatePath}/run-deploy.yaml`),
     destinationGitPath(
@@ -102,5 +102,11 @@ export function copyCommonDeployWorkflows(generator, answers) {
       relativePath,
       deployWorkflowFile: makeWorkflowDeployFile(answers.serviceName),
     },
+  );
+
+  // Clean up old files if they exist (may remove in future)
+  rmIfExists(
+    generator,
+    generator.destinationPath('.jenkins/deployment-intention.json'),
   );
 }

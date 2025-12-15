@@ -52,7 +52,7 @@ jobs:
           RESPONSE=$(curl -s "https://api.github.com/repos/<%= gitHubProjectSlug %>/actions/workflows/${{ inputs.build_workflow }}/runs?head_sha=${{ github.sha }}&branch=${{ github.ref_name }}" \
             -H "Authorization: token ${{ secrets.GITHUB_TOKEN }}" \
             -H "Accept: application/vnd.github+json")
-          if [[ -z $RESPONSE ]]; then
+          if [[ -n $RESPONSE ]]; then
             # top-level workflow - get the workflow run directly
             { read -r BUILD_ACTION_NAME; read -r BUILD_ACTION_STATUS; read -r BUILD_ACTION_URL; } < <(jq -r '.workflow_runs | sort_by(.run_number) | reverse | .[0] | .name // "", .conclusion // "", .html_url // ""' <<< "$RESPONSE")
           else

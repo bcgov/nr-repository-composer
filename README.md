@@ -6,9 +6,9 @@ We recommend using the prebuilt container image to run the generators using Podm
 
 ## Where to start
 
-The composer's generators can be tested by creating a directory and initializing a Git repository. If you have multiple products (frontend, backend, and so on), in a single repository we consider that a monorepo and you should run the `backstage-location` generator to assist with placing a location catalog file at the root.
+The composer's generators can be tested by creating a directory and initializing a Git repository. If you have multiple components (frontend, backend, and so on), in a single repository this is considered a monorepo and you should run the `backstage-location` generator to assist with placing a location catalog file at the root.
 
-The `backstage` generator is first step for most applications and is run at the root of the product within the repository. From here, additional generators are used to scaffold the application's pipeline.
+The `backstage` generator creates the catalog file and is first step for most components. It is run at the root of the component within the repository. If you have multiple components, each should be placed in a directory off the root. Otherwise, the root of a non-monorepo should contain the catalog file. From here, the developer runs additional generators in the folder for each component to scaffold the pipelines.
 
 ## Generator Library
 
@@ -138,9 +138,9 @@ You will need to install one of the following. Either can run the composer using
 * [Podman](https://podman.io)
 * [Docker](https://www.docker.com)
 
-It is recommended that Windows users install and run the command using Node.js or Podman. Docker has a known issue with correctly modifying file permissions on mounted volumes.
+It is recommended that Windows users install and run the command using Node.js or Podman.
 
-**Note:** Windows Docker has an architectural issue with setting permissions for files mounted from volume.
+**Note:** Windows Docker has an architectural issue with correctly setting file permissions on mounted volumes.
 
 ## Using a local install
 
@@ -159,11 +159,9 @@ npm link
 
 # Usage
 
-First, open a terminal and change the current working directory to the root of the checked out repository that you wish to scaffold. It is recommended that you run the generators only on a clean repository.
+First, either initialize a new Git repository or clone an existing repository. It is recommended that you run the generators only on a clean repository.
 
-The generators will output a file to save your answers and will update any `catalog-info.yaml` catalogue file. This is useful if you want to rerun the generator in the future to take advantage of any updated workflows.
-
-The example commands will run the 'gh-maven-build' generator. This creates or updates the files for building and deploying a Maven (Java) application.
+The generators will output a file to save your answers and will update any `catalog-info.yaml` catalogue file. This is useful if you want to rerun the generator in the future to take advantage of any updates.
 
 ## Container
 
@@ -171,7 +169,7 @@ The example commands will run the 'gh-maven-build' generator. This creates or up
 
 The `nr-repository-composer.sh` script is the easiest way to run the composer. It automatically detects whether you have Podman or Docker installed (preferring Podman) and handles all the container configuration for you.
 
-If you haven't cloned the repo, first download the shell script. As you may need to edit the image tag, you should save the file somewhere convenient.
+You can clone this repository or download just the shell script from GitHub.
 
 **Download the script:**
 
@@ -181,13 +179,16 @@ curl -o nr-repository-composer.sh https://raw.githubusercontent.com/bcgov-nr/nr-
 chmod +x nr-repository-composer.sh
 ```
 
-**Optional: Add to your PATH**
-
-For easier access from anywhere, move the script to a directory in your PATH.
+You can optionally add the script to a directory in your PATH.
 
 **Usage:**
 
 ```bash
+# Syntax: nr-repository-composer.sh <working-directory> <generator> [options...]
+#   <working-directory> - Path to your repository or subdirectory within it
+#   <generator>         - Generator name (e.g., backstage, gh-maven-build)
+#   [options...]        - Additional generator options (e.g., --help, --ask-answered)
+
 # If script is in your PATH
 cd /path/to/your/repo
 nr-repository-composer.sh . backstage-location
@@ -197,12 +198,13 @@ nr-repository-composer.sh ./frontend gh-maven-build --help
 # If running from the cloned repo or script in current directory
 ./nr-repository-composer.sh /path/to/your/repo gh-nodejs-build --ask-answered
 ```
+Note: The script prefixes `nr-repository-composer:` automatically to the generator so you can omit it.
 
 **How it works:**
 
 The script:
 - **Auto-detects container runtime** - Uses Podman if available, otherwise Docker
-- **Finds the git repository root** from your working directory and validates it
+- **Finds the git repository root** from the working directory and validates it
 - **Mounts the entire repository** as `/src` in the container
 - **Sets the working directory** to match your relative location within the repo
 - **Auto-prefixes generator names** - Adds `nr-repository-composer:` automatically (you can omit it)
@@ -223,7 +225,7 @@ PULL_IMAGE="true"
 
 ### Direct Container Commands
 
-For manual control or CI/CD pipelines, you can run the container directly:
+For manual control, you can run the container directly:
 
 ```bash
 # Podman

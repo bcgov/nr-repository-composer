@@ -117,11 +117,7 @@ jobs:
       - name: Update pom.xml
         id: update-repo
         shell: bash
-<% if (!isMonoRepo) { -%>
         working-directory: ./<%= relativePath %>
-<% } else { -%>
-        working-directory: ./
-<% } -%>
         run: |
           if [[ ${{ startsWith(github.ref, 'refs/tags/v') }} = true ]]; then
             TAG=${{ github.ref_name }}

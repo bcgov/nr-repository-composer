@@ -117,11 +117,7 @@ jobs:
       - name: Update pom.xml
         id: update-repo
         shell: bash
-<% if (!isMonoRepo) { -%>
         working-directory: ./<%= relativePath %>
-<% } else { -%>
-        working-directory: ./
-<% } -%>
         run: |
           if [[ ${{ startsWith(github.ref, 'refs/tags/v') }} = true ]]; then
             TAG=${{ github.ref_name }}
@@ -164,6 +160,18 @@ jobs:
           echo "intention_id=${INTENTION_ID}" >> $GITHUB_OUTPUT
         env:
           INTENTION_ID: ${{ env.INTENTION_ID }}
+<% if (ociArtifacts.length > 0) { _%>
+      - name: Pull static artifacts
+        run: |
+          oras login ghcr.io -u ${{ github.actor }} --password-stdin <<< ${{ secrets.GITHUB_TOKEN }}
+          <%_ for (const artifact of ociArtifacts) { _%>
+          echo "Pulling artifact <%= artifact.artifact %> to <%= artifact.output %>"
+          oras pull <%= artifact.artifact %> --output <%= artifact.output %>
+          <%_ } -%>
+        working-directory: ./<%= relativePath %>
+        env:
+          PROJECT_TAG: ${{ steps.set-version.outputs.tag }}
+<% } -%>
       - name: Publish artifact
         id: publish-artifact
         working-directory: ./<%= relativePath %>

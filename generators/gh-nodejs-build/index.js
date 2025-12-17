@@ -22,6 +22,7 @@ import {
   PROMPT_DEPLOY_ON_PREM,
   PROMPT_GITHUB_PROJECT_SLUG,
   PROMPT_PLAYBOOK_PATH,
+  PROMPT_OCI_ARTIFACTS,
   getPromptToUsage,
 } from '../util/prompts.js';
 import { BACKSTAGE_FILENAME, BACKSTAGE_KIND_COMPONENT } from '../util/yaml.js';
@@ -46,6 +47,7 @@ const questions = [
   PROMPT_PUBLISH_ARTIFACT_SUFFIX,
   PROMPT_DEPLOY_ON_PREM,
   PROMPT_GITHUB_PROJECT_SLUG,
+  PROMPT_OCI_ARTIFACTS,
   {
     ...PROMPT_PLAYBOOK_PATH,
     when: (answers) => {
@@ -116,6 +118,9 @@ export default class extends Generator {
           '_',
         )
       : 'BROKER_JWT';
+    const ociArtifacts = this.answers.ociArtifacts.trim()
+      ? JSON.parse(this.answers.ociArtifacts.trim())
+      : [];
     this.fs.copyTpl(
       this.templatePath('build-release.yaml'),
       destinationGitPath(
@@ -129,6 +134,7 @@ export default class extends Generator {
         unitTestsPath: this.answers.unitTestsPath,
         publishArtifactSuffix: this.answers.publishArtifactSuffix,
         relativePath,
+        ociArtifacts,
         isMonoRepo: isMonoRepo(),
       },
     );

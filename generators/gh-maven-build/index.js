@@ -38,6 +38,7 @@ import {
   PROMPT_JASPER_SERVER_INSTANCE,
   PROMPT_LICENSE,
   PROMPT_PLAYBOOK_PATH,
+  PROMPT_OCI_ARTIFACTS,
   PROMPT_TOMCAT_CONTEXT,
   PROMPT_UNIT_TESTS_PATH,
   PROMPT_POST_DEPLOY_TESTS_PATH,
@@ -60,6 +61,7 @@ const questions = [
   PROMPT_UNIT_TESTS_PATH,
   PROMPT_POST_DEPLOY_TESTS_PATH,
   PROMPT_GITHUB_PACKAGES,
+  PROMPT_OCI_ARTIFACTS,
   {
     ...PROMPT_GITHUB_PROJECT_SLUG,
     when: (answers) => answers.gitHubPackages,
@@ -189,6 +191,9 @@ export default class extends Generator {
           '_',
         )
       : 'BROKER_JWT';
+    const ociArtifacts = this.answers.ociArtifacts.trim()
+      ? JSON.parse(this.answers.ociArtifacts.trim())
+      : [];
     this.fs.copyTpl(
       this.templatePath('build-release.yaml'),
       destinationGitPath(
@@ -208,6 +213,7 @@ export default class extends Generator {
         isMonoRepo: isMonoRepo(),
         configureNrArtifactory: this.answers.configureNrArtifactory,
         mavenBuildCommand: this.answers.mavenBuildCommand,
+        ociArtifacts,
       },
     );
     copyCommonBuildWorkflows(this, {

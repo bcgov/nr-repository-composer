@@ -37,10 +37,10 @@ jobs:
     name: Preflight
     uses: ./.github/workflows/preflight.yaml
     permissions:
+      contents: read
       actions: read
     with:
       preflight_context: build
-      release_check: true
       catalog_info: <%= relativePath %><%= relativePath ? '/' : '' %>catalog-info.yaml
     secrets:
       token: ${{ secrets.<%= brokerJwt %> }}
@@ -89,7 +89,7 @@ jobs:
             echo "checkout_ref=${{ github.ref_name }}" >> $GITHUB_OUTPUT
           fi
       - name: Checkout repository
-        uses: actions/checkout@v4
+        uses: actions/checkout@v6
         with:
             fetch-depth: 0
             fetch-tags: true
@@ -97,11 +97,13 @@ jobs:
       - name: Setup ORAS
         uses: oras-project/setup-oras@v1
       - name: Set up Node
-        uses: actions/setup-node@v4
+        uses: actions/setup-node@v6
         with:
+          cache-dependency-path: ./<%= relativePath %>
           node-version: 22
           cache: 'npm'
       - name: Set version
+        working-directory: ./<%= relativePath %>
         id: set-version
         run: |
           REF_NAME="${{ github.ref_name }}"
@@ -129,7 +131,7 @@ jobs:
           echo "git_commit=$(git rev-parse --verify HEAD)" >> $GITHUB_OUTPUT
           echo "build_guid=uuid::$(uuidgen)" >> $GITHUB_OUTPUT
       - name: Build intention
-        run: sh ./.github/workflows/build-intention<% if (relativePath){ -%>-<%= serviceName %><% } -%>.sh
+        run: sh ./.github/workflows/build-intention-<%= serviceName %>.sh
         env:
           EVENT_REASON: Build ${{ github.ref_name }}
           GITHUB_REPOSITORY: ${{ github.repository}}
@@ -161,7 +163,7 @@ jobs:
         id: publish-artifact
         run: |
           oras login ghcr.io -u ${{ github.actor }} --password-stdin <<< ${{ secrets.GITHUB_TOKEN }}
-          oras push --export-manifest manifest.json ghcr.io/${{ github.repository }}/package:${PROJECT_TAG} <%= publishArtifactSuffix %>
+          oras push --export-manifest manifest.json ghcr.io/${{ github.repository }}/<%= serviceName %>:${PROJECT_TAG} <%= publishArtifactSuffix %>
           MANIFEST=$(cat ./manifest.json)
           echo $MANIFEST
           echo "artifact_sha256=$(echo $MANIFEST | jq -r '.layers[] | select(.annotations["org.opencontainers.image.title"] == "dist") | .digest')" >> $GITHUB_OUTPUT

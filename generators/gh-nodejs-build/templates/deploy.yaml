@@ -20,7 +20,7 @@ env:
   SERVICE_NAME: <%= serviceName %>
   JOB: buildByToken/buildWithParameters?job=<%= projectName %>/<%= serviceName %>
   URL: https://cd.io.nrs.gov.bc.ca
-  PACKAGE_REPO: ghcr.io/${{ github.repository }}/package
+  PACKAGE_REPO: ghcr.io/${{ github.repository }}/<%= serviceName %>
 
 jobs:
   deploy-pre-release-build:
@@ -108,7 +108,7 @@ jobs:
           SERVICE_NAME: ${{ env.SERVICE_NAME }}
           BUILD_SHA: ${{ steps.lookup-pr-merge-ref.outputs.build_sha }}
       - name: Checkout repository
-        uses: actions/checkout@v4
+        uses: actions/checkout@v6
         with:
             fetch-depth: 0
             fetch-tags: true
@@ -183,7 +183,7 @@ jobs:
           SERVICE_PROJECT: ${{ env.SERVICE_PROJECT }}
           SERVICE_NAME: ${{ env.SERVICE_NAME }}
       - name: Checkout repository
-        uses: actions/checkout@v4
+        uses: actions/checkout@v6
         with:
             fetch-depth: 0
             fetch-tags: true
@@ -212,7 +212,7 @@ jobs:
     steps:
       # See: https://github.com/bcgov-nr/polaris-pipelines
       - name: Checkout repository
-        uses: actions/checkout@v4
+        uses: actions/checkout@v6
         with:
             fetch-depth: 0
             fetch-tags: true

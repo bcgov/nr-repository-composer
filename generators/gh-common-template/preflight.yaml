@@ -18,15 +18,10 @@ on:
         required: true
         type: string
       build_workflow:
-        description: 'Build workflow used to validate the build artifact.'
+        description: 'Build workflow used to validate the build artifact. (Required if preflight_context is deploy)'
         default: ''
         required: false
         type: string
-      release_check:
-        description: "Whether to run the release package check"
-        required: false
-        default: false
-        type: boolean
 permissions:
   contents: read
   actions: read
@@ -43,6 +38,7 @@ jobs:
     uses: ./.github/workflows/check-build-artifact.yaml
     with:
       build_workflow: ${{ inputs.build_workflow }}
+      catalog_info: ${{ inputs.catalog_info }}
     if: inputs.preflight_context == 'deploy'
 
   check-release-package:
@@ -52,4 +48,4 @@ jobs:
       token: ${{ secrets.token }}
     with:
       catalog_info: ${{ inputs.catalog_info }}
-    if: ${{ inputs.release_check == true && github.ref_type == 'tag' }}
+    if: ${{ inputs.preflight_context == 'build' && github.ref_type == 'tag' }}

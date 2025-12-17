@@ -66,6 +66,13 @@ export const PROMPT_OWNER = {
   message: 'Owner:',
 };
 
+export const PROMPT_TAGS = {
+  type: 'input',
+  name: 'tags',
+  message: 'Tags (comma-separated, e.g., java, api, frontend):',
+  default: '',
+};
+
 export const PROMPT_GITHUB_PROJECT_SLUG = {
   type: 'input',
   name: 'gitHubProjectSlug',
@@ -140,6 +147,36 @@ export const PROMPT_PLAYBOOK_PATH = {
   name: 'playbookPath',
   message: 'Playbook path:',
   default: 'playbooks',
+};
+export const PROMPT_OCI_ARTIFACTS = {
+  type: 'input',
+  name: 'ociArtifacts',
+  message:
+    'OCI static assets [{"artifact":"ghcr.io/bcgov-c/servicename:${PROJECT_TAG}","output": "./static"}]:',
+  default: '',
+  validate: (input) => {
+    if (!input.trim()) {
+      return true;
+    }
+    try {
+      const parsed = JSON.parse(input);
+      if (!Array.isArray(parsed)) {
+        return 'OCI Artifacts must be a JSON array';
+      }
+      for (const item of parsed) {
+        if (
+          typeof item.artifact !== 'string' ||
+          typeof item.output !== 'string'
+        ) {
+          return 'Each OCI Artifact must have "artifact" and "output" string properties';
+        }
+      }
+      return true;
+      // eslint-disable-next-line no-unused-vars
+    } catch (e) {
+      return 'Invalid JSON format for OCI Artifacts';
+    }
+  },
 };
 export const PROMPT_POM_ROOT = {
   type: 'input',
@@ -280,6 +317,16 @@ export const PROMPT_TO_USAGE = {
   },
   owner: {
     description: 'The owner of the service (e.g. bcgov)',
+  },
+  ociArtifacts: {
+    description: 'A JSON array of OCI artifact references to include in build',
+    example:
+      '[{"artifact": "ghcr.io/bcgov-c/servicename:${PROJECT_TAG}", "output": "./static"}]',
+  },
+  tags: {
+    description:
+      'Comma-separated list of tags for categorizing and searching components',
+    example: 'java, api, backend, microservice',
   },
   gitHubProjectSlug: {
     description:

@@ -22,12 +22,14 @@ import {
   PROMPT_DEPLOY_ON_PREM,
   PROMPT_GITHUB_PROJECT_SLUG,
   PROMPT_PLAYBOOK_PATH,
+  PROMPT_OCI_ARTIFACTS,
   getPromptToUsage,
 } from '../util/prompts.js';
 import { BACKSTAGE_FILENAME, BACKSTAGE_KIND_COMPONENT } from '../util/yaml.js';
 import {
   copyCommonBuildWorkflows,
   copyCommonDeployWorkflows,
+  rmIfExists,
 } from '../util/copyworkflows.js';
 import {
   makeWorkflowBuildPublishPath,
@@ -45,6 +47,7 @@ const questions = [
   PROMPT_PUBLISH_ARTIFACT_SUFFIX,
   PROMPT_DEPLOY_ON_PREM,
   PROMPT_GITHUB_PROJECT_SLUG,
+  PROMPT_OCI_ARTIFACTS,
   {
     ...PROMPT_PLAYBOOK_PATH,
     when: (answers) => {
@@ -115,10 +118,13 @@ export default class extends Generator {
           '_',
         )
       : 'BROKER_JWT';
+    const ociArtifacts = this.answers.ociArtifacts.trim()
+      ? JSON.parse(this.answers.ociArtifacts.trim())
+      : [];
     this.fs.copyTpl(
       this.templatePath('build-release.yaml'),
       destinationGitPath(
-        makeWorkflowBuildPublishPath(this.answers.serviceName, !!relativePath),
+        makeWorkflowBuildPublishPath(this.answers.serviceName),
       ),
       {
         projectName: this.answers.projectName,
@@ -128,6 +134,7 @@ export default class extends Generator {
         unitTestsPath: this.answers.unitTestsPath,
         publishArtifactSuffix: this.answers.publishArtifactSuffix,
         relativePath,
+        ociArtifacts,
         isMonoRepo: isMonoRepo(),
       },
     );
@@ -139,9 +146,7 @@ export default class extends Generator {
     if (this.answers.deployOnPrem) {
       this.fs.copyTpl(
         this.templatePath('deploy.yaml'),
-        destinationGitPath(
-          makeWorkflowDeployPath(this.answers.serviceName, !!relativePath),
-        ),
+        destinationGitPath(makeWorkflowDeployPath(this.answers.serviceName)),
         {
           projectName: this.answers.projectName,
           serviceName: this.answers.serviceName,
@@ -163,6 +168,16 @@ export default class extends Generator {
         playbook_options,
       );
     }
+
+    // Clean up old files if they exist (may remove in future)
+    if (!isMonoRepo()) {
+      rmIfExists(
+        this,
+        destinationGitPath('.github/workflows/build-release.yaml'),
+      );
+    }
+    rmIfExists(this, destinationGitPath('.github/workflows/deploy.yaml'));
+    rmIfExists(this, destinationGitPath('.github/workflows/run-deploy.yaml'));
   }
 
   writingBackstage() {

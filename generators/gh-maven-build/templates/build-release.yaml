@@ -41,7 +41,6 @@ jobs:
       actions: read
     with:
       preflight_context: build
-      release_check: true
       catalog_info: <%= relativePath %><%= relativePath ? '/' : '' %>catalog-info.yaml
     secrets:
       token: ${{ secrets.<%= brokerJwt %> }}
@@ -94,13 +93,13 @@ jobs:
             echo "version_modifier=${{ github.ref_name }}" >> $GITHUB_OUTPUT
           fi
       - name: Checkout repository
-        uses: actions/checkout@v4
+        uses: actions/checkout@v6
         with:
             fetch-depth: 0
             fetch-tags: true
             ref: ${{ steps.lookup-pr-merge-ref.outputs.checkout_ref }}
       - name: Set up Java
-        uses: actions/setup-java@v4
+        uses: actions/setup-java@v5
         with:
           java-version: '<%= javaVersion %>'
           distribution: 'temurin'
@@ -118,11 +117,7 @@ jobs:
       - name: Update pom.xml
         id: update-repo
         shell: bash
-<% if (!isMonoRepo) { -%>
         working-directory: ./<%= relativePath %>
-<% } else { -%>
-        working-directory: ./
-<% } -%>
         run: |
           if [[ ${{ startsWith(github.ref, 'refs/tags/v') }} = true ]]; then
             TAG=${{ github.ref_name }}
@@ -143,7 +138,7 @@ jobs:
           echo "git_commit=$(git rev-parse --verify HEAD)" >> $GITHUB_OUTPUT
           echo "build_guid=uuid::$(uuidgen)" >> $GITHUB_OUTPUT
       - name: Build intention
-        run: sh ./.github/workflows/build-intention<% if (relativePath) { -%>-<%= serviceName %><% } -%>.sh
+        run: sh ./.github/workflows/build-intention-<%= serviceName %>.sh
         env:
           EVENT_REASON: Build ${{ github.ref_name }}
           GITHUB_REPOSITORY: ${{ github.repository}}
@@ -165,6 +160,18 @@ jobs:
           echo "intention_id=${INTENTION_ID}" >> $GITHUB_OUTPUT
         env:
           INTENTION_ID: ${{ env.INTENTION_ID }}
+<% if (ociArtifacts.length > 0) { _%>
+      - name: Pull static artifacts
+        run: |
+          oras login ghcr.io -u ${{ github.actor }} --password-stdin <<< ${{ secrets.GITHUB_TOKEN }}
+          <%_ for (const artifact of ociArtifacts) { _%>
+          echo "Pulling artifact <%= artifact.artifact %> to <%= artifact.output %>"
+          oras pull <%= artifact.artifact %> --output <%= artifact.output %>
+          <%_ } -%>
+        working-directory: ./<%= relativePath %>
+        env:
+          PROJECT_TAG: ${{ steps.set-version.outputs.tag }}
+<% } -%>
       - name: Publish artifact
         id: publish-artifact
         working-directory: ./<%= relativePath %>

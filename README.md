@@ -1,8 +1,14 @@
 # NR Repository Composer
 
-The NR Repository Composer is a suite of generators for installing and updating NRIDS tooling. It can scaffold NRIDS applications using GitHub Actions for building and deploying them, add catalog files (Backstage), and more.
+The NR Repository Composer templates repositories with files for building, deploying and cataloging applications. Developers use its generators to both initially generate and then maintain their repository. Its primary purpose is to scaffold NRIDS applications.
 
-The generators are created using [Yeoman](http://yeoman.io). For distribution, it is packaged into a container image for running on a developer's machine using Docker or Podman.
+We recommend using the prebuilt container image to run the generators using Podman or Docker. Developers wanting to add new generators or make changes to existing ones should clone this repository and run the tool using NodeJS. The composer is built using [Yeoman](http://yeoman.io).
+
+## Where to start
+
+The composer's generators can be tested by creating a directory and initializing a Git repository. If you have multiple components (frontend, backend, and so on), in a single repository this is considered a monorepo and you should run the `backstage-location` generator to assist with placing a location catalog file at the root.
+
+The `backstage` generator creates the catalog file and is first step for most components. It is run at the root of the component within the repository. If you have multiple components, each should be placed in a directory off the root. Otherwise, the root of a non-monorepo should contain the catalog file. From here, the developer runs additional generators in the folder for each component to scaffold the pipelines.
 
 ## Generator Library
 
@@ -11,6 +17,7 @@ The generators are created using [Yeoman](http://yeoman.io). For distribution, i
 | backstage | Catalog service | All | Backstage (kind: component) |
 | backstage-location | Catalog monorepo | All | Backstage (kind: location) |
 | gh-common-mono-build | Pipeline orchestration | GitHub | GitHub Actions |
+| gh-docs-deploy | Documentation | GitHub | GitHub Actions, GitHub Pages |
 | gh-maven-build | Pipeline | GitHub | Java, GitHub Actions |
 | gh-nodejs-build | Pipeline | GitHub | NodeJS, GitHub Actions |
 | migrations | Database | All | FlyWay, Liquibase |
@@ -81,7 +88,7 @@ The generated workflow file appears in .github/workflows/build-release.yaml and 
 
 ### Github Maven Build: `gh-maven-build`
 
-This generates the CI workflow and NR Broker intention files for building Java/Tomcat with Maven in GitHub.
+This generates the CI workflow and NR Broker intention files for building a Java application using Maven in GitHub. The war artifact can then be used in a Tomcat deployment.
 
 The generated files will appear in your .github/workflows and .jenkins directories.
 
@@ -89,11 +96,24 @@ This generator should be run at the root directory of your component (service) w
 
 ### Github Node.js Build: `gh-nodejs-build`
 
-This generates the CI workflow and NR Broker intention files for building Node.js in GitHub. The workflow assume that your `package.json` has a `build` command and your build places the files in `./dist`.
+This generates the CI workflow and NR Broker intention files for building Node.js in GitHub. The workflow assume that your `package.json` has a `build` command and your build places the files in `./dist`. The built OCI artifact can be used in a Node.js deployment or as static assets.
 
 The generated files will appear in your .github/workflows and .jenkins directories.
 
 This generator should be run at the root directory of your component (service) which should contain the `catalog-info.yaml` for it.
+
+### GitHub Docs Deploy: `gh-docs-deploy`
+
+This generates a GitHub Actions workflow for deploying static documentation to GitHub Pages. The workflow automatically deploys content from the `docs/` folder in your repository whenever changes are pushed to the main branch.
+
+The generated workflow file appears at `.github/workflows/docs-deploy.yaml`.
+
+**Setup:**
+- Enable GitHub Pages in your repository settings
+- Set the Pages source to "GitHub Actions" in repository Settings > Pages
+- Create a `docs/` folder with your static documentation content
+
+If the repository has multiple components, pick one to run the generator. This workflow only uploads documentation a single docs folder in the repository.
 
 ### DB Migrations: `migrations`
 
@@ -107,7 +127,7 @@ If true, show prompts for already configured options. Generators read informatio
 
 ### --force [Default: false]
 
-The option `--force` will allow Yoeman to automatically overwrite any existing files. Yoeman's built-in file comparison is redundant if you are running the composer on a clean repository. You can review the changes using git and in a pull request.
+The option `--force` will allow Yeoman to automatically overwrite any existing files. Yeoman's built-in file comparison is redundant if you are running the composer on a clean repository. You can review the changes using git and in a pull request.
 
 ### --headless [Default: false]
 
@@ -132,17 +152,19 @@ You will need to install one of the following. Either can run the composer using
 * [Podman](https://podman.io)
 * [Docker](https://www.docker.com)
 
-It is recommended that Windows users install and run the command using Node.js or Podman. Docker has a known issue with correctly modifying file permissions on mounted volumes. Since the tool needs to set permissions for files like bash scripts, commands will not execute properly on Windows when using Docker.
+It is recommended that Windows users install and run the command using Node.js or Podman.
+
+**Note:** Windows Docker has an architectural issue with correctly setting file permissions on mounted volumes.
 
 ## Using a local install
 
 You will need to install node and clone this repository. You can checkout a version tag (vx.x.x) to run a specific release.
 
-* [Node 22](https://nodejs.org/en)
+* [Node 24](https://nodejs.org/en)
 
-The tool is build using [Yeoman](http://yeoman.io) which is a JavaScript library. You do not need to install Yoeman.
+The tool is build using [Yeoman](http://yeoman.io) which is a JavaScript library. You do not need to install Yeoman.
 
-Install the dependencies with `npm ci` and link it with `npm link` so Yoeman can find the local installation. If you make code changes, you do not need the re-link it.
+Install the dependencies with `npm ci` and link it with `npm link` so Yeoman can find the local installation. If you make code changes, you do not need to re-link it.
 
 ```bash
 npm ci
@@ -151,26 +173,89 @@ npm link
 
 # Usage
 
-First, open a terminal and change the current working directory to the root of the checked out repository that you wish to scaffold. It is recommended that you run the generators only on a clean repository.
+First, either initialize a new Git repository or clone an existing repository. It is recommended that you run the generators only on a clean repository.
 
-The generators will output a file to save your answers and will update any `catalog-info.yaml` catalogue file. This is useful if you want to rerun the generator in the future to take advantage of any updated workflows.
+The generators will output a file to save your answers and will update any `catalog-info.yaml` catalogue file. This is useful if you want to rerun the generator in the future to take advantage of any updates.
 
-The example command will run the 'gh-maven-build' generator. This creates or updates the files for building and deploying a Maven (Java) application.
+## Container
 
-### Container
+### Using the Shell Script (Recommended)
 
+The `nr-repository-composer.sh` script is the easiest way to run the composer. It automatically detects whether you have Podman or Docker installed (preferring Podman) and handles all the container configuration for you.
+
+You can clone this repository or download just the shell script from GitHub.
+
+**Download the script:**
+
+```bash
+# Download to current directory
+curl -o nr-repository-composer.sh https://raw.githubusercontent.com/bcgov-nr/nr-repository-composer/main/nr-repository-composer.sh
+chmod +x nr-repository-composer.sh
 ```
+
+You can optionally add the script to a directory in your PATH.
+
+**Usage:**
+
+```bash
+# Syntax: nr-repository-composer.sh <working-directory> <generator> [options...]
+#   <working-directory> - Path to your repository or subdirectory within it
+#   <generator>         - Generator name (e.g., backstage, gh-maven-build)
+#   [options...]        - Additional generator options (e.g., --help, --ask-answered)
+
+# If script is in your PATH
+cd /path/to/your/repo
+nr-repository-composer.sh . backstage-location
+nr-repository-composer.sh ./frontend backstage
+nr-repository-composer.sh ./frontend gh-maven-build --help
+
+# If running from the cloned repo or script in current directory
+./nr-repository-composer.sh /path/to/your/repo gh-nodejs-build --ask-answered
+```
+Note: The script prefixes `nr-repository-composer:` automatically to the generator so you can omit it.
+
+**How it works:**
+
+The script:
+- **Auto-detects container runtime** - Uses Podman if available, otherwise Docker
+- **Finds the git repository root** from the working directory and validates it
+- **Mounts the entire repository** as `/src` in the container
+- **Sets the working directory** to match your relative location within the repo
+- **Auto-prefixes generator names** - Adds `nr-repository-composer:` automatically (you can omit it)
+- **Pulls latest image** by default - Set `PULL_IMAGE="false"` in the script to disable
+- **Passes all options** to the generator
+
+**Configuration:**
+
+You can edit the script to customize behavior:
+
+```bash
+# Modify this to change the image version used
+IMAGE="ghcr.io/bcgov/nr-repository-composer:latest"
+
+# Set to "false" to skip pulling the latest image (uses cached version)
+PULL_IMAGE="true"
+```
+
+### Direct Container Commands
+
+For manual control, you can run the container directly:
+
+```bash
+# Podman
 podman run --rm -it -v ${PWD}:/src --userns keep-id ghcr.io/bcgov/nr-repository-composer:latest nr-repository-composer:gh-maven-build
-```
-```
-docker run --rm -v ${PWD}:/src ghcr.io/bcgov/nr-repository-composer:latest nr-repository-composer:gh-maven-build
+
+# Docker
+docker run --rm -it -v ${PWD}:/src ghcr.io/bcgov/nr-repository-composer:latest nr-repository-composer:gh-maven-build
 ```
 
 The examples map the current working directory to the '/src' directory inside of the container image. The generator container image uses '/src' as its working directory and will read and write files at that location.
 
 The mounted `src` directory must always be the root of the repository. Use the "working directory" run argument (example: `-w /src/mydir`) to alter the working directory if you want to run the generator not at the root of the repository. The generators always need to be able to locate the `.git` folder as some files are output relative to it (not relative to the working directory).
 
-### Local
+## Local Install
+
+For development or if you prefer not to use containers:
 
 ```bash
 npx yo nr-repository-composer:gh-maven-build
@@ -182,7 +267,7 @@ npx yo nr-repository-composer:gh-maven-build
 
 The following are expected to be installed.
 
-* node (v22+)
+* node (v24+)
 * podman
 
 ## Building the image

@@ -25,6 +25,17 @@ export const pathToProps = [
   { path: ['spec', 'lifecycle'], prop: 'lifecycle', writeEmpty: false },
   { path: ['spec', 'owner'], prop: 'owner', writeEmpty: true },
   {
+    path: ['metadata', 'annotations', 'playbook.io.nrs.gov.bc.ca/ociArtifacts'],
+    prop: 'ociArtifacts',
+    writeEmpty: true,
+  },
+  {
+    path: ['metadata', 'tags'],
+    prop: 'tags',
+    writeEmpty: false,
+    csv: true,
+  },
+  {
     path: ['metadata', 'annotations', 'playbook.io.nrs.gov.bc.ca/pomRoot'],
     prop: 'pomRoot',
     writeEmpty: false,

@@ -1,4 +1,14 @@
 import { destinationGitPath, relativeGitPath } from './git.js';
+import {
+  makeWorkflowBuildPublishFile,
+  makeWorkflowDeployFile,
+} from '../util/github.js';
+
+export function rmIfExists(generator, path) {
+  if (generator.fs.exists(path)) {
+    generator.fs.delete(path);
+  }
+}
 
 export function copyCommonBuildWorkflows(generator, answers) {
   const commonTemplatePath = '../../gh-common-template';
@@ -7,7 +17,7 @@ export function copyCommonBuildWorkflows(generator, answers) {
   generator.fs.copyTpl(
     generator.templatePath(`${commonTemplatePath}/build-intention.json`),
     destinationGitPath(
-      `.github/workflows/build-intention${relativePath ? `-${answers.serviceName}` : ''}.json`,
+      `.github/workflows/build-intention-${answers.serviceName}.json`,
     ),
     {
       projectName: answers.projectName,
@@ -21,7 +31,7 @@ export function copyCommonBuildWorkflows(generator, answers) {
   generator.fs.copyTpl(
     generator.templatePath(`${commonTemplatePath}/build-intention.sh`),
     destinationGitPath(
-      `.github/workflows/build-intention${relativePath ? `-${answers.serviceName}` : ''}.sh`,
+      `.github/workflows/build-intention-${answers.serviceName}.sh`,
     ),
     {
       serviceName: answers.serviceName,
@@ -41,6 +51,16 @@ export function copyCommonBuildWorkflows(generator, answers) {
   generator.fs.copyTpl(
     generator.templatePath(`${commonTemplatePath}/check-release-package.yaml`),
     destinationGitPath(`.github/workflows/check-release-package.yaml`),
+  );
+
+  // Clean up old files if they exist (may remove in future)
+  rmIfExists(
+    generator,
+    destinationGitPath('.github/workflows/build-intention.json'),
+  );
+  rmIfExists(
+    generator,
+    destinationGitPath('.github/workflows/build-intention.sh'),
   );
 }
 
@@ -76,26 +96,23 @@ export function copyCommonDeployWorkflows(generator, answers) {
     },
   );
 
-  if (
-    generator.fs.exists(
-      generator.destinationPath('.jenkins/deployment-intention.json'),
-    )
-  ) {
-    generator.fs.delete(
-      generator.destinationPath('.jenkins/deployment-intention.json'),
-    );
-  }
-
   generator.fs.copyTpl(
     generator.templatePath(`${commonTemplatePath}/run-deploy.yaml`),
     destinationGitPath(
-      `.github/workflows/run-deploy${relativePath ? `-${answers.serviceName}` : ''}.yaml`,
+      `.github/workflows/run-deploy-${answers.serviceName}.yaml`,
     ),
     {
       serviceName: answers.serviceName,
       brokerJwt,
-      buildWorkflowFile: `build-release${relativePath ? `-${answers.serviceName}` : ''}.yaml`,
-      deployWorkflowFile: `deploy${relativePath ? `-${answers.serviceName}` : ''}.yaml`,
+      buildWorkflowFile: makeWorkflowBuildPublishFile(answers.serviceName),
+      relativePath,
+      deployWorkflowFile: makeWorkflowDeployFile(answers.serviceName),
     },
+  );
+
+  // Clean up old files if they exist (may remove in future)
+  rmIfExists(
+    generator,
+    generator.destinationPath('.jenkins/deployment-intention.json'),
   );
 }

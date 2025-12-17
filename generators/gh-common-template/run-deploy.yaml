@@ -27,6 +27,7 @@ jobs:
     name: Preflight
     uses: ./.github/workflows/preflight.yaml
     with:
+      catalog_info: <%= relativePath %><%= relativePath ? '/' : '' %>catalog-info.yaml
       preflight_context: deploy
       build_workflow: <%= buildWorkflowFile %>
     secrets:

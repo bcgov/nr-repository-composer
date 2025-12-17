@@ -39,7 +39,7 @@ export default class extends Generator {
       const name = doc.getPath(['metadata', 'name']);
       return {
         name,
-        workflow: makeWorkflowBuildPublishPath(name, true),
+        workflow: makeWorkflowBuildPublishPath(name),
       };
     });
 

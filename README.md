@@ -17,6 +17,7 @@ The `backstage` generator creates the catalog file and is first step for most co
 | backstage | Catalog service | All | Backstage (kind: component) |
 | backstage-location | Catalog monorepo | All | Backstage (kind: location) |
 | gh-common-mono-build | Pipeline orchestration | GitHub | GitHub Actions |
+| gh-docs-deploy | Documentation | GitHub | GitHub Actions, GitHub Pages |
 | gh-maven-build | Pipeline | GitHub | Java, GitHub Actions |
 | gh-nodejs-build | Pipeline | GitHub | NodeJS, GitHub Actions |
 | migrations | Database | All | FlyWay, Liquibase |
@@ -87,7 +88,7 @@ The generated workflow file appears in .github/workflows/build-release.yaml and 
 
 ### Github Maven Build: `gh-maven-build`
 
-This generates the CI workflow and NR Broker intention files for building Java/Tomcat with Maven in GitHub.
+This generates the CI workflow and NR Broker intention files for building a Java application using Maven in GitHub. The war artifact can then be used in a Tomcat deployment.
 
 The generated files will appear in your .github/workflows and .jenkins directories.
 
@@ -95,11 +96,24 @@ This generator should be run at the root directory of your component (service) w
 
 ### Github Node.js Build: `gh-nodejs-build`
 
-This generates the CI workflow and NR Broker intention files for building Node.js in GitHub. The workflow assume that your `package.json` has a `build` command and your build places the files in `./dist`.
+This generates the CI workflow and NR Broker intention files for building Node.js in GitHub. The workflow assume that your `package.json` has a `build` command and your build places the files in `./dist`. The built OCI artifact can be used in a Node.js deployment or as static assets.
 
 The generated files will appear in your .github/workflows and .jenkins directories.
 
 This generator should be run at the root directory of your component (service) which should contain the `catalog-info.yaml` for it.
+
+### GitHub Docs Deploy: `gh-docs-deploy`
+
+This generates a GitHub Actions workflow for deploying static documentation to GitHub Pages. The workflow automatically deploys content from the `docs/` folder in your repository whenever changes are pushed to the main branch.
+
+The generated workflow file appears at `.github/workflows/docs-deploy.yaml`.
+
+**Setup:**
+- Enable GitHub Pages in your repository settings
+- Set the Pages source to "GitHub Actions" in repository Settings > Pages
+- Create a `docs/` folder with your static documentation content
+
+If the repository has multiple components, pick one to run the generator. This workflow only uploads documentation a single docs folder in the repository.
 
 ### DB Migrations: `migrations`
 

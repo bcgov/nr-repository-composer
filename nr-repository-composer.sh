@@ -13,13 +13,14 @@ PULL_IMAGE="true"
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 
 # Check arguments
-if [ $# -lt 2 ]; then
-    echo "Usage: $0 <working-directory> <generator> [options...]"
+if [ $# -lt 1 ]; then
+    echo "Usage: $0 <working-directory> [generator] [options...]"
     echo ""
     echo "Examples:"
     echo "  $0 /path/to/repo backstage"
     echo "  $0 . gh-maven-build --help"
     echo "  $0 ~/projects/my-app gh-nodejs-build --ask-answered"
+    echo "  $0 . --help"
     echo ""
     echo "Note: 'nr-repository-composer:' prefix is automatically added to the generator name"
     exit 1
@@ -37,11 +38,18 @@ else
 fi
 
 WORKING_DIR="$1"
-GENERATOR="$2"
-shift 2
+
+# If $2 starts with - (option), don't treat it as a generator
+if [[ "${2:-}" == -* ]]; then
+    GENERATOR=""
+    shift 1
+else
+    GENERATOR="$2"
+    shift 2
+fi
 
 # Prepend nr-repository-composer: to generator name if not already present
-if [[ "$GENERATOR" != nr-repository-composer:* ]]; then
+if [[ -n "$GENERATOR" && "$GENERATOR" != nr-repository-composer:* ]]; then
     GENERATOR="nr-repository-composer:$GENERATOR"
 fi
 

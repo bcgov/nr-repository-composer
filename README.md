@@ -1,14 +1,16 @@
 # NR Repository Composer
 
-The NR Repository Composer templates repositories with files for building, deploying and cataloging applications. Developers use its generators to both initially generate and then maintain their repository. Its primary purpose is to scaffold NRIDS applications.
+The NR Repository Composer populates repositories with files for building, deploying, and cataloging applications. Developers use its generators to both initially set up and then maintain their repository. Its primary purpose is to scaffold NRIDS applications.
 
-We recommend using the prebuilt container image to run the generators using Podman or Docker. Developers wanting to add new generators or make changes to existing ones should clone this repository and run the tool using NodeJS. The composer is built using [Yeoman](http://yeoman.io).
+We recommend using the [prebuilt container](#container) to run the generators using Podman or Docker. A Linux bash script is provided to simplify running the container. Please read the [container documentation](#container) for the details.
+
+Developers wanting to add new generators or make changes to existing ones should clone this repository and run the tool using Node.js. The composer uses [catalog entities](https://backstage.io/docs/features/software-catalog/descriptor-format) from [Backstage Software Catalog](https://backstage.io/docs/features/software-catalog/) to catalog the repository based on prompts given when running a generator. The composer is built using [Yeoman](http://yeoman.io).
 
 ## Where to start
 
-The composer's generators can be tested by creating a directory and initializing a Git repository. If you have multiple components (frontend, backend, and so on), in a single repository this is considered a monorepo and you should run the `backstage-location` generator to assist with placing a location catalog file at the root.
+Developers interact with the tool by running generators that prompt for information and then output templated files. The composer's generators can be tested by creating a directory and initializing it as a Git repository. If you have multiple components (frontend, backend, and so on) in a single repository, this is considered a monorepo and you should start with the `backstage-location` generator to place a location catalog file at the root.
 
-The `backstage` generator creates the catalog file and is first step for most components. It is run at the root of the component within the repository. If you have multiple components, each should be placed in a directory off the root. Otherwise, the root of a non-monorepo should contain the catalog file. From here, the developer runs additional generators in the folder for each component to scaffold the pipelines.
+The `backstage` generator creates the catalog file and is the first step for most components. It is run at the root of the component within the repository. If you have multiple components, each should be placed in a directory off the root. Otherwise, the root of a non-monorepo should contain the component catalog file. From this point, the developer runs additional generators as required in the folder for each component.
 
 ## Generator Library
 
@@ -24,13 +26,13 @@ The `backstage` generator creates the catalog file and is first step for most co
 
 ### Backstage: `backstage`
 
-This builds a Backstage component entity and outputs it to the file `./catalog-info.yaml`. A Backstage component entity is equivalent to a NR Broker service. Automation and software catalogs will read this file to understand your component.
+This builds a [Backstage component entity](https://backstage.io/docs/features/software-catalog/descriptor-format/#kind-component) and outputs it to the file `./catalog-info.yaml`. A Backstage component entity is equivalent to an NR Broker service. Automation and software catalogs will read this file to understand your component.
 
-Single component (service) repositories should run this generator at the root of the repository. If you have monorepo (multiple components in a single repository), you should run the `backstage-location` generator at the root instead. This generator is then run in the individual directories for each component.
+Single-component (service) repositories should run this generator at the root of the repository. If you have a monorepo (multiple components in a single repository), you should run the `backstage-location` generator at the root instead. This generator is then run in the individual directories for each component.
 
 The generator will prompt you for various information about your component (service). Other generators will read from the catalog file and may store additional information in this file.
 
-For each component entity, Developers should manually define the relationships `subcomponentOf`, `consumesApis` and `dependsOn`. The relationship `subcomponentOf` is used to determine build dependencies.
+For each component entity, developers should manually define the relationships `subcomponentOf`, `consumesApis`, and `dependsOn`. The relationship `subcomponentOf` is used to determine build dependencies.
 
 | Field | What it expresses / semantics | Use cases / when to use it | What it does *not* do  |
 | ----------- | ----------- | ----------- | ----------- |
@@ -72,35 +74,11 @@ spec:
 
 ### Backstage: `backstage-location`
 
-This builds a Backstage location entity and outputs it to the file `./catalog-info.yaml`. A location entity is necessary if you have a monorepo with more than one service (component entity) in the repository. This file should always be at the root of the repository. This ensures that automation can locate and process information about all the components in your repository.
+This builds a Backstage location entity and outputs it to the file `./catalog-info.yaml`. A location entity is necessary if you have a monorepo with more than one service (component entity) in the repository. This file should always be placed at the root of the repository to ensure that automation can locate and process information about all the components.
 
 You will be asked to input the location of all component catalog files (targets) in your repository. All targets (spec.targets in the catalog-info.yaml) should be a relative path within the repository. Example: `./some-component/catalog-info.yaml`
 
 You can rerun this composer to add additional targets or manually edit the file. Remember to use the flag `--ask-answered` if you are adding additional targets.
-
-### Backstage: `gh-common-mono-build`
-
-This generates a unified build orchestration workflow for monorepos in GitHub. It reads all component catalog-info.yaml files defined in the root location entity and creates a single build workflow that coordinates the building of all components.
-
-The generator automatically determines the correct build order by analyzing spec.subcomponentOf relationships between components. If a component is a subcomponent of another, it will be built first to satisfy the build dependency.
-
-The generated workflow file appears in .github/workflows/build-release.yaml and delegates to each component's individual build workflow while managing job dependencies.
-
-### Github Maven Build: `gh-maven-build`
-
-This generates the CI workflow and NR Broker intention files for building a Java application using Maven in GitHub. The war artifact can then be used in a Tomcat deployment.
-
-The generated files will appear in your .github/workflows and .jenkins directories.
-
-This generator should be run at the root directory of your component (service) which should contain the `catalog-info.yaml` for it.
-
-### Github Node.js Build: `gh-nodejs-build`
-
-This generates the CI workflow and NR Broker intention files for building Node.js in GitHub. The workflow assume that your `package.json` has a `build` command and your build places the files in `./dist`. The built OCI artifact can be used in a Node.js deployment or as static assets.
-
-The generated files will appear in your .github/workflows and .jenkins directories.
-
-This generator should be run at the root directory of your component (service) which should contain the `catalog-info.yaml` for it.
 
 ### GitHub Docs Deploy: `gh-docs-deploy`
 
@@ -113,7 +91,31 @@ The generated workflow file appears at `.github/workflows/docs-deploy.yaml`.
 - Set the Pages source to "GitHub Actions" in repository Settings > Pages
 - Create a `docs/` folder with your static documentation content
 
-If the repository has multiple components, pick one to run the generator. This workflow only uploads documentation a single docs folder in the repository.
+If the repository has multiple components, pick one in which to run the generator. This workflow only uploads documentation from a single docs folder in the repository.
+
+### GitHub: `gh-common-mono-build`
+
+This generates a unified build orchestration workflow for monorepos in GitHub. It reads all component catalog-info.yaml files defined in the root location entity and creates a single build workflow that coordinates the building of all components.
+
+The generator automatically determines the correct build order by analyzing spec.subcomponentOf relationships between components. If a component is a subcomponent of another, it will be built first to satisfy the build dependency.
+
+The generated workflow file appears in `.github/workflows/build-release.yaml` and delegates to each component's individual build workflow while managing job dependencies.
+
+### GitHub Maven Build: `gh-maven-build`
+
+This generates the CI workflow and NR Broker intention files for building a Java application using Maven in GitHub. The WAR artifact can then be used in a Tomcat deployment.
+
+The generated files will appear in your `.github/workflows` and `.jenkins` directories.
+
+This generator should be run at the root directory of your component (service) which should contain the `catalog-info.yaml` for it.
+
+### GitHub Node.js Build: `gh-nodejs-build`
+
+This generates the CI workflow and NR Broker intention files for building Node.js applications in GitHub. The workflow assumes that your `package.json` has a `build` command and that your build places the files in `./dist`. The built OCI artifact can be used in a Node.js deployment or as static assets.
+
+The generated files will appear in your `.github/workflows` and `.jenkins` directories.
+
+This generator should be run at the root directory of your component (service) which should contain the `catalog-info.yaml` for it.
 
 ### DB Migrations: `migrations`
 
@@ -127,11 +129,11 @@ If true, show prompts for already configured options. Generators read informatio
 
 ### --force [Default: false]
 
-The option `--force` will allow Yeoman to automatically overwrite any existing files. Yeoman's built-in file comparison is redundant if you are running the composer on a clean repository. You can review the changes using git and in a pull request.
+The `--force` option allows Yeoman to automatically overwrite any existing files. Yeoman's built-in file comparison is redundant if you are running the composer on a clean repository. You can review the changes using Git and in a pull request.
 
 ### --headless [Default: false]
 
-If true, exit with error if any prompt is required. Obviously, this will always exit with an error if you enable `--ask-answered`. This is for scripting running the generators.
+If true, exit with an error if any prompt is required. Obviously, this will always exit with an error if you enable `--ask-answered`. This option is useful for scripting the generators.
 
 ### --help [Default: false]
 
@@ -147,7 +149,7 @@ There are two ways to run the composer.
 
 ## Using a container image
 
-You will need to install one of the following. Either can run the composer using the prebuilt container (ghcr.io/bcgov/nr-repository-composer).
+You will need to install one of the following, either of which can run the composer using the prebuilt container (ghcr.io/bcgov/nr-repository-composer):
 
 * [Podman](https://podman.io)
 * [Docker](https://www.docker.com)
@@ -158,11 +160,11 @@ It is recommended that Windows users install and run the command using Node.js o
 
 ## Using a local install
 
-You will need to install node and clone this repository. You can checkout a version tag (vx.x.x) to run a specific release.
+You will need to install Node.js and clone this repository. You can check out a version tag (vx.x.x) to run a specific release.
 
 * [Node 24](https://nodejs.org/en)
 
-The tool is build using [Yeoman](http://yeoman.io) which is a JavaScript library. You do not need to install Yeoman.
+The tool is built using [Yeoman](http://yeoman.io), which is a JavaScript library. You do not need to install Yeoman separately.
 
 Install the dependencies with `npm ci` and link it with `npm link` so Yeoman can find the local installation. If you make code changes, you do not need to re-link it.
 
@@ -175,7 +177,7 @@ npm link
 
 First, either initialize a new Git repository or clone an existing repository. It is recommended that you run the generators only on a clean repository.
 
-The generators will output a file to save your answers and will update any `catalog-info.yaml` catalogue file. This is useful if you want to rerun the generator in the future to take advantage of any updates.
+The generators will save your answers and update any `catalog-info.yaml` catalog file. This is useful if you want to rerun the generator in the future to take advantage of any updates.
 
 ## Container
 
@@ -249,9 +251,9 @@ podman run --rm -it -v ${PWD}:/src --userns keep-id ghcr.io/bcgov/nr-repository-
 docker run --rm -it -v ${PWD}:/src ghcr.io/bcgov/nr-repository-composer:latest nr-repository-composer:gh-maven-build
 ```
 
-The examples map the current working directory to the '/src' directory inside of the container image. The generator container image uses '/src' as its working directory and will read and write files at that location.
+These examples map the current working directory to the `/src` directory inside the container image. The generator container image uses `/src` as its working directory and will read and write files at that location.
 
-The mounted `src` directory must always be the root of the repository. Use the "working directory" run argument (example: `-w /src/mydir`) to alter the working directory if you want to run the generator not at the root of the repository. The generators always need to be able to locate the `.git` folder as some files are output relative to it (not relative to the working directory).
+The mounted `/src` directory must always be the root of the repository. Use the "working directory" run argument (for example, `-w /src/mydir`) to alter the working directory if you want to run the generator somewhere other than the root of the repository. The generators always need to be able to locate the `.git` folder, as some files are output relative to it (not relative to the working directory).
 
 ## Local Install
 
@@ -265,20 +267,20 @@ npx yo nr-repository-composer:gh-maven-build
 
 ## Requirements
 
-The following are expected to be installed.
+The following are expected to be installed:
 
-* node (v24+)
-* podman
+* Node.js (v24+)
+* Podman
 
 ## Building the image
 
-The Dockerfile can be built by running './build.sh'. The local image will be tagged as 'nr-repository-composer'.
+The Dockerfile can be built by running `./build.sh`. The local image will be tagged as `nr-repository-composer`.
 
 # Assumptions and other errata
 
 ## Running a generator
 
-The generators assume they are running inside of a git repository. It will search the current working directory and up the file system for the .git folder. All generators are built to be rerun and not re-ask prompts unless necessary. All information entered should be stored in a Backstage catalog file.
+The generators assume they are running inside a Git repository. They will search the current working directory and up the file system for the `.git` folder. All generators are designed to be rerun without re-asking prompts unless necessary. All information entered is stored in a Backstage catalog file.
 
 ## Standard file names and locations
 
@@ -286,7 +288,7 @@ The generators all assume that the root of a service (and the repository) will h
 
 ## Services and Components
 
-The NR Broker and Backstage use the term service and component for the basically the same concept respectively.
+NR Broker and Backstage use the terms "service" and "component" for essentially the same concept, respectively.
 
 NR Broker description:
 

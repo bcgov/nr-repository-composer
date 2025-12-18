@@ -87,7 +87,7 @@ export default class extends Generator {
           'Create workflow and NR Broker intention files for GitHub NodeJS builds',
           [
             'Generator',
-            'https://github.com/bcgov/nr-repository-composer/blob/main/README.md#github-maven-build-gh-nodejs-build',
+            'https://github.com/bcgov/nr-repository-composer/blob/main/README.md#github-nodejs-build-gh-nodejs-build',
           ],
           ['Documentation', 'https://github.com/bcgov/nr-polaris-collection'],
           ['Documentation', 'https://github.com/bcgov-nr/polaris-pipelines'],

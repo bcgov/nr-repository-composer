@@ -24,6 +24,8 @@ jobs:
   preflight:
     name: Preflight
     uses: ./.github/workflows/preflight.yaml
+    with:
+      preflight_context: deploy-jasper
     secrets:
       token: ${{ secrets.<%= brokerJwt %> }}
 

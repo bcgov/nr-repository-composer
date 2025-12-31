@@ -22,9 +22,13 @@
     # See: https://github.com/bcgov/nr-polaris-collection/tree/main/polaris/deploy/roles/nodejs
     - role: nodejs
 
-    # Install nodejs application
-    # See: https://github.com/bcgov/nr-polaris-collection/tree/main/polaris/deploy/roles/nodejs_app
-    - role: nodejs_app
+    # Install OCI application
+    # See: https://github.com/bcgov/nr-polaris-collection/tree/main/polaris/deploy/roles/oci_app
+    - role: oci_app
+      vars:
+        oci_app_runtime_install_dir: "{{ nodejs_install_dir }}"
+        oci_app_service_command: "{{ oci_app_runtime_home }}/bin/node"
+        oci_app_service_options: "app/dist/main.js"
 
   tasks:
     - ansible.builtin.stat:

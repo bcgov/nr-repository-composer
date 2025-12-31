@@ -3,9 +3,13 @@ set -euo pipefail
 
 # Modify this to change the image version used
 IMAGE="ghcr.io/bcgov/nr-repository-composer:latest"
+LOCAL_IMAGE="nr-repository-composer:latest"
 
 # Set to "false" to skip pulling the latest image (uses cached version)
 PULL_IMAGE="true"
+
+# Use local image instead of GitHub registry
+USE_LOCAL="false"
 
 # NR Repository Composer runner script
 # Usage: ./nr-repository-composer.sh <working-directory> <generator> [options...]
@@ -14,16 +18,32 @@ SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 
 # Check arguments
 if [ $# -lt 1 ]; then
-    echo "Usage: $0 <working-directory> [generator] [options...]"
+    echo "Usage: $0 [--local] <working-directory> [generator] [options...]"
+    echo ""
+    echo "Options:"
+    echo "  --local    Use local image ($LOCAL_IMAGE) instead of GitHub registry"
     echo ""
     echo "Examples:"
     echo "  $0 /path/to/repo backstage"
     echo "  $0 . gh-maven-build --help"
     echo "  $0 ~/projects/my-app gh-nodejs-build --ask-answered"
     echo "  $0 . --help"
+    echo "  $0 --local . backstage"
     echo ""
     echo "Note: 'nr-repository-composer:' prefix is automatically added to the generator name"
     exit 1
+fi
+
+# Check for --local flag
+if [ "$1" = "--local" ]; then
+    USE_LOCAL="true"
+    PULL_IMAGE="false"
+    shift
+fi
+
+# Select image based on --local flag
+if [ "$USE_LOCAL" = "true" ]; then
+    IMAGE="$LOCAL_IMAGE"
 fi
 
 # Detect container runtime (prefer podman over docker)

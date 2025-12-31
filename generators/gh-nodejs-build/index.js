@@ -35,6 +35,7 @@ import {
   makeWorkflowBuildPublishPath,
   makeWorkflowDeployPath,
 } from '../util/github.js';
+import { outputReport } from '../util/report.js';
 
 const questions = [
   PROMPT_PROJECT,
@@ -107,6 +108,19 @@ export default class extends Generator {
 
     bailOnUnansweredQuestions(questions, this.answers, headless, askAnswered);
     this.answers = await this.prompt(questions, 'config');
+
+    // Deprecation notice for deployOnPrem
+    if (this.answers.deployOnPrem) {
+      this.log(
+        chalk.yellow.bold('\n⚠️  DEPRECATION NOTICE:') +
+          chalk.yellow(
+            ' The "deployOnPrem" option is deprecated and will be removed in a future release.\n' +
+              '   Please use the separate generator ' +
+              chalk.cyan('gh-oci-deploy-onprem') +
+              ' instead.\n',
+          ),
+      );
+    }
   }
 
   // Generate GitHub workflows and NR Broker intention files
@@ -161,9 +175,12 @@ export default class extends Generator {
         this.answers.serviceName,
         this.answers.playbookPath,
       ];
-      const playbook_options = {};
+      const playbook_options = {
+        deployType: 'nodejs',
+        shutdownScript: '',
+      };
       this.composeWith(
-        'nr-repository-composer:pd-nodejs-playbook',
+        'nr-repository-composer:pd-oci-playbook',
         playbook_args,
         playbook_options,
       );
@@ -183,5 +200,11 @@ export default class extends Generator {
   writingBackstage() {
     this.config.addGeneratorToDoc('gh-nodejs-build');
     this.config.save();
+  }
+
+  end() {
+    if (!this.options[OPTION_HEADLESS.name]) {
+      outputReport(this, 'gh-nodejs-build', this.answers);
+    }
   }
 }

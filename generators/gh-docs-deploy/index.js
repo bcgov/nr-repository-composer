@@ -12,6 +12,7 @@ import {
   getPromptToUsage,
 } from '../util/prompts.js';
 import { BACKSTAGE_FILENAME, BACKSTAGE_KIND_COMPONENT } from '../util/yaml.js';
+import { outputReport } from '../util/report.js';
 
 const questions = [PROMPT_PROJECT, PROMPT_SERVICE];
 
@@ -81,5 +82,11 @@ export default class extends Generator {
   writingBackstage() {
     this.config.addGeneratorToDoc('gh-docs-deploy');
     this.config.save();
+  }
+
+  end() {
+    if (!this.options[OPTION_HEADLESS.name]) {
+      outputReport(this, 'gh-docs-deploy', this.answers);
+    }
   }
 }

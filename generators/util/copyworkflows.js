@@ -4,6 +4,8 @@ import {
   makeWorkflowDeployFile,
 } from '../util/github.js';
 
+const COMMON_TEMPLATE_PATH = '../../util/gh-workflow-template';
+
 export function rmIfExists(generator, path) {
   if (generator.fs.exists(path)) {
     generator.fs.delete(path);
@@ -11,11 +13,10 @@ export function rmIfExists(generator, path) {
 }
 
 export function copyCommonBuildWorkflows(generator, answers) {
-  const commonTemplatePath = '../../util/gh-workflow-template';
   const relativePath = relativeGitPath();
 
   generator.fs.copyTpl(
-    generator.templatePath(`${commonTemplatePath}/build-intention.json`),
+    generator.templatePath(`${COMMON_TEMPLATE_PATH}/build-intention.json`),
     destinationGitPath(
       `.github/workflows/build-intention-${answers.serviceName}.json`,
     ),
@@ -29,7 +30,7 @@ export function copyCommonBuildWorkflows(generator, answers) {
   );
 
   generator.fs.copyTpl(
-    generator.templatePath(`${commonTemplatePath}/build-intention.sh`),
+    generator.templatePath(`${COMMON_TEMPLATE_PATH}/build-intention.sh`),
     destinationGitPath(
       `.github/workflows/build-intention-${answers.serviceName}.sh`,
     ),
@@ -40,16 +41,18 @@ export function copyCommonBuildWorkflows(generator, answers) {
   );
 
   generator.fs.copyTpl(
-    generator.templatePath(`${commonTemplatePath}/preflight.yaml`),
+    generator.templatePath(`${COMMON_TEMPLATE_PATH}/preflight.yaml`),
     destinationGitPath('.github/workflows/preflight.yaml'),
   );
   generator.fs.copyTpl(
-    generator.templatePath(`${commonTemplatePath}/check-token.yaml`),
+    generator.templatePath(`${COMMON_TEMPLATE_PATH}/check-token.yaml`),
     destinationGitPath('.github/workflows/check-token.yaml'),
   );
 
   generator.fs.copyTpl(
-    generator.templatePath(`${commonTemplatePath}/check-release-package.yaml`),
+    generator.templatePath(
+      `${COMMON_TEMPLATE_PATH}/check-release-package.yaml`,
+    ),
     destinationGitPath(`.github/workflows/check-release-package.yaml`),
   );
 
@@ -65,7 +68,6 @@ export function copyCommonBuildWorkflows(generator, answers) {
 }
 
 export function copyCommonDeployWorkflows(generator, answers) {
-  const commonTemplatePath = '../../gh-common-template';
   const relativePath = relativeGitPath();
 
   const brokerJwt = answers.clientId.trim()
@@ -73,7 +75,7 @@ export function copyCommonDeployWorkflows(generator, answers) {
     : 'BROKER_JWT';
 
   generator.fs.copyTpl(
-    generator.templatePath(`${commonTemplatePath}/check-build-artifact.yaml`),
+    generator.templatePath(`${COMMON_TEMPLATE_PATH}/check-build-artifact.yaml`),
     destinationGitPath('.github/workflows/check-build-artifact.yaml'),
     {
       gitHubProjectSlug: answers.gitHubProjectSlug,
@@ -81,12 +83,14 @@ export function copyCommonDeployWorkflows(generator, answers) {
   );
 
   generator.fs.copyTpl(
-    generator.templatePath(`${commonTemplatePath}/check-deploy-job-status.sh`),
+    generator.templatePath(
+      `${COMMON_TEMPLATE_PATH}/check-deploy-job-status.sh`,
+    ),
     destinationGitPath('.github/workflows/check-deploy-job-status.sh'),
   );
 
   generator.fs.copyTpl(
-    generator.templatePath(`${commonTemplatePath}/deployment-intention.json`),
+    generator.templatePath(`${COMMON_TEMPLATE_PATH}/deployment-intention.json`),
     destinationGitPath(
       `.jenkins/${answers.serviceName}-deployment-intention.json`,
     ),
@@ -97,7 +101,7 @@ export function copyCommonDeployWorkflows(generator, answers) {
   );
 
   generator.fs.copyTpl(
-    generator.templatePath(`${commonTemplatePath}/run-deploy.yaml`),
+    generator.templatePath(`${COMMON_TEMPLATE_PATH}/run-deploy.yaml`),
     destinationGitPath(
       `.github/workflows/run-deploy-${answers.serviceName}.yaml`,
     ),

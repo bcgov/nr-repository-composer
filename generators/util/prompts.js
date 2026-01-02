@@ -111,7 +111,7 @@ export const PROMPT_PUBLISH_ARTIFACT_SUFFIX = {
 export const PROMPT_DEPLOY_ON_PREM = {
   type: 'confirm',
   name: 'deployOnPrem',
-  message: 'Deploy on-prem:',
+  message: 'Deploy on-prem (deprecated):',
   default: false,
 };
 

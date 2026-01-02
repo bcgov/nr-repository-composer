@@ -116,6 +116,10 @@ export const GENERATOR_REPORTS = {
         description:
           'Set up unified build orchestration workflow (after component catalogs exist)',
       },
+      {
+        generator: 'gh-docs-deploy',
+        description: 'Set up GitHub Pages documentation deployment',
+      },
     ],
   },
   'gh-common-mono-build': {

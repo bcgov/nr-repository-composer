@@ -11,7 +11,7 @@ export function rmIfExists(generator, path) {
 }
 
 export function copyCommonBuildWorkflows(generator, answers) {
-  const commonTemplatePath = '../../gh-common-template';
+  const commonTemplatePath = '../../util/gh-workflow-template';
   const relativePath = relativeGitPath();
 
   generator.fs.copyTpl(

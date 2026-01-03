@@ -184,6 +184,13 @@ export const PROMPT_POM_ROOT = {
   message: 'Path to pom.xml:',
   default: './',
 };
+export const PROMPT_JAVA_VERSION = {
+  type: 'list',
+  name: 'javaVersion',
+  message: 'Java version:',
+  choices: ['8', '11', '17', '21'],
+  default: '8',
+};
 export const PROMPT_GITHUB_PACKAGES = {
   type: 'confirm',
   name: 'gitHubPackages',
@@ -364,6 +371,11 @@ export const PROMPT_TO_USAGE = {
     description:
       'A space separated list with the first used as the overall checksum.',
     example: 'dist node_modules package.json package-lock.json',
+  },
+  javaVersion: {
+    description:
+      'The Java version to use for building and deploying the Maven project. This will be used in the GitHub Actions workflow.',
+    example: '11',
   },
   deployOnPrem: {
     description: 'Whether to deploy on-prem or not',

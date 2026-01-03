@@ -122,6 +122,11 @@ export const pathToProps = [
     prop: 'mavenBuildCommand',
     writeEmpty: false,
   },
+  {
+    path: ['metadata', 'annotations', 'playbook.io.nrs.gov.bc.ca/javaVersion'],
+    prop: 'javaVersion',
+    writeEmpty: false,
+  },
   // Jasper
   {
     path: [

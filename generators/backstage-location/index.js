@@ -11,6 +11,7 @@ import {
   PROMPT_LOCATION_TARGETS,
   getPromptToUsage,
 } from '../util/prompts.js';
+import { outputReport } from '../util/report.js';
 
 const questions = [PROMPT_LOCATION_NAME, PROMPT_LOCATION_TARGETS];
 
@@ -72,5 +73,11 @@ export default class extends Generator {
   writingBackstage() {
     this.config.setPath(['spec', 'type'], 'path');
     this.config.save();
+  }
+
+  end() {
+    if (!this.options[OPTION_HEADLESS.name]) {
+      outputReport(this, 'backstage-location', this.answers);
+    }
   }
 }

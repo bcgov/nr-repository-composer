@@ -60,6 +60,7 @@ jobs:
     permissions:
       contents: read
       packages: write
+      pull-requests: read
     outputs:
       project_version: ${{ steps.set-version.outputs.project_version }}
       intention_id: ${{ steps.set-intention-id.outputs.intention_id }}

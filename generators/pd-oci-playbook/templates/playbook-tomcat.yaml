@@ -1,0 +1,74 @@
+---
+- name: <%= projectName %>/<%= serviceName %>
+  hosts: "{{ tomcat_server_hosts }}"
+  collections:
+    - polaris.deploy
+  vars_files:
+    - "vars/standard/all.yaml"
+    - "vars/standard/{{env_vars}}.yaml"
+    - "vars/custom/all.yaml"
+    - "vars/custom/{{env_vars}}.yaml"
+
+  roles:
+    # prepare the installation environment by creating the necessary folders
+    # See: https://github.com/bcgov/nr-polaris-collection/tree/main/polaris/deploy/roles/create_project_directories
+    - role: create_project_directories
+
+    # Establish the port number
+    # See: https://github.com/bcgov/nr-polaris-collection/tree/main/polaris/deploy/roles/port_manager
+    - role: port_manager
+
+    # individual JDK installation
+    # See: https://github.com/bcgov/nr-polaris-collection/tree/main/polaris/deploy/roles/jdk
+    - role: jdk
+
+    # create a self signed certificate to allow for HTTPS
+    # See: https://github.com/bcgov/nr-polaris-collection/tree/main/polaris/deploy/roles/self_signed_cert
+    - role: self_signed_cert
+
+    # Install OCI application (webapp)
+    # See: https://github.com/bcgov/nr-polaris-collection/tree/main/polaris/deploy/roles/oci_app
+    - role: oci_app
+      vars:
+        oci_app_runtime_install_dir: "{{ tomcat_install_dir_current }}"
+        oci_app_service_command: "{{ oci_app_runtime_home }}/bin/catalina.sh run"
+        oci_app_service_options: "-jar app.jar"
+        oci_app_env_dict:
+          JAVA_OPTS: "-Xmx512m"
+<% if (addWebadeConfig === 'true') { %>
+    # create a WebADE connection jar for the container
+    # If using the MOF Webade datastore, add the following to vars/custom/all.yaml
+    # webade_datastore: "ca.bc.gov.webade.mof.MOFOrganizationDatastore"
+    # See: https://github.com/bcgov/nr-polaris-collection/tree/main/polaris/deploy/roles/webade_connection_jar
+    - role: webade_connection_jar
+      become: yes
+      become_user: "{{ polaris_install_user }}"
+<% } -%>
+
+  tasks:
+    - ansible.builtin.stat:
+        path: custom-tasks.yaml
+      register: playbookcustomtask
+      delegate_to: localhost
+    - ansible.builtin.debug:
+        msg: >
+          Warning! Review custom-tasks.yaml carefully. Please thoroughly check for potential issues
+          such as incorrect paths, overwritten files, or unintentional destructive commands. Failing
+          to validate the script may result in deployment failures, data loss, or service downtime.
+      when: playbookcustomtask.stat.exists
+    - ansible.builtin.include_tasks: custom-tasks.yaml
+      when: playbookcustomtask.stat.exists
+    # The following is an example of a custom-tasks.yaml for adding custom webapp configuration files
+    # ---
+    # - name: configure nonstandard files
+    #   template:
+    #     src: "{{ playbook_dir }}/templates/{{ item.src }}"
+    #     dest: "{{ item.dest }}"
+    #     mode: "0775"
+    #   become: yes
+    #   become_user: "{{ polaris_install_user }}"
+    #   with_items:
+    #     - {
+    #         src: "web.xml.j2",
+    #         dest: "{{ polaris_apps_service_install_home }}/webapps/{{ alt_app_dir_name | default(context) }}/WEB-INF/web.xml"
+    #       }

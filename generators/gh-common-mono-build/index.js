@@ -8,10 +8,13 @@ import {
 import { BackstageStorage } from '../util/backstage.storage.js';
 import { destinationGitPath } from '../util/git.js';
 import { makeWorkflowBuildPublishPath } from '../util/github.js';
+import { OPTION_HEADLESS } from '../util/options.js';
+import { outputReport } from '../util/report.js';
 
 export default class extends Generator {
   constructor(args, opts) {
     super(args, opts);
+    this.option(OPTION_HEADLESS);
   }
 
   _getStorage() {
@@ -76,5 +79,11 @@ export default class extends Generator {
         serviceNeeds,
       },
     );
+  }
+
+  end() {
+    if (!this.options[OPTION_HEADLESS.name]) {
+      outputReport(this, 'gh-common-mono-build', {});
+    }
   }
 }

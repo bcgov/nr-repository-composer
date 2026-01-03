@@ -16,13 +16,15 @@ The `backstage` generator creates the catalog file and is the first step for mos
 
 | Generator | Usage | Platform | Technologies |
 | ----------- | ----------- | ----------- | ----------- |
-| backstage | Catalog service | All | Backstage (kind: component) |
-| backstage-location | Catalog monorepo | All | Backstage (kind: location) |
-| gh-common-mono-build | Pipeline orchestration | GitHub | GitHub Actions |
-| gh-docs-deploy | Documentation | GitHub | GitHub Actions, GitHub Pages |
-| gh-maven-build | Pipeline | GitHub | Java, GitHub Actions |
-| gh-nodejs-build | Pipeline | GitHub | NodeJS, GitHub Actions |
-| migrations | Database | All | FlyWay, Liquibase |
+| [backstage](#backstage-backstage) | Catalog service | All | Backstage (kind: component) |
+| [backstage-location](#backstage-backstage-location) | Catalog monorepo | All | Backstage (kind: location) |
+| [gh-common-mono-build](#github-gh-common-mono-build) | Pipeline orchestration | GitHub | GitHub Actions |
+| [gh-docs-deploy](#github-docs-deploy-gh-docs-deploy) | Documentation | GitHub | GitHub Actions, GitHub Pages |
+| [gh-maven-build](#github-maven-build-gh-maven-build) | Pipeline | GitHub | Java, GitHub Actions |
+| [gh-tomcat-deploy-onprem](#github-tomcat-on-prem-deploy-gh-tomcat-deploy-onprem) | Deploy | GitHub | Java, Tomcat, GitHub Actions |
+| [gh-nodejs-build](#github-nodejs-build-gh-nodejs-build) | Pipeline | GitHub | Node.js, GitHub Actions |
+| [gh-oci-deploy-onprem](#github-oci-on-prem-deploy-gh-oci-deploy-onprem) | Deploy | GitHub | OCI artifacts, GitHub Actions |
+| [migrations](#db-migrations-migrations) | Database | All | FlyWay, Liquibase |
 
 ### Backstage: `backstage`
 
@@ -109,6 +111,14 @@ The generated files will appear in your `.github/workflows` and `.jenkins` direc
 
 This generator should be run at the root directory of your component (service) which should contain the `catalog-info.yaml` for it.
 
+### GitHub Tomcat On-Prem Deploy: `gh-tomcat-deploy-onprem`
+
+This generates the deploy workflow and NR Broker intention files for deploying Java/Tomcat applications to on-premises infrastructure via GitHub Actions.
+
+The generated files will appear in your `.github/workflows` directory. This generator also invokes the `pd-java-playbook` generator to create the Ansible playbook configuration.
+
+This generator should be run at the root directory of your component (service) which should contain the `catalog-info.yaml` for it. Run the `gh-maven-build` generator first to set up the build workflow.
+
 ### GitHub Node.js Build: `gh-nodejs-build`
 
 This generates the CI workflow and NR Broker intention files for building Node.js applications in GitHub. The workflow assumes that your `package.json` has a `build` command and that your build places the files in `./dist`. The built OCI artifact can be used in a Node.js deployment or as static assets.
@@ -116,6 +126,14 @@ This generates the CI workflow and NR Broker intention files for building Node.j
 The generated files will appear in your `.github/workflows` and `.jenkins` directories.
 
 This generator should be run at the root directory of your component (service) which should contain the `catalog-info.yaml` for it.
+
+### GitHub OCI On-Prem Deploy: `gh-oci-deploy-onprem`
+
+This generates the deploy workflow and NR Broker intention files for deploying OCI artifacts (Node.js or Java/Tomcat applications) to on-premises infrastructure via GitHub Actions.
+
+The generated files will appear in your `.github/workflows` directory. This generator prompts you to select a deployment type (Node.js or Tomcat), and then invokes `pd-oci-playbook` to create the Ansible playbook configuration.
+
+This generator should be run at the root directory of your component (service) which should contain the `catalog-info.yaml` for it. Run the appropriate build generator (`gh-nodejs-build` or `gh-maven-build`) first to set up the build workflow.
 
 ### DB Migrations: `migrations`
 

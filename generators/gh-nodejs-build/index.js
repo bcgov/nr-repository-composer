@@ -91,7 +91,7 @@ export default class extends Generator {
             'https://github.com/bcgov/nr-repository-composer/blob/main/README.md#github-nodejs-build-gh-nodejs-build',
           ],
           ['Documentation', 'https://github.com/bcgov/nr-polaris-collection'],
-          ['Documentation', 'https://github.com/bcgov-nr/polaris-pipelines'],
+          ['Documentation', 'https://github.com/bcgov/nr-polaris-pipelines'],
         ),
       );
     }

@@ -210,7 +210,7 @@ jobs:
       contents: read
     runs-on: ubuntu-latest
     steps:
-      # See: https://github.com/bcgov-nr/polaris-pipelines
+      # See: https://github.com/bcgov/nr-polaris-pipelines
       - name: Checkout repository
         uses: actions/checkout@v6
         with:

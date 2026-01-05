@@ -209,7 +209,7 @@ You can clone this repository or download just the shell script from GitHub.
 
 ```bash
 # Download to current directory
-curl -o nr-repository-composer.sh https://raw.githubusercontent.com/bcgov-nr/nr-repository-composer/main/nr-repository-composer.sh
+curl -o nr-repository-composer.sh https://raw.githubusercontent.com/bcgov/nr-repository-composer/main/nr-repository-composer.sh
 chmod +x nr-repository-composer.sh
 ```
 

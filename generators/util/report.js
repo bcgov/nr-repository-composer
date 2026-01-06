@@ -304,5 +304,5 @@ export function outputReport(generator, generatorName, answers = {}) {
     }
   }
 
-  generator.log('\n' + chalk.green.bold('═'.repeat(60)));
+  generator.log('');
 }

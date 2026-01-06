@@ -95,8 +95,8 @@ export class BackstageStorage {
   }
 
   delete(key) {
-    key = Array.isArray(key) ? key : propRecord[key].path;
-    this.backstageDoc.deleteIn(propRecord[key].path);
+    const path = Array.isArray(key) ? key : propRecord[key].path;
+    this.backstageDoc.deleteIn(path);
   }
 
   defaults(defaults) {

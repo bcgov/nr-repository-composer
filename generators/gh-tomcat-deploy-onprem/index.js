@@ -15,6 +15,7 @@ import {
   PROMPT_ALT_APP_DIR_NAME,
   PROMPT_CLIENT_ID,
   PROMPT_POM_ROOT,
+  PROMPT_JAVA_VERSION,
   PROMPT_GITHUB_PACKAGES,
   PROMPT_GITHUB_PROJECT_SLUG,
   PROMPT_ARTIFACTORY_PROJECT,
@@ -23,6 +24,13 @@ import {
   PROMPT_TOMCAT_CONTEXT,
   PROMPT_POST_DEPLOY_TESTS_PATH,
   PROMPT_USE_ALT_APP_DIR_NAME,
+  PROMPT_DEPLOY_JASPER_REPORTS,
+  PROMPT_JASPER_PAUSE_SECONDS,
+  PROMPT_JASPER_PROJECT_NAME,
+  PROMPT_JASPER_SERVICE_NAME,
+  PROMPT_JASPER_SOURCE_PATH,
+  PROMPT_JASPER_ADDITIONAL_DATA_SOURCES,
+  PROMPT_JASPER_SERVER_INSTANCE,
   getPromptToUsage,
 } from '../util/prompts.js';
 import { BACKSTAGE_FILENAME, BACKSTAGE_KIND_COMPONENT } from '../util/yaml.js';
@@ -34,6 +42,7 @@ const questions = [
   PROMPT_SERVICE,
   PROMPT_CLIENT_ID,
   PROMPT_POM_ROOT,
+  PROMPT_JAVA_VERSION,
   PROMPT_POST_DEPLOY_TESTS_PATH,
   PROMPT_GITHUB_PACKAGES,
   {
@@ -56,6 +65,37 @@ const questions = [
     when: (answers) => answers.useAltAppDirName,
   },
   PROMPT_ADD_WEBADE_CONFIG,
+  PROMPT_DEPLOY_JASPER_REPORTS,
+  {
+    ...PROMPT_JASPER_PROJECT_NAME,
+    default: (answers) => answers.projectName,
+    when: (answers) => answers.deployJasperReports,
+  },
+  {
+    ...PROMPT_JASPER_SERVICE_NAME,
+    default: (answers) => `${answers.projectName}-jasper-reports`,
+    when: (answers) => answers.deployJasperReports,
+  },
+  {
+    ...PROMPT_JASPER_SOURCE_PATH,
+    when: (answers) => answers.deployJasperReports,
+  },
+  {
+    ...PROMPT_JASPER_ADDITIONAL_DATA_SOURCES,
+    when: (answers) => answers.deployJasperReports,
+  },
+  {
+    ...PROMPT_JASPER_SERVER_INSTANCE,
+    when: (answers) => answers.deployJasperReports,
+  },
+  {
+    ...PROMPT_JASPER_PAUSE_SECONDS,
+    when: (answers) => answers.deployJasperReports,
+  },
+  {
+    ...PROMPT_PLAYBOOK_PATH,
+    when: (answers) => answers.deployJasperReports,
+  },
 ];
 
 /**
@@ -149,12 +189,34 @@ export default class extends Generator {
       tomcatContext: this.answers.tomcatContext,
       addWebadeConfig: this.answers.addWebadeConfig,
       altAppDirName: this.answers.altAppDirName,
+      javaVersion: this.answers.javaVersion,
     };
     this.composeWith(
       'nr-repository-composer:pd-java-playbook',
       java_playbook_args,
       java_playbook_options,
     );
+
+    if (this.answers.deployJasperReports) {
+      const jasper_reports_args = [
+        this.answers.projectName,
+        this.answers.jasperServiceName,
+        this.answers.playbookPath,
+      ];
+      const jasper_playbook_options = {
+        jasperProjectName: this.answers.jasperProjectName,
+        jasperServerInstance: this.answers.jasperServerInstance,
+        jasperSourcePath: this.answers.jasperSourcePath,
+        jasperPauseSeconds: this.answers.jasperPauseSeconds,
+        jasperAdditionalDataSources: this.answers.jasperAdditionalDataSources,
+        brokerJwt: brokerJwt,
+      };
+      this.composeWith(
+        'nr-repository-composer:pd-jasper-reports',
+        jasper_reports_args,
+        jasper_playbook_options,
+      );
+    }
   }
 
   writingBackstage() {

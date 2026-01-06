@@ -107,20 +107,13 @@ export default class extends Generator {
     }
 
     bailOnUnansweredQuestions(questions, this.answers, headless, askAnswered);
-    this.answers = await this.prompt(questions, 'config');
-
-    // Deprecation notice for deployOnPrem
     if (this.answers.deployOnPrem) {
-      this.log(
-        chalk.yellow.bold('\n⚠️  DEPRECATION NOTICE:') +
-          chalk.yellow(
-            ' The "deployOnPrem" option is deprecated and will be removed in a future release.\n' +
-              '   Please use the separate generator ' +
-              chalk.cyan('gh-oci-deploy-onprem') +
-              ' instead.\n',
-          ),
-      );
+      this.config.delete('deployOnPrem');
+      this.config.addGeneratorToDoc('gh-oci-deploy-onprem');
+      this.config.save();
+      this.showGeneratorDeprecationWarning = true;
     }
+    this.answers = await this.prompt(questions, 'config');
   }
 
   // Generate GitHub workflows and NR Broker intention files
@@ -205,6 +198,17 @@ export default class extends Generator {
   end() {
     if (!this.options[OPTION_HEADLESS.name]) {
       outputReport(this, 'gh-nodejs-build', this.answers);
+      if (this.showGeneratorDeprecationWarning) {
+        this.log(
+          chalk.yellow.bold('⚠️ Notice:') +
+            chalk.yellow(
+              ' This generator no longer handles deployments.\n' +
+                '   Please use generator ' +
+                chalk.cyan('gh-oci-deploy-onprem') +
+                ' to update your deployment configuration.\n',
+            ),
+        );
+      }
     }
   }
 }

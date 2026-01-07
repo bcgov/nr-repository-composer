@@ -42,6 +42,11 @@ For each component entity, developers should manually define the relationships `
 | **`spec.consumesApis`** | States that a component uses (calls) one or more APIs. | When your component needs to call external APIs (internal or third-party) and you want to document that dependency: e.g. “this service consumes the User API”, “this frontend calls the Payments API”. Good for tracking API dependencies, understanding coupling, impact analysis. If an API changes, you can trace what components will be impacted. | It does *not* capture all dependencies (for instance low-level infrastructure or resources) and doesn't imply subcomponent relationship. Also doesn’t capture “resource” dependencies like databases, storage, etc.—those are better done via `dependsOn`. Also, it’s not about “part of” structure but about “uses / invokes”. |
 | **`spec.dependsOn`** | States that a component (or resource) depends on other components or resources. | Use this when your component needs something else to operate, but that thing is *not* necessarily an API: e.g. a database, a message queue, another service, infrastructural resource, or even another component for build-time or runtime dependency. It covers both resource kind entities and component kind entities. | It’s less specific: doesn’t distinguish *how* the dependency is used (“via API”, “via sharing library”, etc.). And doesn’t imply “is part of”. Also, if an API dependency is relevant, using `consumesApis` gives semantics that are more specific / meaningful in API-centric views. |
 
+**Suggested Next Steps:**
+- [`gh-common-mono-build`](#github-gh-common-mono-build), [`gh-maven-build`](#github-maven-build-gh-maven-build), [`gh-nodejs-build`](#github-nodejs-build-gh-nodejs-build) - Set up build pipeline
+- [`gh-docs-deploy`](#github-docs-deploy-gh-docs-deploy) - Set up GitHub Pages documentation deployment
+- [`migrations`](#db-migrations-migrations) - Set up database migration files
+
 #### Example website with a dependent library component
 
 ```yaml
@@ -82,6 +87,11 @@ You will be asked to input the location of all component catalog files (targets)
 
 You can rerun this composer to add additional targets or manually edit the file. Remember to use the flag `--ask-answered` if you are adding additional targets.
 
+**Suggested Next Steps:**
+- [`backstage`](#backstage-backstage) - Run in each component directory to create component catalog files
+- [`gh-common-mono-build`](#github-gh-common-mono-build) - Set up unified build orchestration workflow (after component catalogs exist)
+- [`gh-docs-deploy`](#github-docs-deploy-gh-docs-deploy) - Set up GitHub Pages documentation deployment
+
 ### GitHub Docs Deploy: `gh-docs-deploy`
 
 This generates a GitHub Actions workflow for deploying static documentation to GitHub Pages. The workflow automatically deploys content from the `docs/` folder in your repository whenever changes are pushed to the main branch.
@@ -103,6 +113,9 @@ The generator automatically determines the correct build order by analyzing spec
 
 The generated workflow file appears in `.github/workflows/build-release.yaml` and delegates to each component's individual build workflow while managing job dependencies.
 
+**Suggested Next Steps:**
+- [`gh-maven-build`](#github-maven-build-gh-maven-build), [`gh-nodejs-build`](#github-nodejs-build-gh-nodejs-build) - Run in each component directory to create individual build workflows
+
 ### GitHub Maven Build: `gh-maven-build`
 
 This generates the CI workflow and NR Broker intention files for building a Java application using Maven in GitHub. The WAR artifact can then be used in a Tomcat deployment.
@@ -110,6 +123,9 @@ This generates the CI workflow and NR Broker intention files for building a Java
 The generated files will appear in your `.github/workflows` and `.jenkins` directories.
 
 This generator should be run at the root directory of your component (service) which should contain the `catalog-info.yaml` for it.
+
+**Suggested Next Steps:**
+- [`gh-tomcat-deploy-onprem`](#github-tomcat-on-prem-deploy-gh-tomcat-deploy-onprem) - Set up on-premises Tomcat deployment workflow
 
 ### GitHub Tomcat On-Prem Deploy: `gh-tomcat-deploy-onprem`
 
@@ -126,6 +142,9 @@ This generates the CI workflow and NR Broker intention files for building Node.j
 The generated files will appear in your `.github/workflows` and `.jenkins` directories.
 
 This generator should be run at the root directory of your component (service) which should contain the `catalog-info.yaml` for it.
+
+**Suggested Next Steps:**
+- [`gh-oci-deploy-onprem`](#github-oci-on-prem-deploy-gh-oci-deploy-onprem) - Set up on-premises deployment workflow
 
 ### GitHub OCI On-Prem Deploy: `gh-oci-deploy-onprem`
 

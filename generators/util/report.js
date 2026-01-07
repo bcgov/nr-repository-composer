@@ -7,7 +7,7 @@ const README_BASE_URL =
 /**
  * All available generators for pattern matching
  */
-const ALL_GENERATORS = [
+export const ALL_GENERATORS = [
   'backstage',
   'backstage-location',
   'gh-common-mono-build',
@@ -23,7 +23,7 @@ const ALL_GENERATORS = [
  * Generator to README anchor mapping
  * Maps generator names to their README section anchors
  */
-const GENERATOR_ANCHORS = {
+export const GENERATOR_ANCHORS = {
   backstage: 'backstage-backstage',
   'backstage-location': 'backstage-backstage-location',
   'gh-common-mono-build': 'github-gh-common-mono-build',
@@ -55,7 +55,7 @@ function getGeneratorUrl(generatorName) {
  * @param {string} pattern - Pattern like 'gh-*-build'
  * @returns {RegExp}
  */
-function patternToRegex(pattern) {
+export function patternToRegex(pattern) {
   const escaped = pattern.replace(/[.+^${}()|[\]\\]/g, '\\$&');
   const regexStr = escaped.replace(/\*/g, '.*');
   return new RegExp(`^${regexStr}$`);
@@ -66,7 +66,7 @@ function patternToRegex(pattern) {
  * @param {string} pattern - Pattern like 'gh-*-build' or exact name like 'backstage'
  * @returns {string[]} - Array of matching generator names
  */
-function expandGeneratorPattern(pattern) {
+export function expandGeneratorPattern(pattern) {
   if (!pattern.includes('*')) {
     return [pattern];
   }

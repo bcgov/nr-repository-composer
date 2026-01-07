@@ -1,10 +1,76 @@
-import { destinationGitPath, relativeGitPath } from './git.js';
+import fs from 'fs';
+import { destinationGitPath, relativeGitPath, ensureRepoDirs } from './git.js';
 import {
   makeWorkflowBuildPublishFile,
   makeWorkflowDeployFile,
 } from '../util/github.js';
 
 const COMMON_TEMPLATE_PATH = '../../util/gh-workflow-template';
+
+function copyRepoSupportFiles(generator) {
+  const templateBase = `${COMMON_TEMPLATE_PATH}/local-build-support`;
+
+  // copy root scripts
+  try {
+    const buildTpl = generator.templatePath(`${templateBase}/build.sh`);
+    const runTpl = generator.templatePath(`${templateBase}/run.sh`);
+    const destBuild = destinationGitPath('build.sh');
+    const destRun = destinationGitPath('run.sh');
+
+    if (!fs.existsSync(destBuild)) {
+      generator.fs.copy(buildTpl, destBuild);
+      try {
+        fs.chmodSync(destBuild, 0o755);
+      } catch {
+        /* ignore */
+      }
+    }
+
+    if (!fs.existsSync(destRun)) {
+      generator.fs.copy(runTpl, destRun);
+      try {
+        fs.chmodSync(destRun, 0o755);
+      } catch {
+        /* ignore */
+      }
+    }
+  } catch {
+    /* ignore */
+  }
+
+  // copy .docker files
+  try {
+    const setenvTpl = generator.templatePath(
+      `${templateBase}/.docker/setenv.sh`,
+    );
+    const dockerfileTpl = generator.templatePath(
+      `${templateBase}/.docker/runtime/Dockerfile`,
+    );
+
+    const destSetenv = destinationGitPath('.docker/setenv.sh');
+    const destRuntimeDir = destinationGitPath('.docker/runtime');
+
+    if (!fs.existsSync(destRuntimeDir)) {
+      fs.mkdirSync(destRuntimeDir, { recursive: true });
+    }
+
+    // Only copy setenv.sh if it does not already exist in destination
+    if (!fs.existsSync(destSetenv)) {
+      generator.fs.copy(setenvTpl, destSetenv);
+      try {
+        fs.chmodSync(destSetenv, 0o644);
+      } catch {
+        /* ignore */
+      }
+    }
+
+    // Only copy runtime Dockerfile if it does not already exist
+    const destRuntimeDockerfile = `${destRuntimeDir}/Dockerfile`;
+    generator.fs.copy(dockerfileTpl, destRuntimeDockerfile);
+  } catch {
+    /* ignore */
+  }
+}
 
 export function rmIfExists(generator, path) {
   if (generator.fs.exists(path)) {
@@ -14,6 +80,9 @@ export function rmIfExists(generator, path) {
 
 export function copyCommonBuildWorkflows(generator, answers) {
   const relativePath = relativeGitPath();
+
+  ensureRepoDirs();
+  copyRepoSupportFiles(generator);
 
   generator.fs.copyTpl(
     generator.templatePath(`${COMMON_TEMPLATE_PATH}/build-intention.json`),
@@ -69,6 +138,9 @@ export function copyCommonBuildWorkflows(generator, answers) {
 
 export function copyCommonDeployWorkflows(generator, answers) {
   const relativePath = relativeGitPath();
+
+  ensureRepoDirs();
+  copyRepoSupportFiles(generator);
 
   const brokerJwt = answers.clientId.trim()
     ? `broker-jwt:${answers.clientId.trim()}`.replace(/[^a-zA-Z0-9_]/g, '_')

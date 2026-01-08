@@ -16,13 +16,15 @@ The `backstage` generator creates the catalog file and is the first step for mos
 
 | Generator | Usage | Platform | Technologies |
 | ----------- | ----------- | ----------- | ----------- |
-| backstage | Catalog service | All | Backstage (kind: component) |
-| backstage-location | Catalog monorepo | All | Backstage (kind: location) |
-| gh-common-mono-build | Pipeline orchestration | GitHub | GitHub Actions |
-| gh-docs-deploy | Documentation | GitHub | GitHub Actions, GitHub Pages |
-| gh-maven-build | Pipeline | GitHub | Java, GitHub Actions |
-| gh-nodejs-build | Pipeline | GitHub | NodeJS, GitHub Actions |
-| migrations | Database | All | FlyWay, Liquibase |
+| [backstage](#backstage-backstage) | Catalog service | All | Backstage (kind: component) |
+| [backstage-location](#backstage-backstage-location) | Catalog monorepo | All | Backstage (kind: location) |
+| [gh-common-mono-build](#github-gh-common-mono-build) | Pipeline orchestration | GitHub | GitHub Actions |
+| [gh-docs-deploy](#github-docs-deploy-gh-docs-deploy) | Documentation | GitHub | GitHub Actions, GitHub Pages |
+| [gh-maven-build](#github-maven-build-gh-maven-build) | Pipeline | GitHub | Java, GitHub Actions |
+| [gh-tomcat-deploy-onprem](#github-tomcat-on-prem-deploy-gh-tomcat-deploy-onprem) | Deploy | GitHub | Java, Tomcat, GitHub Actions |
+| [gh-nodejs-build](#github-nodejs-build-gh-nodejs-build) | Pipeline | GitHub | Node.js, GitHub Actions |
+| [gh-oci-deploy-onprem](#github-oci-on-prem-deploy-gh-oci-deploy-onprem) | Deploy | GitHub | OCI artifacts, GitHub Actions |
+| [migrations](#db-migrations-migrations) | Database | All | FlyWay, Liquibase |
 
 ### Backstage: `backstage`
 
@@ -39,6 +41,11 @@ For each component entity, developers should manually define the relationships `
 | **`spec.subcomponentOf`** | States that a component is part of a larger component. | Use when your software architecture has components that are “parts” of other components. For example: a mobile app component might have subcomponents (UI framework, plugin modules etc.), or a larger system composed of many smaller deployable pieces where you want to reflect that part-of hierarchy. It helps with determining build order, visualization, and understanding boundaries. | It does *not* imply API dependency, or runtime dependency necessarily. It’s about composition or structure (“this is part of that”) rather than “using”, “invoking”, or “depending on”. |
 | **`spec.consumesApis`** | States that a component uses (calls) one or more APIs. | When your component needs to call external APIs (internal or third-party) and you want to document that dependency: e.g. “this service consumes the User API”, “this frontend calls the Payments API”. Good for tracking API dependencies, understanding coupling, impact analysis. If an API changes, you can trace what components will be impacted. | It does *not* capture all dependencies (for instance low-level infrastructure or resources) and doesn't imply subcomponent relationship. Also doesn’t capture “resource” dependencies like databases, storage, etc.—those are better done via `dependsOn`. Also, it’s not about “part of” structure but about “uses / invokes”. |
 | **`spec.dependsOn`** | States that a component (or resource) depends on other components or resources. | Use this when your component needs something else to operate, but that thing is *not* necessarily an API: e.g. a database, a message queue, another service, infrastructural resource, or even another component for build-time or runtime dependency. It covers both resource kind entities and component kind entities. | It’s less specific: doesn’t distinguish *how* the dependency is used (“via API”, “via sharing library”, etc.). And doesn’t imply “is part of”. Also, if an API dependency is relevant, using `consumesApis` gives semantics that are more specific / meaningful in API-centric views. |
+
+**Suggested Next Steps:**
+- [`gh-common-mono-build`](#github-gh-common-mono-build), [`gh-maven-build`](#github-maven-build-gh-maven-build), [`gh-nodejs-build`](#github-nodejs-build-gh-nodejs-build) - Set up build pipeline
+- [`gh-docs-deploy`](#github-docs-deploy-gh-docs-deploy) - Set up GitHub Pages documentation deployment
+- [`migrations`](#db-migrations-migrations) - Set up database migration files
 
 #### Example website with a dependent library component
 
@@ -80,6 +87,11 @@ You will be asked to input the location of all component catalog files (targets)
 
 You can rerun this composer to add additional targets or manually edit the file. Remember to use the flag `--ask-answered` if you are adding additional targets.
 
+**Suggested Next Steps:**
+- [`backstage`](#backstage-backstage) - Run in each component directory to create component catalog files
+- [`gh-common-mono-build`](#github-gh-common-mono-build) - Set up unified build orchestration workflow (after component catalogs exist)
+- [`gh-docs-deploy`](#github-docs-deploy-gh-docs-deploy) - Set up GitHub Pages documentation deployment
+
 ### GitHub Docs Deploy: `gh-docs-deploy`
 
 This generates a GitHub Actions workflow for deploying static documentation to GitHub Pages. The workflow automatically deploys content from the `docs/` folder in your repository whenever changes are pushed to the main branch.
@@ -101,6 +113,9 @@ The generator automatically determines the correct build order by analyzing spec
 
 The generated workflow file appears in `.github/workflows/build-release.yaml` and delegates to each component's individual build workflow while managing job dependencies.
 
+**Suggested Next Steps:**
+- [`gh-maven-build`](#github-maven-build-gh-maven-build), [`gh-nodejs-build`](#github-nodejs-build-gh-nodejs-build) - Run in each component directory to create individual build workflows
+
 ### GitHub Maven Build: `gh-maven-build`
 
 This generates the CI workflow and NR Broker intention files for building a Java application using Maven in GitHub. The WAR artifact can then be used in a Tomcat deployment.
@@ -109,6 +124,17 @@ The generated files will appear in your `.github/workflows` and `.jenkins` direc
 
 This generator should be run at the root directory of your component (service) which should contain the `catalog-info.yaml` for it.
 
+**Suggested Next Steps:**
+- [`gh-tomcat-deploy-onprem`](#github-tomcat-on-prem-deploy-gh-tomcat-deploy-onprem) - Set up on-premises Tomcat deployment workflow
+
+### GitHub Tomcat On-Prem Deploy: `gh-tomcat-deploy-onprem`
+
+This generates the deploy workflow and NR Broker intention files for deploying Java/Tomcat applications to on-premises infrastructure via GitHub Actions.
+
+The generated files will appear in your `.github/workflows` directory. This generator also invokes the `pd-java-playbook` generator to create the Ansible playbook configuration.
+
+This generator should be run at the root directory of your component (service) which should contain the `catalog-info.yaml` for it. Run the `gh-maven-build` generator first to set up the build workflow.
+
 ### GitHub Node.js Build: `gh-nodejs-build`
 
 This generates the CI workflow and NR Broker intention files for building Node.js applications in GitHub. The workflow assumes that your `package.json` has a `build` command and that your build places the files in `./dist`. The built OCI artifact can be used in a Node.js deployment or as static assets.
@@ -116,6 +142,17 @@ This generates the CI workflow and NR Broker intention files for building Node.j
 The generated files will appear in your `.github/workflows` and `.jenkins` directories.
 
 This generator should be run at the root directory of your component (service) which should contain the `catalog-info.yaml` for it.
+
+**Suggested Next Steps:**
+- [`gh-oci-deploy-onprem`](#github-oci-on-prem-deploy-gh-oci-deploy-onprem) - Set up on-premises deployment workflow
+
+### GitHub OCI On-Prem Deploy: `gh-oci-deploy-onprem`
+
+This generates the deploy workflow and NR Broker intention files for deploying OCI artifacts (Node.js or Java/Tomcat applications) to on-premises infrastructure via GitHub Actions.
+
+The generated files will appear in your `.github/workflows` directory. This generator prompts you to select a deployment type (Node.js or Tomcat), and then invokes `pd-oci-playbook` to create the Ansible playbook configuration.
+
+This generator should be run at the root directory of your component (service) which should contain the `catalog-info.yaml` for it. Run the appropriate build generator (`gh-nodejs-build` or `gh-maven-build`) first to set up the build workflow.
 
 ### DB Migrations: `migrations`
 
@@ -191,7 +228,7 @@ You can clone this repository or download just the shell script from GitHub.
 
 ```bash
 # Download to current directory
-curl -o nr-repository-composer.sh https://raw.githubusercontent.com/bcgov-nr/nr-repository-composer/main/nr-repository-composer.sh
+curl -o nr-repository-composer.sh https://raw.githubusercontent.com/bcgov/nr-repository-composer/main/nr-repository-composer.sh
 chmod +x nr-repository-composer.sh
 ```
 

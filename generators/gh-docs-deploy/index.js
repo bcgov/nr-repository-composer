@@ -6,14 +6,11 @@ import { BackstageStorage } from '../util/backstage.storage.js';
 import { OPTION_HEADLESS, OPTION_HELP_PROMPTS } from '../util/options.js';
 import { bailOnUnansweredQuestions } from '../util/process.js';
 import { destinationGitPath } from '../util/git.js';
-import {
-  PROMPT_PROJECT,
-  PROMPT_SERVICE,
-  getPromptToUsage,
-} from '../util/prompts.js';
+import { getPromptToUsage } from '../util/prompts.js';
 import { BACKSTAGE_FILENAME, BACKSTAGE_KIND_COMPONENT } from '../util/yaml.js';
+import { outputReport } from '../util/report.js';
 
-const questions = [PROMPT_PROJECT, PROMPT_SERVICE];
+const questions = [];
 
 /**
  * Generate the CI workflow and NR Broker intention files needed for Java/Tomcat Maven builds in GitHub
@@ -30,6 +27,7 @@ export default class extends Generator {
       this.rootGeneratorName(),
       BACKSTAGE_KIND_COMPONENT,
       this.destinationPath(BACKSTAGE_FILENAME),
+      { ignoreKindMismatch: true },
     );
   }
 
@@ -71,15 +69,18 @@ export default class extends Generator {
     this.fs.copyTpl(
       this.templatePath('docs-deploy.yaml'),
       destinationGitPath('.github/workflows/docs-deploy.yaml'),
-      {
-        projectName: this.answers.projectName,
-        serviceName: this.answers.serviceName,
-      },
+      {},
     );
   }
 
   writingBackstage() {
     this.config.addGeneratorToDoc('gh-docs-deploy');
     this.config.save();
+  }
+
+  end() {
+    if (!this.options[OPTION_HEADLESS.name]) {
+      outputReport(this, 'gh-docs-deploy', this.answers);
+    }
   }
 }

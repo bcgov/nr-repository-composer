@@ -9,14 +9,14 @@ import {
 } from './yaml.js';
 
 export class BackstageStorage {
-  constructor(name, kind, configPath) {
+  constructor(name, kind, configPath, options = {}) {
     this.path = configPath;
     this.name = name;
 
     if (fs.existsSync(this.path)) {
       const backstageYaml = fs.readFileSync(this.path, 'utf8');
       this.backstageDoc = parseDocument(backstageYaml);
-      if (this.getPath(['kind']) !== kind) {
+      if (!options.ignoreKindMismatch && this.getPath(['kind']) !== kind) {
         throw new Error(
           `Backstage document kind mismatch: expected "${kind}", found "${this.getPath(['kind'])}". Are you running the correct generator for the current working directory?`,
         );
@@ -95,8 +95,8 @@ export class BackstageStorage {
   }
 
   delete(key) {
-    key = Array.isArray(key) ? key : propRecord[key].path;
-    this.backstageDoc.deleteIn(propRecord[key].path);
+    const path = Array.isArray(key) ? key : propRecord[key].path;
+    this.backstageDoc.deleteIn(path);
   }
 
   defaults(defaults) {

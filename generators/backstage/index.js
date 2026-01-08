@@ -18,6 +18,7 @@ import {
   PROMPT_GITHUB_PROJECT_SLUG,
   getPromptToUsage,
 } from '../util/prompts.js';
+import { outputReport } from '../util/report.js';
 
 const questions = [
   PROMPT_PROJECT,
@@ -89,5 +90,11 @@ export default class extends Generator {
   writingBackstage() {
     this.config.addGeneratorToDoc('backstage');
     this.config.save();
+  }
+
+  end() {
+    if (!this.options[OPTION_HEADLESS.name]) {
+      outputReport(this, 'backstage', this.answers);
+    }
   }
 }

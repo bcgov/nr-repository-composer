@@ -35,6 +35,7 @@ import {
   makeWorkflowBuildPublishPath,
   makeWorkflowDeployPath,
 } from '../util/github.js';
+import { outputReport } from '../util/report.js';
 
 const questions = [
   PROMPT_PROJECT,
@@ -90,7 +91,7 @@ export default class extends Generator {
             'https://github.com/bcgov/nr-repository-composer/blob/main/README.md#github-nodejs-build-gh-nodejs-build',
           ],
           ['Documentation', 'https://github.com/bcgov/nr-polaris-collection'],
-          ['Documentation', 'https://github.com/bcgov-nr/polaris-pipelines'],
+          ['Documentation', 'https://github.com/bcgov/nr-polaris-pipelines'],
         ),
       );
     }
@@ -106,6 +107,12 @@ export default class extends Generator {
     }
 
     bailOnUnansweredQuestions(questions, this.answers, headless, askAnswered);
+    if (this.answers.deployOnPrem) {
+      this.config.delete('deployOnPrem');
+      this.config.addGeneratorToDoc('gh-oci-deploy-onprem');
+      this.config.save();
+      this.showGeneratorDeprecationWarning = true;
+    }
     this.answers = await this.prompt(questions, 'config');
   }
 
@@ -161,9 +168,12 @@ export default class extends Generator {
         this.answers.serviceName,
         this.answers.playbookPath,
       ];
-      const playbook_options = {};
+      const playbook_options = {
+        deployType: 'nodejs',
+        shutdownScript: '',
+      };
       this.composeWith(
-        'nr-repository-composer:pd-nodejs-playbook',
+        'nr-repository-composer:pd-oci-playbook',
         playbook_args,
         playbook_options,
       );
@@ -183,5 +193,22 @@ export default class extends Generator {
   writingBackstage() {
     this.config.addGeneratorToDoc('gh-nodejs-build');
     this.config.save();
+  }
+
+  end() {
+    if (!this.options[OPTION_HEADLESS.name]) {
+      outputReport(this, 'gh-nodejs-build', this.answers);
+      if (this.showGeneratorDeprecationWarning) {
+        this.log(
+          chalk.yellow.bold('⚠️ Notice:') +
+            chalk.yellow(
+              ' This generator no longer handles deployments.\n' +
+                '   Please use generator ' +
+                chalk.cyan('gh-oci-deploy-onprem') +
+                ' to update your deployment configuration.\n',
+            ),
+        );
+      }
+    }
   }
 }

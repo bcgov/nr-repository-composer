@@ -10,18 +10,12 @@ import {
   isMonoRepo,
   relativeGitPath,
 } from '../util/git.js';
-import {
-  makeWorkflowBuildPublishPath,
-  makeWorkflowDeployPath,
-} from '../util/github.js';
+import { makeWorkflowBuildPublishPath } from '../util/github.js';
 
 import {
   PROMPT_PROJECT,
   PROMPT_SERVICE,
-  PROMPT_ADD_WEBADE_CONFIG,
-  PROMPT_ALT_APP_DIR_NAME,
   PROMPT_CLIENT_ID,
-  PROMPT_DEPLOY_ON_PREM,
   PROMPT_CONFIGURE_NR_ARTIFACTORY,
   PROMPT_MAVEN_BUILD_COMMAND,
   PROMPT_POM_ROOT,
@@ -30,28 +24,15 @@ import {
   PROMPT_GITHUB_PROJECT_SLUG,
   PROMPT_ARTIFACTORY_PROJECT,
   PROMPT_ARTIFACTORY_PACKAGE_TYPE,
-  PROMPT_DEPLOY_JASPER_REPORTS,
-  PROMPT_JASPER_PAUSE_SECONDS,
-  PROMPT_JASPER_PROJECT_NAME,
-  PROMPT_JASPER_SERVICE_NAME,
-  PROMPT_JASPER_SOURCE_PATH,
-  PROMPT_JASPER_ADDITIONAL_DATA_SOURCES,
-  PROMPT_JASPER_SERVER_INSTANCE,
   PROMPT_LICENSE,
-  PROMPT_PLAYBOOK_PATH,
   PROMPT_OCI_ARTIFACTS,
-  PROMPT_TOMCAT_CONTEXT,
   PROMPT_UNIT_TESTS_PATH,
   PROMPT_POST_DEPLOY_TESTS_PATH,
-  PROMPT_USE_ALT_APP_DIR_NAME,
   getPromptToUsage,
 } from '../util/prompts.js';
 import { BACKSTAGE_FILENAME, BACKSTAGE_KIND_COMPONENT } from '../util/yaml.js';
-import {
-  copyCommonBuildWorkflows,
-  copyCommonDeployWorkflows,
-  rmIfExists,
-} from '../util/copyworkflows.js';
+import { copyCommonBuildWorkflows, rmIfExists } from '../util/copyworkflows.js';
+import { outputReport } from '../util/report.js';
 
 const questions = [
   PROMPT_PROJECT,
@@ -76,59 +57,11 @@ const questions = [
     ...PROMPT_ARTIFACTORY_PACKAGE_TYPE,
     when: (answers) => !answers.gitHubPackages,
   },
-  PROMPT_DEPLOY_ON_PREM,
   PROMPT_CONFIGURE_NR_ARTIFACTORY,
   {
     ...PROMPT_MAVEN_BUILD_COMMAND,
     default: (answers) =>
       `--batch-mode -Dmaven.test.skip=true -P${answers.gitHubPackages ? 'github' : 'artifactory'} deploy${answers.configureNrArtifactory ? ` --settings ${relativeGitPath() ? '../'.repeat(relativeGitPath().split('/').length) : ''}.github/polaris-maven-settings.xml ` : ' '}--file ${answers.pomRoot}pom.xml`,
-  },
-  PROMPT_DEPLOY_JASPER_REPORTS,
-  {
-    ...PROMPT_JASPER_PROJECT_NAME,
-    default: (answers) => answers.projectName,
-    when: (answers) => answers.deployJasperReports,
-  },
-  {
-    ...PROMPT_JASPER_SERVICE_NAME,
-    default: (answers) => `${answers.projectName}-jasper-reports`,
-    when: (answers) => answers.deployJasperReports,
-  },
-  {
-    ...PROMPT_JASPER_SOURCE_PATH,
-    when: (answers) => answers.deployJasperReports,
-  },
-  {
-    ...PROMPT_JASPER_ADDITIONAL_DATA_SOURCES,
-    when: (answers) => answers.deployJasperReports,
-  },
-  {
-    ...PROMPT_JASPER_SERVER_INSTANCE,
-    when: (answers) => answers.deployJasperReports,
-  },
-  {
-    ...PROMPT_JASPER_PAUSE_SECONDS,
-    when: (answers) => answers.deployJasperReports,
-  },
-  {
-    ...PROMPT_PLAYBOOK_PATH,
-    when: (answers) => answers.deployOnPrem || answers.deployJasperReports,
-  },
-  {
-    ...PROMPT_TOMCAT_CONTEXT,
-    when: (answers) => answers.deployOnPrem,
-  },
-  {
-    ...PROMPT_USE_ALT_APP_DIR_NAME,
-    when: (answers) => answers.deployOnPrem,
-  },
-  {
-    ...PROMPT_ALT_APP_DIR_NAME,
-    when: (answers) => answers.useAltAppDirName,
-  },
-  {
-    ...PROMPT_ADD_WEBADE_CONFIG,
-    when: (answers) => answers.deployOnPrem,
   },
 ];
 
@@ -159,14 +92,14 @@ export default class extends Generator {
     if (!headless) {
       this.log(
         nrsay(
-          'NR GitHub Maven Build and Deploy Generator',
+          'NR GitHub Maven Build and Publish Generator',
           'Create workflow and NR Broker intention files for GitHub Maven builds',
           [
             'Generator',
             'https://github.com/bcgov/nr-repository-composer/blob/main/README.md#github-maven-build-gh-maven-build',
           ],
           ['Documentation', 'https://github.com/bcgov/nr-polaris-collection'],
-          ['Documentation', 'https://github.com/bcgov-nr/polaris-pipelines'],
+          ['Documentation', 'https://github.com/bcgov/nr-polaris-pipelines'],
         ),
       );
     }
@@ -182,6 +115,12 @@ export default class extends Generator {
     }
 
     bailOnUnansweredQuestions(questions, this.answers, headless, askAnswered);
+    if (this.answers.deployOnPrem) {
+      this.config.delete('deployOnPrem');
+      this.config.addGeneratorToDoc('gh-tomcat-deploy-onprem');
+      this.config.save();
+      this.showGeneratorDeprecationWarning = true;
+    }
     this.answers = await this.prompt(questions, 'config');
   }
   // Generate GitHub workflows and NR Broker intention files
@@ -224,65 +163,9 @@ export default class extends Generator {
       packageArchitecture: 'jvm',
       packageType: 'war',
     });
-    if (this.answers.deployOnPrem) {
-      this.fs.copyTpl(
-        this.templatePath('deploy.yaml'),
-        destinationGitPath(makeWorkflowDeployPath(this.answers.serviceName)),
-        {
-          projectName: this.answers.projectName,
-          serviceName: this.answers.serviceName,
-          brokerJwt,
-          artifactoryProject: this.answers.artifactoryProject,
-          pomRoot: this.answers.pomRoot,
-          javaVersion: this.answers.javaVersion,
-          gitHubPackages: this.answers.gitHubPackages,
-          artifactoryPackageType: this.answers.artifactoryPackageType,
-          gitHubProjectSlug: this.answers.gitHubProjectSlug,
-          relativePath,
-          postDeployTestsPath: this.answers.postDeployTestsPath,
-        },
-      );
-      copyCommonDeployWorkflows(this, this.answers);
-      const java_playbook_args = [
-        this.answers.projectName,
-        this.answers.serviceName,
-        this.answers.playbookPath,
-      ];
-      const java_playbook_options = {
-        tomcatContext: this.answers.tomcatContext,
-        addWebadeConfig: this.answers.addWebadeConfig,
-        altAppDirName: this.answers.altAppDirName,
-        javaVersion: this.answers.javaVersion,
-      };
-      this.composeWith(
-        'nr-repository-composer:pd-java-playbook',
-        java_playbook_args,
-        java_playbook_options,
-      );
-    }
     if (this.answers.configureNrArtifactory) {
       const maven_args = [this.answers.projectName, this.answers.serviceName];
       this.composeWith('nr-repository-composer:pd-maven', maven_args);
-    }
-    if (this.answers.deployJasperReports) {
-      const jasper_reports_args = [
-        this.answers.projectName,
-        this.answers.jasperServiceName,
-        this.answers.playbookPath,
-      ];
-      const jasper_playbook_options = {
-        jasperProjectName: this.answers.jasperProjectName,
-        jasperServerInstance: this.answers.jasperServerInstance,
-        jasperSourcePath: this.answers.jasperSourcePath,
-        jasperPauseSeconds: this.answers.jasperPauseSeconds,
-        jasperAdditionalDataSources: this.answers.jasperAdditionalDataSources,
-        brokerJwt: brokerJwt,
-      };
-      this.composeWith(
-        'nr-repository-composer:pd-jasper-reports',
-        jasper_reports_args,
-        jasper_playbook_options,
-      );
     }
 
     // Clean up old files if they exist (may remove in future)
@@ -299,5 +182,22 @@ export default class extends Generator {
   writingBackstage() {
     this.config.addGeneratorToDoc('gh-maven-build');
     this.config.save();
+  }
+
+  end() {
+    if (!this.options[OPTION_HEADLESS.name]) {
+      outputReport(this, 'gh-maven-build', this.answers);
+      if (this.showGeneratorDeprecationWarning) {
+        this.log(
+          chalk.yellow.bold('⚠️ Notice:') +
+            chalk.yellow(
+              ' This generator no longer handles deployments.\n' +
+                '   Please use generator ' +
+                chalk.cyan('gh-tomcat-deploy-onprem') +
+                ' to update your deployment configuration.\n',
+            ),
+        );
+      }
+    }
   }
 }

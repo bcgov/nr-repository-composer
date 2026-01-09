@@ -106,3 +106,20 @@ export function getGitRepoOriginUrl() {
     return null;
   }
 }
+
+/**
+ * Ensure repository-level directories exist (creates them if missing).
+ * @param {Array<string>} dirs
+ */
+export function ensureLocalMavenSupportDirs(dirs = ['.docker', '.m2repo']) {
+  dirs.forEach((dir) => {
+    try {
+      const dest = destinationGitPath(dir);
+      if (!fs.existsSync(dest)) {
+        fs.mkdirSync(dest, { recursive: true });
+      }
+    } catch (err) {
+      console.error(`Failed to create directory ${dir}: ${err.message}`);
+    }
+  });
+}

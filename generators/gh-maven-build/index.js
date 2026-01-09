@@ -158,11 +158,15 @@ export default class extends Generator {
         ociArtifacts,
       },
     );
-    copyCommonBuildWorkflows(this, {
-      ...this.answers,
-      packageArchitecture: 'jvm',
-      packageType: 'war',
-    });
+    copyCommonBuildWorkflows(
+      this,
+      {
+        ...this.answers,
+        packageArchitecture: 'jvm',
+        packageType: 'war',
+      },
+      { copyRepoSupportFiles: true },
+    );
     if (this.answers.configureNrArtifactory) {
       const maven_args = [this.answers.projectName, this.answers.serviceName];
       this.composeWith('nr-repository-composer:pd-maven', maven_args);

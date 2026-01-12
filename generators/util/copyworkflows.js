@@ -1,9 +1,4 @@
-import * as fs from 'fs';
-import {
-  destinationGitPath,
-  relativeGitPath,
-  ensureLocalMavenSupportDirs,
-} from './git.js';
+import { destinationGitPath, relativeGitPath } from './git.js';
 import {
   makeWorkflowBuildPublishFile,
   makeWorkflowDeployFile,
@@ -17,13 +12,8 @@ export function rmIfExists(generator, path) {
   }
 }
 
-export function copyCommonBuildWorkflows(generator, answers, opts = {}) {
+export function copyCommonBuildWorkflows(generator, answers) {
   const relativePath = relativeGitPath();
-
-  if (opts && opts.copyRepoSupportFiles) {
-    ensureLocalMavenSupportDirs();
-    copyLocalMavenSupportFiles(generator);
-  }
 
   generator.fs.copyTpl(
     generator.templatePath(`${COMMON_TEMPLATE_PATH}/build-intention.json`),
@@ -77,13 +67,8 @@ export function copyCommonBuildWorkflows(generator, answers, opts = {}) {
   );
 }
 
-export function copyCommonDeployWorkflows(generator, answers, opts = {}) {
+export function copyCommonDeployWorkflows(generator, answers) {
   const relativePath = relativeGitPath();
-
-  if (opts && opts.copyRepoSupportFiles) {
-    ensureLocalMavenSupportDirs();
-    copyLocalMavenSupportFiles(generator);
-  }
 
   const brokerJwt = answers.clientId.trim()
     ? `broker-jwt:${answers.clientId.trim()}`.replace(/[^a-zA-Z0-9_]/g, '_')
@@ -134,74 +119,4 @@ export function copyCommonDeployWorkflows(generator, answers, opts = {}) {
     generator,
     generator.destinationPath('.jenkins/deployment-intention.json'),
   );
-}
-
-function copyLocalMavenSupportFiles(generator) {
-  const templateBase = `${COMMON_TEMPLATE_PATH}/local-maven-build-support`;
-  const destM2Repo = destinationGitPath('.m2repo');
-
-  // Ensure .m2repo directory exists
-  if (!fs.existsSync(destM2Repo)) {
-    fs.mkdirSync(destM2Repo, { recursive: true });
-  }
-
-  // copy root scripts and .docker files to disk so they're immediately available
-  try {
-    const buildTpl = generator.templatePath(`${templateBase}/build.sh`);
-    const destBuild = destinationGitPath('build.sh');
-    // Always copy build.sh to disk
-    if (!fs.existsSync(destBuild)) {
-      try {
-        fs.copyFileSync(buildTpl, destBuild);
-        fs.chmodSync(destBuild, 0o755);
-        generator.log("Copied local Maven support 'build.sh' script.");
-      } catch (err) {
-        generator.log('Warn: failed to copy build.sh to disk: ' + err);
-      }
-    }
-
-    const setenvTpl = generator.templatePath(
-      `${templateBase}/.docker/setenv.sh`,
-    );
-    const dockerfileTpl = generator.templatePath(
-      `${templateBase}/.docker/runtime/Dockerfile`,
-    );
-
-    const destSetenv = destinationGitPath('.docker/setenv.sh');
-    const destRuntimeDir = destinationGitPath('.docker/runtime');
-    // copy .docker files (ensure runtime dir exists)
-    if (!fs.existsSync(destRuntimeDir)) {
-      try {
-        fs.mkdirSync(destRuntimeDir, { recursive: true });
-      } catch (err) {
-        generator.log(
-          'Warn: failed to create .docker/runtime directory: ' + err,
-        );
-      }
-    }
-    generator.log('Ensured local Maven support runtime folder exists.');
-
-    const destRuntimeDockerfile = `${destRuntimeDir}/Dockerfile`;
-    try {
-      if (!fs.existsSync(destRuntimeDockerfile)) {
-        fs.copyFileSync(dockerfileTpl, destRuntimeDockerfile);
-        generator.log("Copied local Maven support 'Dockerfile' file.");
-      }
-    } catch (err) {
-      generator.log('Warn: failed to copy Dockerfile to disk: ' + err);
-    }
-
-    // Only copy setenv.sh if it does not already exist on disk
-    try {
-      if (!fs.existsSync(destSetenv)) {
-        fs.copyFileSync(setenvTpl, destSetenv);
-        fs.chmodSync(destSetenv, 0o644);
-        generator.log("Copied local Maven support 'setenv.sh' script.");
-      }
-    } catch (err) {
-      generator.log('Warn: failed to copy setenv.sh to disk: ' + err);
-    }
-  } catch (err) {
-    generator.log('Warn: failed to set local support folder and files: ' + err);
-  }
 }

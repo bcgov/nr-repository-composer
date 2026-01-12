@@ -107,19 +107,26 @@ export function getGitRepoOriginUrl() {
   }
 }
 
-/**
- * Ensure repository-level directories exist (creates them if missing).
- * @param {Array<string>} dirs
- */
-export function ensureLocalMavenSupportDirs(dirs = ['.docker', '.m2repo']) {
-  dirs.forEach((dir) => {
-    try {
-      const dest = destinationGitPath(dir);
-      if (!fs.existsSync(dest)) {
-        fs.mkdirSync(dest, { recursive: true });
-      }
-    } catch (err) {
-      console.error(`Failed to create directory ${dir}: ${err.message}`);
+function ensureDir(absolutePath) {
+  try {
+    if (!fs.existsSync(absolutePath)) {
+      fs.mkdirSync(absolutePath, { recursive: true });
     }
-  });
+  } catch (err) {
+    console.error(
+      `Failed to create directory at ${absolutePath}: ${err.message}`,
+    );
+  }
+}
+
+export function ensureDockerDir() {
+  // Creating the deepest child with recursive: true ensures the whole tree exists
+  const runtimeRelPath = relativeGitPath('.docker', 'runtime');
+  const runtimeAbsPath = path.resolve(destinationGitPath('.'), runtimeRelPath);
+  ensureDir(runtimeAbsPath);
+}
+
+export function ensureM2RepoDir() {
+  const localPackPath = destinationGitPath('.m2repo');
+  ensureDir(localPackPath);
 }

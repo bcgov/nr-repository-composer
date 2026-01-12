@@ -5,7 +5,11 @@ import { nrsay } from '../util/nrsay.js';
 import { BackstageStorage } from '../util/backstage.storage.js';
 import { OPTION_HEADLESS, OPTION_HELP_PROMPTS } from '../util/options.js';
 import { bailOnUnansweredQuestions } from '../util/process.js';
-import { destinationGitPath } from '../util/git.js';
+import {
+  destinationGitPath,
+  ensureDockerDir,
+  relativeGitPath,
+} from '../util/git.js';
 import {
   PROMPT_PROJECT,
   PROMPT_SERVICE,
@@ -101,6 +105,7 @@ export default class extends Generator {
 
   // Generate GitHub deploy workflow and NR Broker intention files
   writingWorkflow() {
+    const relativePath = relativeGitPath();
     const brokerJwt = this.answers.clientId.trim()
       ? `broker-jwt:${this.answers.clientId.trim()}`.replace(
           /[^a-zA-Z0-9_]/g,
@@ -121,6 +126,27 @@ export default class extends Generator {
     );
 
     copyCommonDeployWorkflows(this, this.answers);
+
+    ensureDockerDir();
+    this.fs.copyTpl(
+      this.templatePath('Dockerfile'),
+      destinationGitPath(relativePath('.docker/runtime/Dockerfile')),
+    );
+
+    this.fs.copyTpl(
+      this.templatePath('build.sh'),
+      destinationGitPath(relativePath(`build-${this.answers.serviceName}.sh`)),
+    );
+
+    this.fs.copyTpl(
+      this.templatePath('deploy.sh'),
+      destinationGitPath(relativePath(`deploy-${this.answers.serviceName}.sh`)),
+    );
+
+    this.fs.copyTpl(
+      this.templatePath('run.sh'),
+      destinationGitPath(relativePath('run.sh')),
+    );
 
     // Compose with OCI playbook generator
     const playbook_args = [

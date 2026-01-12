@@ -5,7 +5,12 @@ import { nrsay } from '../util/nrsay.js';
 import { BackstageStorage } from '../util/backstage.storage.js';
 import { OPTION_HEADLESS, OPTION_HELP_PROMPTS } from '../util/options.js';
 import { bailOnUnansweredQuestions } from '../util/process.js';
-import { destinationGitPath, relativeGitPath } from '../util/git.js';
+import {
+  destinationGitPath,
+  relativeGitPath,
+  ensureDockerDir,
+  ensureM2RepoDir,
+} from '../util/git.js';
 import { makeWorkflowDeployPath } from '../util/github.js';
 
 import {
@@ -179,6 +184,33 @@ export default class extends Generator {
     );
 
     copyCommonDeployWorkflows(this, this.answers);
+    // copy local build and deploy support files
+    ensureDockerDir();
+    ensureM2RepoDir();
+
+    this.fs.copyTpl(
+      this.templatePath('Dockerfile'),
+      destinationGitPath(relativePath('.docker/runtime/Dockerfile')),
+    );
+
+    this.fs.copyTpl(
+      this.templatePath('setenv.sh'),
+      destinationGitPath(relativePath('.docker/setenv.sh')),
+    );
+
+    this.fs.copyTpl(
+      this.templatePath('build.sh'),
+      destinationGitPath(relativePath(`build-${this.answers.serviceName}.sh`)),
+      {
+        projectName: this.answers.projectName,
+        serviceName: this.answers.serviceName,
+      },
+    );
+
+    this.fs.copyTpl(
+      this.templatePath('deploy.sh'),
+      destinationGitPath(relativePath(`deploy-${this.answers.serviceName}.sh`)),
+    );
 
     const java_playbook_args = [
       this.answers.projectName,

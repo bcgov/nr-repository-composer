@@ -178,15 +178,17 @@ The build is expected to set the following annotations in the manifest: (The gen
 * org.opencontainers.image.title
 * org.opencontainers.image.version
 
+See: https://github.com/opencontainers/image-spec/blob/main/annotations.md
+
 ### Usage
 
 The built OCI artifact can be used in deployments or as static assets in another build. When you pull the artifact, any folders (like `dist`) from the root of your service folder that were pushed will be maintained.
 
 #### Static assets
 
-The most common pattern for using static assets from a previous build step is having a backend host the frontend files. Build generators that can use OCI Srtifacts will prompt for the artifacts to pull and the output locations.
+The most common pattern for using static assets from a previous build step is having a backend host the frontend files. Build generators that support using OCI Artifacts as static assets will prompt for the artifacts to pull and the output locations.
 
-If used as a static asset, the manifest file (which includes all the required annotations) must be stored in `manifest.json` in the output folder. Builds are not permitted to include assets without a way to discover their source.
+If used as a static asset, the manifest file (which includes all the required annotations) should be stored in `manifest.json` in the output folder. Builds are not permitted to include assets without a way to discover their source.
 
 If you are using the OCI artifact as hosted static files (example: frontend JavaScript application), it is recommened that the `dist` folder be configured as the static file root. The `manifest.json` and other support files should not be avialable to a user.
 

@@ -120,6 +120,8 @@ The generated workflow file appears in `.github/workflows/build-release.yaml` an
 
 This generates the CI workflow and NR Broker intention files for building a Java application using Maven in GitHub. The WAR artifact can then be used in a Tomcat deployment.
 
+The build can optionally pull [OCI artifacts as static assets](#static-assets) from other builds (e.g., frontend artifacts for a backend service).
+
 The generated files will appear in your `.github/workflows` and `.jenkins` directories.
 
 This generator should be run at the root directory of your component (service) which should contain the `catalog-info.yaml` for it.
@@ -137,7 +139,9 @@ This generator should be run at the root directory of your component (service) w
 
 ### GitHub Node.js Build: `gh-nodejs-build`
 
-This generates the CI workflow and NR Broker intention files for building Node.js applications in GitHub. The workflow assumes that your `package.json` has a `build` command and that your build places the files in `./dist`. The built OCI artifact can be used in a Node.js deployment or as static assets.
+This generates the CI workflow and NR Broker intention files for building Node.js applications in GitHub. The workflow assumes that your `package.json` has a `build` command. The build is output as an [OCI artifact](#build-outputs).
+
+The build can optionally pull [OCI artifacts as static assets](#static-assets) from other builds (e.g., frontend artifacts for a backend service).
 
 The generated files will appear in your `.github/workflows` and `.jenkins` directories.
 
@@ -157,6 +161,36 @@ This generator should be run at the root directory of your component (service) w
 ### DB Migrations: `migrations`
 
 This assists in creating a standard layout of folders and files related to database migrations. This is a catch-all generator that supports manual and automated processes that incrementally alter your database.
+
+## OCI Artifacts
+
+A container registery is used to store and fetch containers by software like Podman. All container registries are based on a standard that allows them to evolve to store generic artifacts. OCI Artifacts is a standard way to store those generic artifacts. See: https://oras.land/docs/concepts/artifact/
+
+### Build Outputs
+
+If the build output is an OCI artifact then the build must create a `./dist` folder and include it in the artifact. You may bundle additional support folders and files in the artifact as well.
+
+The build is expected to set the following annotations in the manifest: (The generator should set this up)
+
+* org.opencontainers.image.description
+* org.opencontainers.image.licenses
+* org.opencontainers.image.source
+* org.opencontainers.image.title
+* org.opencontainers.image.version
+
+See: https://github.com/opencontainers/image-spec/blob/main/annotations.md
+
+### Usage
+
+The built OCI artifact can be used in deployments or as static assets in another build. When you pull the artifact, any folders (like `dist`) from the root of your service folder that were pushed will be maintained.
+
+#### Static assets
+
+The most common pattern for using static assets from a previous build step is having a backend host the frontend files. Build generators that support using OCI Artifacts as static assets will prompt for the artifacts to pull and the output locations.
+
+If used as a static asset, the manifest file (which includes all the required annotations) should be stored in `manifest.json` in the output folder. Builds are not permitted to include assets without a way to discover their source.
+
+If you are using the OCI artifact as hosted static files (example: frontend JavaScript application), it is recommened that the `dist` folder be configured as the static file root. The `manifest.json` and other support files should not be avialable to a user.
 
 ## Command Options
 

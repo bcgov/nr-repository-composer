@@ -164,13 +164,13 @@ This assists in creating a standard layout of folders and files related to datab
 
 ## OCI Artifacts
 
-A container registery is used to store and fetch containers by software like Podman. All container registries are based on a standard that allows them to evolve to store generic artifacts. OCI Artifacts is a standard way to store those generic artifacts. Some of the generators use OCI Artifacts.
+A container registery is used to store and fetch containers by software like Podman. All container registries are based on a standard that allows them to evolve to store generic artifacts. OCI Artifacts is a standard way to store those generic artifacts. See: https://oras.land/docs/concepts/artifact/
 
 ### Build Outputs
 
 If the build output is an OCI artifact then the build must create a `./dist` folder and include it in the artifact. You may bundle additional support folders and files in the artifact as well.
 
-The build is expected to set the following annotations in the manifest:
+The build is expected to set the following annotations in the manifest: (The generator should set this up)
 
 * org.opencontainers.image.description
 * org.opencontainers.image.licenses

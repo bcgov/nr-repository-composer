@@ -104,8 +104,8 @@ export const PROMPT_POST_DEPLOY_TESTS_PATH = {
 export const PROMPT_PUBLISH_ARTIFACT_SUFFIX = {
   type: 'input',
   name: 'publishArtifactSuffix',
-  message: 'Published files/folders:',
-  default: 'dist node_modules package.json package-lock.json',
+  message: 'Published files/folders (required: dist):',
+  default: 'dist',
 };
 
 export const PROMPT_DEPLOY_ON_PREM = {
@@ -183,6 +183,13 @@ export const PROMPT_POM_ROOT = {
   name: 'pomRoot',
   message: 'Path to pom.xml:',
   default: './',
+};
+export const PROMPT_NODE_VERSION = {
+  type: 'list',
+  name: 'nodeVersion',
+  message: 'Node.js version:',
+  choices: ['20', '22', '24'],
+  default: '24',
 };
 export const PROMPT_JAVA_VERSION = {
   type: 'list',
@@ -347,6 +354,11 @@ export const PROMPT_TO_USAGE = {
   unitTestsPath: {
     description:
       'The path to the unit tests (e.g. .github/workflows/test.yaml)',
+  },
+  nodeVersion: {
+    description:
+      'The Node.js version to use for building and deploying the Node.js project. This will be used in the GitHub Actions workflow.',
+    example: '24',
   },
   postDeployTestsPath: {
     description:

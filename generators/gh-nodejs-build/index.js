@@ -26,15 +26,8 @@ import {
   getPromptToUsage,
 } from '../util/prompts.js';
 import { BACKSTAGE_FILENAME, BACKSTAGE_KIND_COMPONENT } from '../util/yaml.js';
-import {
-  copyCommonBuildWorkflows,
-  copyCommonDeployWorkflows,
-  rmIfExists,
-} from '../util/copyworkflows.js';
-import {
-  makeWorkflowBuildPublishPath,
-  makeWorkflowDeployPath,
-} from '../util/github.js';
+import { copyCommonBuildWorkflows, rmIfExists } from '../util/copyworkflows.js';
+import { makeWorkflowBuildPublishPath } from '../util/github.js';
 import { outputReport } from '../util/report.js';
 
 const questions = [
@@ -150,34 +143,6 @@ export default class extends Generator {
       packageArchitecture: 'nodejs',
       packageType: 'application/vnd.oci.image.layer.v1.tar+gzip',
     });
-    if (this.answers.deployOnPrem) {
-      this.fs.copyTpl(
-        this.templatePath('deploy.yaml'),
-        destinationGitPath(makeWorkflowDeployPath(this.answers.serviceName)),
-        {
-          projectName: this.answers.projectName,
-          serviceName: this.answers.serviceName,
-          brokerJwt,
-          gitHubProjectSlug: this.answers.gitHubProjectSlug,
-          postDeployTestsPath: this.answers.postDepoyTestsPath,
-        },
-      );
-      copyCommonDeployWorkflows(this, this.answers);
-      const playbook_args = [
-        this.answers.projectName,
-        this.answers.serviceName,
-        this.answers.playbookPath,
-      ];
-      const playbook_options = {
-        deployType: 'nodejs',
-        shutdownScript: '',
-      };
-      this.composeWith(
-        'nr-repository-composer:pd-oci-playbook',
-        playbook_args,
-        playbook_options,
-      );
-    }
 
     // Clean up old files if they exist (may remove in future)
     if (!isMonoRepo()) {

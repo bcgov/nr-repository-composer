@@ -194,7 +194,7 @@ jobs:
               "org.opencontainers.image.licenses": "<%= license %>",
               "org.opencontainers.image.source": "${{ github.repositoryUrl }}",
               "org.opencontainers.image.title": "<%= serviceName %>-artifact",
-              "org.opencontainers.image.version": "${PROJECT_TAG}",
+              "org.opencontainers.image.version": "${PROJECT_TAG}"
             }
           }
           EOF

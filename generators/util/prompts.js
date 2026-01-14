@@ -115,6 +115,18 @@ export const PROMPT_DEPLOY_ON_PREM = {
   default: false,
 };
 
+export const PROMPT_DEPLOY_TYPE = {
+  type: 'list',
+  name: 'deployType',
+  message: 'Deployment type',
+  description: 'Select the type of application being deployed',
+  choices: [
+    { name: 'Node.js application', value: 'nodejs' },
+    { name: 'Java/Tomcat application', value: 'tomcat' },
+  ],
+  default: 'nodejs',
+};
+
 export const PROMPT_SCHEMA_NAME = {
   type: 'input',
   name: 'schemaName',

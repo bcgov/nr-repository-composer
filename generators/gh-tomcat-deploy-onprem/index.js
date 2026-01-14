@@ -1,4 +1,5 @@
 'use strict';
+import path from 'path';
 import Generator from 'yeoman-generator';
 import chalk from 'chalk';
 import { nrsay } from '../util/nrsay.js';
@@ -179,6 +180,17 @@ export default class extends Generator {
     );
 
     copyCommonDeployWorkflows(this, this.answers);
+
+    this.fs.copyTpl(
+      this.templatePath('Dockerfile'),
+      destinationGitPath(path.join(relativePath,'.docker/runtime/Dockerfile')),
+    );
+    
+    this.fs.copyTpl(
+      this.templatePath('deploy.sh'),
+      destinationGitPath(`deploy-${this.answers.serviceName}.sh`),      
+      {serviceName: this.answers.serviceName,}, {}, { mode: 0o755 }
+    );
 
     const java_playbook_args = [
       this.answers.projectName,

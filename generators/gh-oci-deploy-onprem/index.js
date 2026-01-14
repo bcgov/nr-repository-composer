@@ -1,16 +1,18 @@
 'use strict';
+import path from 'path';
 import Generator from 'yeoman-generator';
 import chalk from 'chalk';
 import { nrsay } from '../util/nrsay.js';
 import { BackstageStorage } from '../util/backstage.storage.js';
 import { OPTION_HEADLESS, OPTION_HELP_PROMPTS } from '../util/options.js';
 import { bailOnUnansweredQuestions } from '../util/process.js';
-import { destinationGitPath } from '../util/git.js';
+import { destinationGitPath, ensureDockerDir, relativeGitPath } from '../util/git.js';
 import {
   PROMPT_PROJECT,
   PROMPT_SERVICE,
   PROMPT_CLIENT_ID,
   PROMPT_POST_DEPLOY_TESTS_PATH,
+  PROMPT_DEPLOY_TYPE,
   PROMPT_GITHUB_PROJECT_SLUG,
   PROMPT_PLAYBOOK_PATH,
   getPromptToUsage,
@@ -23,18 +25,6 @@ import { outputReport } from '../util/report.js';
 /**
  * Deploy type prompt - determines which playbook to use
  */
-const PROMPT_DEPLOY_TYPE = {
-  type: 'list',
-  name: 'deployType',
-  message: 'Deployment type',
-  description: 'Select the type of application being deployed',
-  choices: [
-    { name: 'Node.js application', value: 'nodejs' },
-    { name: 'Java/Tomcat application', value: 'tomcat' },
-  ],
-  default: 'nodejs',
-  store: true,
-};
 
 const questions = [
   PROMPT_PROJECT,
@@ -101,6 +91,7 @@ export default class extends Generator {
 
   // Generate GitHub deploy workflow and NR Broker intention files
   writingWorkflow() {
+    const relativePath = relativeGitPath();
     const brokerJwt = this.answers.clientId.trim()
       ? `broker-jwt:${this.answers.clientId.trim()}`.replace(
           /[^a-zA-Z0-9_]/g,
@@ -121,6 +112,24 @@ export default class extends Generator {
     );
 
     copyCommonDeployWorkflows(this, this.answers);
+
+    ensureDockerDir();
+    this.fs.copyTpl(
+      this.templatePath('Dockerfile'),
+      destinationGitPath(path.join(relativePath,'.docker/runtime/Dockerfile')),
+    );    
+
+    this.fs.copyTpl(
+      this.templatePath('deploy.sh'), 
+      destinationGitPath(`deploy-${this.answers.serviceName}.sh`),
+      {serviceName: this.answers.serviceName,}, {}, { mode: 0o755 }
+    );
+
+    this.fs.copyTpl(
+      this.templatePath('run.sh'), 
+      destinationGitPath(path.join(relativePath,'run.sh')),
+      {serviceName: this.answers.serviceName,},  {},{ mode: 0o644 }
+  );
 
     // Compose with OCI playbook generator
     const playbook_args = [

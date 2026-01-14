@@ -148,6 +148,12 @@ export default class extends Generator {
       packageType: 'application/vnd.oci.image.layer.v1.tar+gzip',
     });
 
+    this.fs.copyTpl(
+      this.templatePath('build.sh'),
+      destinationGitPath(`build-${this.answers.serviceName}.sh`),
+      {serviceName: this.answers.serviceName,}, {}, { mode: 0o755 } 
+    );
+
     // Clean up old files if they exist (may remove in future)
     if (!isMonoRepo()) {
       rmIfExists(

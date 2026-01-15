@@ -106,3 +106,28 @@ export function getGitRepoOriginUrl() {
     return null;
   }
 }
+
+function ensureDir(absolutePath) {
+  try {
+    if (!fs.existsSync(absolutePath)) {
+      fs.mkdirSync(absolutePath, { recursive: true });
+    }
+  } catch (err) {
+    console.error(
+      `Failed to create directory at ${absolutePath}: ${err.message}`,
+    );
+  }
+}
+
+export function ensureDockerDir() {
+  // Creating the deepest child with recursive: true ensures the whole tree exists
+  const runtimeRelPath = relativeGitPath('.docker', 'runtime');
+  const runtimeAbsPath = path.resolve(destinationGitPath('.'), runtimeRelPath);
+  ensureDir(runtimeAbsPath);
+}
+
+export function ensureM2RepoDir() {
+  const localPackPath = destinationGitPath('.m2repo');
+  ensureDir(localPackPath);
+}
+

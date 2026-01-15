@@ -30,6 +30,11 @@ export const pathToProps = [
     writeEmpty: true,
   },
   {
+    path: ['metadata', 'annotations', 'playbook.io.nrs.gov.bc.ca/deployType'],
+    prop: 'deployType',
+    writeEmpty: false,
+  },
+  {
     path: ['metadata', 'tags'],
     prop: 'tags',
     writeEmpty: false,

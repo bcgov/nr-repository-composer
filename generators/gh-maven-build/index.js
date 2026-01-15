@@ -1,4 +1,5 @@
 'use strict';
+import path from 'path';
 import Generator from 'yeoman-generator';
 import chalk from 'chalk';
 import { nrsay } from '../util/nrsay.js';
@@ -8,7 +9,9 @@ import { bailOnUnansweredQuestions } from '../util/process.js';
 import {
   destinationGitPath,
   isMonoRepo,
-  relativeGitPath,
+  relativeGitPath,  
+  ensureDockerDir,
+  ensureM2RepoDir,
 } from '../util/git.js';
 import { makeWorkflowBuildPublishPath } from '../util/github.js';
 
@@ -163,6 +166,24 @@ export default class extends Generator {
       packageArchitecture: 'jvm',
       packageType: 'war',
     });
+    
+    ensureDockerDir();
+    ensureM2RepoDir();
+
+    this.fs.copyTpl(
+      this.templatePath('setenv.sh'),
+      destinationGitPath(path.join(relativePath,'.docker/setenv.sh')),
+    );
+
+    this.fs.copyTpl(
+      this.templatePath('build.sh'),
+      destinationGitPath(`build-${this.answers.serviceName}.sh`),
+      {
+        projectName: this.answers.projectName,
+        serviceName: this.answers.serviceName,
+      },
+    );
+    
     if (this.answers.configureNrArtifactory) {
       const maven_args = [this.answers.projectName, this.answers.serviceName];
       this.composeWith('nr-repository-composer:pd-maven', maven_args);

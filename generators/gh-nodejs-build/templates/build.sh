@@ -41,6 +41,9 @@ else
     echo "Local registry is already running."
 fi
 
+<% if (relativePath && relativePath.length > 0) { -%>
+cd <%= relativePath %>
+<% } -%>
 # --- Step 3: Build Node.js locally ---
 echo "Running local build..."
 npm ci

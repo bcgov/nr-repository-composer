@@ -151,7 +151,7 @@ export default class extends Generator {
     this.fs.copyTpl(
       this.templatePath('build.sh'),
       destinationGitPath(`build-${this.answers.serviceName}.sh`),
-      {serviceName: this.answers.serviceName,}, {}, { mode: 0o755 } 
+      {serviceName: this.answers.serviceName, relativePath}, {}, { mode: 0o755 } 
     );
 
     // Clean up old files if they exist (may remove in future)

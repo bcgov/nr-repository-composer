@@ -187,8 +187,6 @@ jobs:
           <%_ for (const artifact of ociArtifacts) { _%>
           echo "Pulling artifact <%= artifact.artifact %> to <%= artifact.output %>"
           oras pull <%= artifact.artifact %> --output <%= artifact.output %>
-          oras manifest fetch -o <%= artifact.output %>/manifest-annotation.json <%= artifact.artifact %>
-          oras manifest fetch-config -o <%= artifact.output %>/manifest-config.json <%= artifact.artifact %>
           <%_ } -%>
         working-directory: ./<%= relativePath %>
         env:

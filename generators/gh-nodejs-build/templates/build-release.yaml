@@ -188,7 +188,7 @@ jobs:
         run: |
           cat <<EOF > annotation.json
           {
-            "$manifest": {
+            "\$manifest": {
               "org.opencontainers.image.description": "Build artifact for <%= serviceName %> version ${PROJECT_TAG}",
               "org.opencontainers.image.licenses": "<%= license %>",
               "org.opencontainers.image.source": "${{ github.repositoryUrl }}",

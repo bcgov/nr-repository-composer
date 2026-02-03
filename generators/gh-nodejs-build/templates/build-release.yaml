@@ -185,11 +185,11 @@ jobs:
           fi
           echo "dist directory exists and contains files"
         working-directory: ./<%= relativePath %>
-      - name: Create annotations file
+      - name: Create annotations files
         run: |
           cat <<EOF > annotation.json
           {
-            "$manifest": {
+            "\$manifest": {
               "org.opencontainers.image.description": "Build artifact for <%= serviceName %> version ${PROJECT_TAG}",
               "org.opencontainers.image.licenses": "<%= license %>",
               "org.opencontainers.image.source": "${{ github.repositoryUrl }}",

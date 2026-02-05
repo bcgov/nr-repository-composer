@@ -415,7 +415,7 @@ export const PROMPT_TO_USAGE = {
   mavenBuildCommand: {
     description: 'Arguments to pass to mvn',
     example:
-      '--batch-mode -Dmaven.test.skip=true -Partifactory deploy --settings ./.github/polaris-maven-settings.xml --file <%= pomRoot %>pom.xml',
+      '--batch-mode -Dmaven.test.skip=true -Partifactory clean deploy --settings ./.github/polaris-maven-settings.xml --file <%= pomRoot %>pom.xml',
   },
   deployJasperReports: {
     description: 'Whether to deploy Jasper Reports or not',

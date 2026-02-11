@@ -196,17 +196,16 @@ jobs:
       - name: Publish artifact
         id: publish-artifact
         working-directory: ./<%= relativePath %>
-<% if (gitHubPackages) { -%>
+<% if (artifactRepositoryType === 'GitHubPackages') { -%>
         run: |
           ARTIFACT_NAME="${ARTIFACT_ID}-${PROJECT_VERSION}.${PACKAGE_TYPE}"
           mvn <%= mavenBuildCommand %>
           echo "artifact_sha256=$(sha256sum <%= pomRoot %>target/${ARTIFACT_NAME} | awk '{ print $1 }')" >> $GITHUB_OUTPUT
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-<% if (configureNrArtifactory) { -%>
-          ARTIFACTORY_USERNAME: ${{ secrets.ARTIFACTORY_USERNAME }}
-          ARTIFACTORY_PASSWORD: ${{ secrets.ARTIFACTORY_PASSWORD }}
-<% } -%>
+<% if (toolsBuildSecrets) { for (const secret of toolsBuildSecrets.split(',')) { -%>
+          <%= secret %>: ${{ secrets.<%= secret %> }}
+<% } } -%>
           PROJECT_VERSION: ${{ steps.set-build-output-parameters.outputs.project_version }}
           ARTIFACT_ID: ${{ steps.set-build-output-parameters.outputs.artifact_id }}
           PACKAGE_TYPE: ${{ steps.set-build-output-parameters.outputs.package_type }}
@@ -222,6 +221,7 @@ jobs:
 <% } else { -%>
         run: mvn <% mavenBuildCommand %>
         env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
           ARTIFACTORY_USERNAME: ${{ secrets.ARTIFACTORY_USERNAME }}
           ARTIFACTORY_PASSWORD: ${{ secrets.ARTIFACTORY_PASSWORD }}
           BUILD_NUMBER: ${{ github.run_number }}

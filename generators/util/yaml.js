@@ -75,9 +75,27 @@ export const pathToProps = [
     path: [
       'metadata',
       'annotations',
-      'playbook.io.nrs.gov.bc.ca/gitHubPackages',
+      'playbook.io.nrs.gov.bc.ca/artifactRepositoryType',
     ],
-    prop: 'gitHubPackages',
+    prop: 'artifactRepositoryType',
+    writeEmpty: false,
+  },
+  {
+    path: [
+      'metadata',
+      'annotations',
+      'playbook.io.nrs.gov.bc.ca/artifactRepositoryPath',
+    ],
+    prop: 'artifactRepositoryPath',
+    writeEmpty: false,
+  },
+  {
+    path: [
+      'metadata',
+      'annotations',
+      'playbook.io.nrs.gov.bc.ca/toolsBuildSecrets',
+    ],
+    prop: 'toolsBuildSecrets',
     writeEmpty: false,
   },
   {
@@ -123,8 +141,22 @@ export const pathToProps = [
     writeEmpty: false,
   },
   {
+    path: [
+      'metadata',
+      'annotations',
+      'playbook.io.nrs.gov.bc.ca/mavenBuildProfiles',
+    ],
+    prop: 'mavenBuildProfiles',
+    writeEmpty: false,
+  },
+  {
     path: ['metadata', 'annotations', 'playbook.io.nrs.gov.bc.ca/nodeVersion'],
     prop: 'nodeVersion',
+    writeEmpty: false,
+  },
+  {
+    path: ['metadata', 'annotations', 'playbook.io.nrs.gov.bc.ca/javaPattern'],
+    prop: 'javaPattern',
     writeEmpty: false,
   },
   {

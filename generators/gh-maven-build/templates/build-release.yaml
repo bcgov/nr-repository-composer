@@ -204,7 +204,7 @@ jobs:
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
 <% if (toolsBuildSecrets) { for (const secret of toolsBuildSecrets.split(',')) { -%>
-          <%= secret %>: ${{ secrets.<%= secret %> }}
+          <%= secret.toUpperCase() %>: ${{ secrets.<%= secret.toUpperCase() %> }}
 <% } } -%>
           PROJECT_VERSION: ${{ steps.set-build-output-parameters.outputs.project_version }}
           ARTIFACT_ID: ${{ steps.set-build-output-parameters.outputs.artifact_id }}

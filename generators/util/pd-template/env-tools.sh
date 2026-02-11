@@ -11,6 +11,7 @@ export SERVICE_NAME="<%= serviceName %>"
 
 <% if (pomRoot) { -%>
 export POM_ROOT="<%= pomRoot %>"
+export MAVEN_ARGS="--file $POM_ROOT"
 <% } -%>
 
 # Only fetch vault secrets if --skip-vault is not set

@@ -417,22 +417,21 @@ export const PROMPT_TO_USAGE = {
     description: 'The path to the pom.xml file',
     example: './',
   },
-  gitHubPackages: {
-    description: 'Whether to publish to GitHub Packages or not',
+  artifactRepositoryType: {
+    description: 'The artifact destination repository type',
+    example: 'GitHubPackages',
   },
-  artifactoryProject: {
-    description: 'The Artifactory project to use (e.g. cc20)',
-  },
-  artifactoryPackageType: {
-    description: 'The Artifactory package type to use (e.g. maven, ivy, npm)',
-  },
-  configureNrArtifactory: {
-    description: 'Whether to include NR Artifactory settings or not',
+  artifactRepositoryPath: {
+    description: 'The artifact destination repository path',
   },
   mavenBuildCommand: {
     description: 'Arguments to pass to mvn',
     example:
       '--batch-mode -Dmaven.test.skip=true -Partifactory clean deploy --settings ./.github/polaris-maven-settings.xml --file <%= pomRoot %>pom.xml',
+  },
+  toolsBuildSecrets: {
+    description: 'Tools secrets used with builds (comma-separated)',
+    example: 'ARTIFACTORY_USERNAME,ARTIFACTORY_PASSWORD',
   },
   deployJasperReports: {
     description: 'Whether to deploy Jasper Reports or not',
@@ -475,7 +474,6 @@ export const PROMPT_TO_USAGE = {
 };
 
 export function getPromptToUsage(question) {
-  console.log(question);
   const usage = PROMPT_TO_USAGE[question.name];
   return (
     `${chalk.bold(question.message)} (key: ${question.name})

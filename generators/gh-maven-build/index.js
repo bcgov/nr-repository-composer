@@ -166,12 +166,12 @@ export default class extends Generator {
       maven_opts,
     );
 
-    // if (this.answers.javaPattern !== 'unknown') {
-    //   this.composeWith(
-    //     'nr-repository-composer:pd-java-pattern',
-    //     maven_args.concat([this.answers.javaPattern]),
-    //   );
-    // }
+    if (this.answers.javaPattern !== 'unknown') {
+      this.composeWith(
+        'nr-repository-composer:pd-java-pattern',
+        maven_args.concat([this.answers.javaPattern]),
+      );
+    }
 
     // Clean up old files if they exist (may remove in future)
     if (!isMonoRepo()) {

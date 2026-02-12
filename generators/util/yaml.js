@@ -102,6 +102,15 @@ export const pathToProps = [
     path: [
       'metadata',
       'annotations',
+      'playbook.io.nrs.gov.bc.ca/toolsLocalBuildSecrets',
+    ],
+    prop: 'toolsLocalBuildSecrets',
+    writeEmpty: false,
+  },
+  {
+    path: [
+      'metadata',
+      'annotations',
       'playbook.io.nrs.gov.bc.ca/artifactoryProject',
     ],
     prop: 'artifactoryProject',

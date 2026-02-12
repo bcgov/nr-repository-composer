@@ -22,6 +22,7 @@ import {
   PROMPT_JAVA_VERSION,
   PROMPT_GITHUB_PROJECT_SLUG,
   PROMPT_TOOLS_BUILD_SECRETS,
+  PROMPT_TOOLS_LOCAL_BUILD_SECRETS,
   PROMPT_ARTIFACT_REPOSITORY_TYPE,
   PROMPT_ARTIFACT_REPOSITORY_PATH,
   PROMPT_LICENSE,
@@ -49,10 +50,11 @@ const questions = [
   PROMPT_ARTIFACT_REPOSITORY_TYPE,
   PROMPT_ARTIFACT_REPOSITORY_PATH,
   PROMPT_TOOLS_BUILD_SECRETS,
+  PROMPT_TOOLS_LOCAL_BUILD_SECRETS,
   {
     ...PROMPT_MAVEN_BUILD_COMMAND,
     default: (answers) =>
-      `--batch-mode -Dmaven.test.skip=true -P${answers.artifactRepositoryType === 'GitHubPackages' ? 'github' : 'artifactory'} clean deploy --file $POM_ROOT`,
+      `--batch-mode -Dmaven.test.skip=true -P${answers.artifactRepositoryType === 'GitHubPackages' ? 'github' : 'artifactory'} clean deploy`,
   },
 ];
 

@@ -232,7 +232,15 @@ export const PROMPT_TOOLS_BUILD_SECRETS = {
   type: 'input',
   name: 'toolsBuildSecrets',
   message: 'Tools secrets used with builds (comma-separated):',
-  default: 'ARTIFACTORY_USERNAME,ARTIFACTORY_PASSWORD',
+  default: '',
+};
+export const PROMPT_TOOLS_LOCAL_BUILD_SECRETS = {
+  type: 'input',
+  name: 'toolsLocalBuildSecrets',
+  message: 'Local tools secrets used with builds (comma-separated):',
+  default: (answers) => {
+    return answers.toolsBuildSecrets ?? '';
+  },
 };
 export const PROMPT_MAVEN_BUILD_COMMAND = {
   type: 'input',
@@ -427,10 +435,14 @@ export const PROMPT_TO_USAGE = {
   mavenBuildCommand: {
     description: 'Arguments to pass to mvn',
     example:
-      '--batch-mode -Dmaven.test.skip=true -Partifactory clean deploy --settings ./.github/polaris-maven-settings.xml --file <%= pomRoot %>pom.xml',
+      '--batch-mode -Dmaven.test.skip=true -Pgithub clean deploy',
   },
   toolsBuildSecrets: {
     description: 'Tools secrets used with builds (comma-separated)',
+    example: 'ARTIFACTORY_USERNAME,ARTIFACTORY_PASSWORD',
+  },
+  toolsLocalBuildSecrets: {
+    description: 'Local tools secrets used with builds (comma-separated)',
     example: 'ARTIFACTORY_USERNAME,ARTIFACTORY_PASSWORD',
   },
   deployJasperReports: {

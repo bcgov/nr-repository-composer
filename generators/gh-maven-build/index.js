@@ -147,6 +147,7 @@ export default class extends Generator {
         isMonoRepo: isMonoRepo(),
         toolsBuildSecrets: this.answers.toolsBuildSecrets,
         mavenBuildCommand: this.answers.mavenBuildCommand,
+        toolsLocalBuildSecrets: this.answers.toolsLocalBuildSecrets,
         ociArtifacts,
       },
     );
@@ -160,6 +161,7 @@ export default class extends Generator {
       pomRoot: this.answers.pomRoot,
       relativePath,
     };
+    console.log(relativePath);
     this.composeWith(
       'nr-repository-composer:pd-java-maven',
       maven_args,

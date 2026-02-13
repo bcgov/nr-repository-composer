@@ -1,4 +1,5 @@
 'use strict';
+import path from 'node:path';
 import BaseGenerator from '../pd-base-playbook/index.js';
 import { destinationGitPath } from '../util/git.js';
 
@@ -13,10 +14,9 @@ export default class extends BaseGenerator {
   // Generate files
   writing() {
     // Template path is "drop dot and underscores for folders"
-
     this.fs.copyTpl(
       this.templatePath('gitignore'),
-      destinationGitPath(`${this.options.relativePath}/.gitignore`),
+      destinationGitPath(path.join(this.options.relativePath, '.gitignore')),
       {},
     );
 

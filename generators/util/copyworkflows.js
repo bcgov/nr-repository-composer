@@ -60,12 +60,12 @@ export function copyCommonBuildWorkflows(generator, answers) {
 
   generator.fs.copyTpl(
     generator.templatePath(`${COMMON_PD_TEMPLATE_PATH}/env-tools.sh`),
-    destinationGitPath(`${relativePath}/env-tools.sh`),
+    destinationGitPath(path.join(relativePath, 'env-tools.sh')),
     {
       projectName: answers.projectName,
       serviceName: answers.serviceName,
       pomRoot: path.join(relativePath, answers.pomRoot),
-      toolsBuildSecrets: answers.toolsBuildSecrets,
+      toolsLocalBuildSecrets: answers.toolsLocalBuildSecrets,
     },
     { mode: 0o755 },
   );

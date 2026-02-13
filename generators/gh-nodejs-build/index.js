@@ -131,6 +131,8 @@ export default class extends Generator {
         unitTestsPath: this.answers.unitTestsPath,
         nodeVersion: this.answers.nodeVersion,
         publishArtifactSuffix: this.answers.publishArtifactSuffix,
+        toolsBuildSecrets: this.answers.toolsBuildSecrets,
+        toolsLocalBuildSecrets: this.answers.toolsLocalBuildSecrets,
         relativePath,
         ociArtifacts,
       },

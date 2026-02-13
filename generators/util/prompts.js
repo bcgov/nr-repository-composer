@@ -241,6 +241,12 @@ export const PROMPT_TOOLS_BUILD_SECRETS = {
   message: 'Tools secrets used with builds (comma-separated):',
   default: 'ARTIFACTORY_USERNAME,ARTIFACTORY_PASSWORD',
 };
+export const PROMPT_TOOLS_LOCAL_BUILD_SECRETS = {
+  type: 'input',
+  name: 'toolsLocalBuildSecrets',
+  message: 'Local tools secrets used with builds (comma-separated):',
+  default: (answers) => answers.toolsBuildSecrets ?? '',
+};
 export const PROMPT_MAVEN_BUILD_COMMAND = {
   type: 'input',
   name: 'mavenBuildCommand',

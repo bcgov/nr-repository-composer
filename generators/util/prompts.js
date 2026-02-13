@@ -185,6 +185,13 @@ export const PROMPT_POM_ROOT = {
   message: 'Path to pom.xml (relative to service catalog root):',
   default: './',
 };
+export const PROMPT_NODE_PATTERN = {
+  type: 'list',
+  name: 'nodePattern',
+  message: 'Node pattern:',
+  choices: ['NPM', 'unknown'],
+  default: 'NPM',
+};
 export const PROMPT_NODE_VERSION = {
   type: 'list',
   name: 'nodeVersion',
@@ -232,15 +239,7 @@ export const PROMPT_TOOLS_BUILD_SECRETS = {
   type: 'input',
   name: 'toolsBuildSecrets',
   message: 'Tools secrets used with builds (comma-separated):',
-  default: '',
-};
-export const PROMPT_TOOLS_LOCAL_BUILD_SECRETS = {
-  type: 'input',
-  name: 'toolsLocalBuildSecrets',
-  message: 'Local tools secrets used with builds (comma-separated):',
-  default: (answers) => {
-    return answers.toolsBuildSecrets ?? '';
-  },
+  default: 'ARTIFACTORY_USERNAME,ARTIFACTORY_PASSWORD',
 };
 export const PROMPT_MAVEN_BUILD_COMMAND = {
   type: 'input',

@@ -19,11 +19,7 @@ env:
   SERVICE_NAME: <%= serviceName %>
   JOB: buildByToken/buildWithParameters?job=<%= projectName %>/<%= serviceName %>
   URL: https://cd.io.nrs.gov.bc.ca
-<% if (gitHubPackages) { -%>
-  PACKAGE_REPO: https://maven.pkg.github.com/<%= gitHubProjectSlug %>
-<% } else { -%>
-  PACKAGE_REPO: https://artifacts.developer.gov.bc.ca/artifactory/<%= artifactoryProject %>-<%= projectName %>-<%= artifactoryPackageType %>-local
-<% } -%>
+  PACKAGE_REPO: <%= artifactRepositoryPath %>
 
 jobs:
   deploy-pre-release-build:
@@ -125,7 +121,7 @@ jobs:
       - name: Set download URL
         id: set-download-url
         working-directory: ./<%= relativePath %>
-<% if (gitHubPackages) { -%>
+<% if (artifactRepositoryType === 'GitHubPackages') { -%>
         run: |
           set -e
           sudo apt-get update
@@ -377,7 +373,7 @@ jobs:
           --data-urlencode "gitTag=${{ (startsWith(github.ref, 'refs/tags/') && github.ref_name) || '' }}" \
           --data-urlencode "configBranch=${{ inputs.config_branch || '' }}" \
           --data-urlencode "downloadUrl=${DOWNLOAD_URL}" \
-          --data-urlencode "downloadType=<% if (gitHubPackages) { -%>GITHUB<% } else { -%>ARTIFACTORY<% } -%>" \
+          --data-urlencode "downloadType=<% if (artifactRepositoryType === 'JFrogArtifactory') { -%>ARTIFACTORY<% } else { -%>GITHUB<% } -%>" \
           --data-urlencode "envLong=${{ inputs.environment }}" \
           --data-urlencode "triggerUrl=https://github.com/${{ github.repository }}/actions/runs/${{ github.run_id }}" \
           --data-urlencode "deploymentApprover=${DEPLOYMENT_APPROVER}" \

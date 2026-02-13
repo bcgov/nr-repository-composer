@@ -15,10 +15,12 @@ if [[ "${1:-}" == "--skip-vault" ]]; then
   SKIP_VAULT=true
 fi
 
+# Service-specific environment variables
 export PROJECT_NAME="<%= projectName %>"
 export SERVICE_NAME="<%= serviceName %>"
 
 <% if (pomRoot) { -%>
+# Maven build configuration
 export POM_ROOT="<%= pomRoot %>"
 export MAVEN_ARGS="--file $POM_ROOT"
 <% } -%>

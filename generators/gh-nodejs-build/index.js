@@ -95,12 +95,9 @@ export default class extends Generator {
     }
 
     bailOnUnansweredQuestions(questions, this.answers, headless, askAnswered);
-    if (this.answers.deployOnPrem) {
-      this.config.delete('deployOnPrem');
-      this.config.addGeneratorToDoc('gh-oci-deploy-onprem');
-      this.config.save();
-      this.showGeneratorDeprecationWarning = true;
-    }
+    const removedProps = this.config.processDeprecated();
+    this.showGeneratorDeprecationWarning = removedProps.indexOf('deployOnPrem') !== -1;
+
     this.answers = await this.prompt(questions, 'config');
   }
 

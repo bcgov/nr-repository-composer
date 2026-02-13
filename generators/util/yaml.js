@@ -107,39 +107,7 @@ export const pathToProps = [
     prop: 'toolsLocalBuildSecrets',
     writeEmpty: false,
   },
-  {
-    path: [
-      'metadata',
-      'annotations',
-      'playbook.io.nrs.gov.bc.ca/artifactoryProject',
-    ],
-    prop: 'artifactoryProject',
-    writeEmpty: false,
-  },
-  {
-    path: [
-      'metadata',
-      'annotations',
-      'playbook.io.nrs.gov.bc.ca/artifactoryPackageType',
-    ],
-    prop: 'artifactoryPackageType',
-    writeEmpty: false,
-  },
-  {
-    path: ['metadata', 'annotations', 'playbook.io.nrs.gov.bc.ca/deployOnPrem'],
-    prop: 'deployOnPrem',
-    writeEmpty: false,
-  },
   // Maven
-  {
-    path: [
-      'metadata',
-      'annotations',
-      'playbook.io.nrs.gov.bc.ca/configureNrArtifactory',
-    ],
-    prop: 'configureNrArtifactory',
-    writeEmpty: false,
-  },
   {
     path: [
       'metadata',
@@ -326,6 +294,67 @@ export const pathToProps = [
     prop: 'schemaMigrationBasePath',
     writeEmpty: true,
   },
+  // Deprecated - Remove in future
+  {
+    path: [
+      'metadata',
+      'annotations',
+      'playbook.io.nrs.gov.bc.ca/artifactoryPackageType',
+    ],
+    prop: 'artifactoryPackageType',
+    writeEmpty: false,
+    deprecated: () => {},
+  },
+  {
+    path: [
+      'metadata',
+      'annotations',
+      'playbook.io.nrs.gov.bc.ca/artifactoryProject',
+    ],
+    prop: 'artifactoryProject',
+    writeEmpty: false,
+    deprecated: () => {},
+  },
+  {
+    path: [
+      'metadata',
+      'annotations',
+      'playbook.io.nrs.gov.bc.ca/configureNrArtifactory',
+    ],
+    prop: 'configureNrArtifactory',
+    writeEmpty: false,
+    deprecated: (config) => {
+      config.set('toolsBuildSecrets', 'ARTIFACTORY_USERNAME,ARTIFACTORY_PASSWORD');
+      config.set('toolsLocalBuildSecrets', 'ARTIFACTORY_USERNAME,ARTIFACTORY_PASSWORD');
+      // Build command will need updating
+      config.delete('mavenBuildCommand');
+    },
+  },
+  {
+    path: ['metadata', 'annotations', 'playbook.io.nrs.gov.bc.ca/deployOnPrem'],
+    prop: 'deployOnPrem',
+    writeEmpty: false,
+    deprecated: (config) => {
+      if (config.hasGenerator('gh-maven-build')) {
+        config.addGeneratorToDoc('gh-tomcat-deploy-onprem');
+      }
+      if (config.hasGenerator('gh-nodejs-build')) {
+        config.addGeneratorToDoc('gh-oci-deploy-onprem');
+      }
+    },
+  },
+  {
+    path: [
+      'metadata',
+      'annotations',
+      'playbook.io.nrs.gov.bc.ca/gitHubPackages',
+    ],
+    prop: 'gitHubPackages',
+    writeEmpty: false,
+    deprecated: (config, value) => {
+      config.set('artifactRepositoryType', value ? 'GitHubPackages' : 'JFrogArtifactory');
+    },
+  },
 ];
 
 export const propRecord = pathToProps.reduce((acc, pathToProp) => {
@@ -339,7 +368,7 @@ export function extractFromYaml(doc, pathToProps) {
   if (doc) {
     for (const pathToProp of pathToProps) {
       const path = pathToProp.path;
-      if (doc.hasIn(path)) {
+      if (doc.hasIn(path) && !!pathToProp.deprecated) {
         answers[pathToProp.prop] = doc.getIn(path);
       }
     }
@@ -360,6 +389,14 @@ export function addGeneratorToDoc(doc, generator) {
   } else {
     doc.setIn(BACKSTAGE_GENERATOR_PATH, generator);
   }
+}
+
+export function hasGeneratorInDoc(doc, generator) {
+  if (doc.hasIn(BACKSTAGE_GENERATOR_PATH)) {
+    const generators = doc.getIn(BACKSTAGE_GENERATOR_PATH).split(',');
+    return generators.indexOf(generator) !== -1;
+  }
+  return false;
 }
 
 /**

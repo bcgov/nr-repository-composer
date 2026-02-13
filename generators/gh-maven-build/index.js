@@ -107,7 +107,8 @@ export default class extends Generator {
 
     bailOnUnansweredQuestions(questions, this.answers, headless, askAnswered);
     const removedProps = this.config.processDeprecated();
-    this.showGeneratorDeprecationWarning = removedProps.indexOf('deployOnPrem') !== -1;
+    this.showGeneratorDeprecationWarning =
+      removedProps.indexOf('deployOnPrem') !== -1;
     this.answers = await this.prompt(questions, 'config');
   }
   // Generate GitHub workflows and NR Broker intention files

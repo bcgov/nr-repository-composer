@@ -23,12 +23,12 @@
 # This script:
 #   1. Validates that the PATH catalog file is a component (kind: Component)
 #   2. Authenticates with Knox Vault (unless --skip-vault specified)
-#   3. Sources optional PATH/env-tools.sh (tools mode) or PATH/env-local.sh (local mode)
+#   3. Sources PATH/.env-tools.sh (always), and optionally PATH/.env-local.sh (if local mode)
 #
 # Environment variables set:
 #   VAULT_ADDR    Knox Vault address
 #   VAULT_TOKEN   Authentication token (if not --skip-vault)
-#   Plus any additional variables from PATH/env-tools.sh or PATH/env-local.sh
+#   Plus any additional variables from PATH/.env-tools.sh and PATH/.env-local.sh
 
 # Parse parameters
 ENV_MODE="tools"  # Default to tools mode
@@ -80,19 +80,25 @@ if [[ "$SKIP_VAULT" == false ]]; then
   fi
 fi
 
-# Source environment file from target path
-if [[ "$ENV_MODE" == "local" ]]; then
-  # Local mode: use env-local.sh if available
-  ENV_FILE="${TARGET_PATH}/env-local.sh"
-else
-  # Tools mode: use env-tools.sh if available
-  ENV_FILE="${TARGET_PATH}/env-tools.sh"
+# Source environment files from target path
+# Always source env-tools.sh first (contains service config and credentials)
+ENV_TOOLS_FILE="${TARGET_PATH}/.env-tools.sh"
+if [[ -f "$ENV_TOOLS_FILE" ]]; then
+  if [[ "$SKIP_VAULT" == true ]]; then
+    source "$ENV_TOOLS_FILE" --skip-vault
+  else
+    source "$ENV_TOOLS_FILE"
+  fi
 fi
 
-if [[ -f "$ENV_FILE" ]]; then
-  if [[ "$SKIP_VAULT" == true ]]; then
-    source "$ENV_FILE" --skip-vault
-  else
-    source "$ENV_FILE"
+# If local mode, also source env-local.sh for additional development settings
+if [[ "$ENV_MODE" == "local" ]]; then
+  ENV_LOCAL_FILE="${TARGET_PATH}/.env-local.sh"
+  if [[ -f "$ENV_LOCAL_FILE" ]]; then
+    if [[ "$SKIP_VAULT" == true ]]; then
+      source "$ENV_LOCAL_FILE" --skip-vault
+    else
+      source "$ENV_LOCAL_FILE"
+    fi
   fi
 fi

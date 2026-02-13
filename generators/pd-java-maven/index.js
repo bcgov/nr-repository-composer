@@ -1,12 +1,12 @@
 'use strict';
-import path from 'node:path';
-import BaseGenerator from '../pd-base-playbook/index.js';
+import Generator from 'yeoman-generator';
 import { destinationGitPath } from '../util/git.js';
+import { updateReadmeWithPipelineGuide } from '../util/copyworkflows.js';
 
 /**
  * Generate the files needed for Maven
  */
-export default class extends BaseGenerator {
+export default class extends Generator {
   constructor(args, opts) {
     super(args, opts);
   }
@@ -14,11 +14,12 @@ export default class extends BaseGenerator {
   // Generate files
   writing() {
     // Template path is "drop dot and underscores for folders"
-    this.fs.copyTpl(
-      this.templatePath('gitignore'),
-      destinationGitPath(path.join(this.options.relativePath, '.gitignore')),
-      {},
-    );
+    // TODO: Insert contents as part of existing .gitignore if it exists instead of overwriting
+    // this.fs.copyTpl(
+    //   this.templatePath('gitignore'),
+    //   destinationGitPath(path.join(this.options.relativePath, '.gitignore')),
+    //   {},
+    // );
 
     this.fs.copyTpl(
       this.templatePath('mvn_maven.config'),
@@ -46,5 +47,8 @@ export default class extends BaseGenerator {
     );
 
     // Not supporting Windows shell scripts at this time
+
+    // Update README with Polaris Pipeline guide
+    updateReadmeWithPipelineGuide(this);
   }
 }

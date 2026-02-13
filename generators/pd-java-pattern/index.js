@@ -1,10 +1,10 @@
 'use strict';
-import BaseGenerator from '../pd-base-playbook/index.js';
+import Generator from 'yeoman-generator';
 
 /**
  * Generate the files needed for Java development patterns
  */
-export default class extends BaseGenerator {
+export default class extends Generator {
   constructor(args, opts) {
     super(args, opts);
   }

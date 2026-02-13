@@ -16,7 +16,10 @@ import {
   getPromptToUsage,
 } from '../util/prompts.js';
 import { BACKSTAGE_FILENAME, BACKSTAGE_KIND_COMPONENT } from '../util/yaml.js';
-import { copyCommonDeployWorkflows } from '../util/copyworkflows.js';
+import {
+  copyCommonDeployWorkflows,
+  initializePlaybookVariables,
+} from '../util/copyworkflows.js';
 import { makeWorkflowDeployPath } from '../util/github.js';
 import { outputReport } from '../util/report.js';
 
@@ -121,6 +124,9 @@ export default class extends Generator {
     );
 
     copyCommonDeployWorkflows(this, this.answers);
+
+    // Initialize playbook variables
+    initializePlaybookVariables(this, this.answers.playbookPath);
 
     // Compose with OCI playbook generator
     const playbook_args = [

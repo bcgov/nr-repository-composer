@@ -324,8 +324,14 @@ export const pathToProps = [
     prop: 'configureNrArtifactory',
     writeEmpty: false,
     deprecated: (config) => {
-      config.set('toolsBuildSecrets', 'ARTIFACTORY_USERNAME,ARTIFACTORY_PASSWORD');
-      config.set('toolsLocalBuildSecrets', 'ARTIFACTORY_USERNAME,ARTIFACTORY_PASSWORD');
+      config.set(
+        'toolsBuildSecrets',
+        'ARTIFACTORY_USERNAME,ARTIFACTORY_PASSWORD',
+      );
+      config.set(
+        'toolsLocalBuildSecrets',
+        'ARTIFACTORY_USERNAME,ARTIFACTORY_PASSWORD',
+      );
       // Build command will need updating
       config.delete('mavenBuildCommand');
     },
@@ -352,7 +358,10 @@ export const pathToProps = [
     prop: 'gitHubPackages',
     writeEmpty: false,
     deprecated: (config, value) => {
-      config.set('artifactRepositoryType', value ? 'GitHubPackages' : 'JFrogArtifactory');
+      config.set(
+        'artifactRepositoryType',
+        value ? 'GitHubPackages' : 'JFrogArtifactory',
+      );
     },
   },
 ];

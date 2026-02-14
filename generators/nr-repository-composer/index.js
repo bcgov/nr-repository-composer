@@ -31,15 +31,12 @@ export default class extends Generator {
 
   writing() {
     // Copy the main runner script
-    this.fs.copy(
+    this.fs.copyTpl(
       this.templatePath('nr-repository-composer.sh'),
       this.destinationPath('nr-repository-composer.sh'),
+      {},
+      { mode: 0o755 },
     );
-
-    // Make it executable
-    const fs = require('fs');
-    const path = this.destinationPath('nr-repository-composer.sh');
-    fs.chmodSync(path, 0o755);
   }
 
   end() {

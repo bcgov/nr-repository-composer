@@ -13,6 +13,8 @@ import {
 import {
   PROMPT_PROJECT,
   PROMPT_SERVICE,
+  PROMPT_ARTIFACT_REPOSITORY_TYPE,
+  PROMPT_ARTIFACT_REPOSITORY_PATH,
   PROMPT_CLIENT_ID,
   PROMPT_GITHUB_PROJECT_SLUG,
   PROMPT_LICENSE,
@@ -41,6 +43,8 @@ const questions = [
   PROMPT_OCI_ARTIFACTS,
   PROMPT_PUBLISH_ARTIFACT_SUFFIX,
   PROMPT_UNIT_TESTS_PATH,
+  PROMPT_ARTIFACT_REPOSITORY_TYPE,
+  PROMPT_ARTIFACT_REPOSITORY_PATH,
   PROMPT_TOOLS_BUILD_SECRETS,
   PROMPT_TOOLS_LOCAL_BUILD_SECRETS,
 ];
@@ -122,6 +126,8 @@ export default class extends Generator {
       {
         projectName: this.answers.projectName,
         serviceName: this.answers.serviceName,
+        artifactRepositoryType: this.answers.artifactRepositoryType,
+        artifactRepositoryPath: this.answers.artifactRepositoryPath,
         brokerJwt,
         gitHubProjectSlug: this.answers.gitHubProjectSlug,
         license: this.answers.license,

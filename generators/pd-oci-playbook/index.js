@@ -2,9 +2,9 @@
 import path from 'path';
 import * as fs from 'node:fs';
 import Generator from 'yeoman-generator';
-// eslint-disable-next-line no-unused-vars
-import chalk from 'chalk';
 import { updateReadmeWithPipelineGuide } from '../util/copyworkflows.js';
+import { BackstageStorage } from '../util/backstage.storage.js';
+import { BACKSTAGE_FILENAME, BACKSTAGE_KIND_COMPONENT } from '../util/yaml.js';
 
 /**
  * Generate Ansible playbook and variable files for OCI artifact deployments
@@ -13,13 +13,38 @@ export default class extends Generator {
   constructor(args, opts) {
     super(args, opts);
 
+    this.argument('projectName', {
+      type: String,
+      required: true,
+      description: 'Project Name',
+    });
+    this.argument('serviceName', {
+      type: String,
+      required: true,
+      description: 'Service Name',
+    });
+    this.argument('playbookPath', {
+      type: String,
+      required: false,
+      description: 'Playbook Path',
+      default: 'playbooks',
+    });
+
     this.option('deployType', {
       type: String,
       description: 'Deployment type (nodejs or tomcat)',
       default: 'nodejs',
     });
   }
-
+  
+  _getStorage() {
+    return new BackstageStorage(
+      this.rootGeneratorName(),
+      BACKSTAGE_KIND_COMPONENT,
+      this.destinationPath(BACKSTAGE_FILENAME),
+    );
+  }
+  
   writing() {
     this.log('Generating playbook files');
 

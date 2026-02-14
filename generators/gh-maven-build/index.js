@@ -15,19 +15,19 @@ import { makeWorkflowBuildPublishPath } from '../util/github.js';
 import {
   PROMPT_PROJECT,
   PROMPT_SERVICE,
+  PROMPT_ARTIFACT_REPOSITORY_TYPE,
+  PROMPT_ARTIFACT_REPOSITORY_PATH,
   PROMPT_CLIENT_ID,
-  PROMPT_CONFIGURE_NR_ARTIFACTORY,
-  PROMPT_MAVEN_BUILD_COMMAND,
-  PROMPT_POM_ROOT,
+  PROMPT_JAVA_PATTERN,
   PROMPT_JAVA_VERSION,
-  PROMPT_GITHUB_PACKAGES,
-  PROMPT_GITHUB_PROJECT_SLUG,
-  PROMPT_ARTIFACTORY_PROJECT,
-  PROMPT_ARTIFACTORY_PACKAGE_TYPE,
   PROMPT_LICENSE,
+  PROMPT_GITHUB_PROJECT_SLUG,
+  PROMPT_MAVEN_BUILD_COMMAND,
   PROMPT_OCI_ARTIFACTS,
+  PROMPT_POM_ROOT,
+  PROMPT_TOOLS_BUILD_SECRETS,
+  PROMPT_TOOLS_LOCAL_BUILD_SECRETS,
   PROMPT_UNIT_TESTS_PATH,
-  PROMPT_POST_DEPLOY_TESTS_PATH,
   getPromptToUsage,
 } from '../util/prompts.js';
 import { BACKSTAGE_FILENAME, BACKSTAGE_KIND_COMPONENT } from '../util/yaml.js';
@@ -39,29 +39,20 @@ const questions = [
   PROMPT_SERVICE,
   PROMPT_LICENSE,
   PROMPT_CLIENT_ID,
-  PROMPT_POM_ROOT,
+  PROMPT_GITHUB_PROJECT_SLUG,
   PROMPT_JAVA_VERSION,
-  PROMPT_UNIT_TESTS_PATH,
-  PROMPT_POST_DEPLOY_TESTS_PATH,
-  PROMPT_GITHUB_PACKAGES,
+  PROMPT_JAVA_PATTERN,
+  PROMPT_POM_ROOT,
   PROMPT_OCI_ARTIFACTS,
-  {
-    ...PROMPT_GITHUB_PROJECT_SLUG,
-    when: (answers) => answers.gitHubPackages,
-  },
-  {
-    ...PROMPT_ARTIFACTORY_PROJECT,
-    when: (answers) => !answers.gitHubPackages,
-  },
-  {
-    ...PROMPT_ARTIFACTORY_PACKAGE_TYPE,
-    when: (answers) => !answers.gitHubPackages,
-  },
-  PROMPT_CONFIGURE_NR_ARTIFACTORY,
+  PROMPT_UNIT_TESTS_PATH,
+  PROMPT_ARTIFACT_REPOSITORY_TYPE,
+  PROMPT_ARTIFACT_REPOSITORY_PATH,
+  PROMPT_TOOLS_BUILD_SECRETS,
+  PROMPT_TOOLS_LOCAL_BUILD_SECRETS,
   {
     ...PROMPT_MAVEN_BUILD_COMMAND,
     default: (answers) =>
-      `--batch-mode -Dmaven.test.skip=true -P${answers.gitHubPackages ? 'github' : 'artifactory'} deploy${answers.configureNrArtifactory ? ` --settings ${relativeGitPath() ? '../'.repeat(relativeGitPath().split('/').length) : ''}.github/polaris-maven-settings.xml ` : ' '}--file ${answers.pomRoot}pom.xml`,
+      `--batch-mode -Dmaven.test.skip=true -P${answers.artifactRepositoryType === 'GitHubPackages' ? 'github' : 'artifactory'} clean deploy`,
   },
 ];
 
@@ -115,12 +106,9 @@ export default class extends Generator {
     }
 
     bailOnUnansweredQuestions(questions, this.answers, headless, askAnswered);
-    if (this.answers.deployOnPrem) {
-      this.config.delete('deployOnPrem');
-      this.config.addGeneratorToDoc('gh-tomcat-deploy-onprem');
-      this.config.save();
-      this.showGeneratorDeprecationWarning = true;
-    }
+    const removedProps = this.config.processDeprecated();
+    this.showGeneratorDeprecationWarning =
+      removedProps.indexOf('deployOnPrem') !== -1;
     this.answers = await this.prompt(questions, 'config');
   }
   // Generate GitHub workflows and NR Broker intention files
@@ -144,28 +132,43 @@ export default class extends Generator {
         projectName: this.answers.projectName,
         serviceName: this.answers.serviceName,
         brokerJwt,
-        artifactoryProject: this.answers.artifactoryProject,
+        artifactoryProject: '',
+        artifactRepositoryType: this.answers.artifactRepositoryType,
+        artifactRepositoryPath: this.answers.artifactRepositoryPath,
         pomRoot: this.answers.pomRoot,
         javaVersion: this.answers.javaVersion,
+        javaPattern: this.answers.javaPattern,
         unitTestsPath: this.answers.unitTestsPath,
-        gitHubPackages: this.answers.gitHubPackages,
-        artifactoryPackageType: this.answers.artifactoryPackageType,
         gitHubProjectSlug: this.answers.gitHubProjectSlug,
         relativePath,
         isMonoRepo: isMonoRepo(),
-        configureNrArtifactory: this.answers.configureNrArtifactory,
+        toolsBuildSecrets: this.answers.toolsBuildSecrets,
         mavenBuildCommand: this.answers.mavenBuildCommand,
+        toolsLocalBuildSecrets: this.answers.toolsLocalBuildSecrets,
         ociArtifacts,
       },
     );
     copyCommonBuildWorkflows(this, {
       ...this.answers,
       packageArchitecture: 'jvm',
-      packageType: 'war',
+      packageType: this.answers.javaPattern === 'Tomcat' ? 'war' : 'jar',
     });
-    if (this.answers.configureNrArtifactory) {
-      const maven_args = [this.answers.projectName, this.answers.serviceName];
-      this.composeWith('nr-repository-composer:pd-maven', maven_args);
+    const maven_args = [this.answers.projectName, this.answers.serviceName];
+    const maven_opts = {
+      pomRoot: this.answers.pomRoot,
+      relativePath,
+    };
+    this.composeWith(
+      'nr-repository-composer:pd-java-maven',
+      maven_args,
+      maven_opts,
+    );
+
+    if (this.answers.javaPattern !== 'unknown') {
+      this.composeWith(
+        'nr-repository-composer:pd-java-pattern',
+        maven_args.concat([this.answers.javaPattern]),
+      );
     }
 
     // Clean up old files if they exist (may remove in future)

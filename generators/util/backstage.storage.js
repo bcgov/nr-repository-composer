@@ -3,6 +3,7 @@ import { Document, parseDocument, isSeq } from 'yaml';
 import {
   BACKSTAGE_API_VERSION,
   addGeneratorToDoc,
+  hasGeneratorInDoc,
   extractFromYaml,
   propRecord,
   pathToProps,
@@ -38,6 +39,10 @@ export class BackstageStorage {
 
   addGeneratorToDoc(generator) {
     addGeneratorToDoc(this.backstageDoc, generator);
+  }
+
+  hasGenerator(generator) {
+    hasGeneratorInDoc(this.backstageDoc, generator);
   }
 
   save() {
@@ -118,5 +123,21 @@ export class BackstageStorage {
 
   createProxy() {
     throw new Error('createProxy not implemented');
+  }
+
+  processDeprecated() {
+    const removedProps = [];
+    for (const pathToProp of pathToProps) {
+      const path = pathToProp.path;
+      if (this.backstageDoc.hasIn(path) && pathToProp.deprecated) {
+        removedProps.push(pathToProp.prop);
+        pathToProp.deprecated(this, this.backstageDoc.getIn(path));
+        this.backstageDoc.deleteIn(path);
+      }
+    }
+    if (removedProps.length > 0) {
+      this.save();
+    }
+    return removedProps;
   }
 }

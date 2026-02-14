@@ -18,6 +18,7 @@ export default class extends Generator {
       this.rootGeneratorName(),
       BACKSTAGE_KIND_COMPONENT,
       this.destinationPath(BACKSTAGE_FILENAME),
+      { ignoreKindMismatch: true },
     );
   }
 

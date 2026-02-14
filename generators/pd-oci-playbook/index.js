@@ -36,7 +36,7 @@ export default class extends Generator {
       default: 'nodejs',
     });
   }
-  
+
   _getStorage() {
     return new BackstageStorage(
       this.rootGeneratorName(),
@@ -44,7 +44,7 @@ export default class extends Generator {
       this.destinationPath(BACKSTAGE_FILENAME),
     );
   }
-  
+
   writing() {
     this.log('Generating playbook files');
 

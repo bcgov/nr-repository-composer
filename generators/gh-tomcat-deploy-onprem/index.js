@@ -33,9 +33,7 @@ import {
   getPromptToUsage,
 } from '../util/prompts.js';
 import { BACKSTAGE_FILENAME, BACKSTAGE_KIND_COMPONENT } from '../util/yaml.js';
-import {
-  copyCommonDeployWorkflows,
-} from '../util/copyworkflows.js';
+import { copyCommonDeployWorkflows } from '../util/copyworkflows.js';
 import { outputReport } from '../util/report.js';
 
 const questions = [

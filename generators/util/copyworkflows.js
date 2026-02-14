@@ -77,7 +77,9 @@ export function copyCommonBuildWorkflows(generator, answers) {
     {
       projectName: answers.projectName,
       serviceName: answers.serviceName,
-      pomRoot: answers.pomRoot ? path.join(relativePath, answers.pomRoot) : undefined,
+      pomRoot: answers.pomRoot
+        ? path.join(relativePath, answers.pomRoot)
+        : undefined,
       toolsLocalBuildSecrets: answers.toolsLocalBuildSecrets,
     },
     { mode: 0o755 },

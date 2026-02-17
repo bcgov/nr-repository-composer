@@ -1,16 +1,11 @@
 import path from 'path';
 import * as fs from 'node:fs';
 import * as ejs from 'ejs';
-import { parseDocument } from 'yaml';
-import {
-  destinationGitPath,
-  relativeGitPath,
-  findGitRepoOrigin,
-} from './git.js';
+import { destinationGitPath, relativeGitPath } from './git.js';
 import {
   BACKSTAGE_FILENAME,
-  BACKSTAGE_KIND_COMPONENT,
-  BACKSTAGE_KIND_LOCATION,
+  scanRepositoryForComponents,
+  hasGeneratorInDoc,
 } from './yaml.js';
 import {
   makeWorkflowBuildPublishFile,
@@ -19,7 +14,23 @@ import {
 
 const COMMON_GH_TEMPLATE_PATH = '../../util/gh-workflow-template';
 const COMMON_PD_TEMPLATE_PATH = '../../util/pd-template';
-const POLARIS_README_TEMPLATE = '../../util/pd-template/gh-docs/README.md.tpl';
+const README_TEMPLATES = [
+  {
+    name: 'README.md.tpl',
+    path: '../../util/pd-template/gh-docs/README.md.tpl',
+    markerName: 'README.md.tpl',
+  },
+  {
+    name: 'README-buildenv.md.tpl',
+    path: '../../util/pd-template/gh-docs/README-buildenv.md.tpl',
+    markerName: 'README-buildenv.md.tpl',
+  },
+  {
+    name: 'README-localenv.md.tpl',
+    path: '../../util/pd-template/gh-docs/README-localenv.md.tpl',
+    markerName: 'README-localenv.md.tpl',
+  },
+];
 
 export function rmIfExists(generator, path) {
   if (generator.fs.exists(path)) {
@@ -72,8 +83,8 @@ export function copyCommonBuildWorkflows(generator, answers) {
   );
 
   generator.fs.copyTpl(
-    generator.templatePath(`${COMMON_PD_TEMPLATE_PATH}/env-tools.sh`),
-    destinationGitPath(path.join(relativePath, '.env-tools.sh')),
+    generator.templatePath(`${COMMON_PD_TEMPLATE_PATH}/env-build.sh`),
+    destinationGitPath(path.join(relativePath, '.env-build.sh')),
     {
       projectName: answers.projectName,
       serviceName: answers.serviceName,
@@ -162,129 +173,74 @@ export function copyCommonDeployWorkflows(generator, answers) {
 }
 
 /**
- * Scan the repository for all services and build information
- * Traverses Location entities to find all Component services
+ * Update a section of README with rendered template content
+ * @param {string} readmeContent - Existing README content (or empty string if file doesn't exist)
+ * @param {string} templateContent - Rendered template content
+ * @param {string} markerName - Template marker name (e.g., 'README.md.tpl')
+ * @returns {string} Updated README content
  */
-function scanRepositoryForServices() {
-  const gitConfigPath = findGitRepoOrigin(process.cwd());
-  if (!gitConfigPath) {
-    return { hasMavenBuild: false, services: [] };
+function updateReadmeSection(readmeContent, templateContent, markerName) {
+  const markerPattern = `<!-- ${markerName}:START -->.*<!-- ${markerName}:END -->`;
+  const markerRegex = new RegExp(markerPattern, 'gs');
+
+  if (!readmeContent) {
+    // If content is empty, start with the template
+    return templateContent;
   }
 
-  const repoRoot = path.dirname(path.dirname(gitConfigPath)); // .git/config -> .git -> repo root
-  const rootCatalogPath = path.join(repoRoot, BACKSTAGE_FILENAME);
-
-  if (!fs.existsSync(rootCatalogPath)) {
-    return { hasMavenBuild: false, services: [] };
+  if (!markerRegex.test(readmeContent)) {
+    // If markers don't exist, append
+    return readmeContent + '\n' + templateContent;
   }
 
-  const services = [];
-  const visited = new Set();
-
-  const loadCatalog = (catalogPath) => {
-    if (visited.has(catalogPath)) {
-      return;
-    }
-    visited.add(catalogPath);
-
-    try {
-      const content = fs.readFileSync(catalogPath, 'utf8');
-      const doc = parseDocument(content);
-      const kind = doc.getIn(['kind']);
-
-      if (kind === BACKSTAGE_KIND_LOCATION) {
-        // Load all targets from this location
-        const targets = doc.getIn(['spec', 'targets']);
-        if (targets && Array.isArray(targets)) {
-          for (const target of targets) {
-            const targetPath = target.startsWith('/')
-              ? target.substring(1) // Remove leading slash
-              : target;
-            const resolvedPath = path.resolve(
-              path.dirname(catalogPath),
-              targetPath,
-            );
-            loadCatalog(resolvedPath);
-          }
-        }
-      } else if (kind === BACKSTAGE_KIND_COMPONENT) {
-        // Check if this component has Maven build
-        const generators = doc.getIn([
-          'metadata',
-          'annotations',
-          'composer.io.nrs.gov.bc.ca/generators',
-        ]);
-        const generatorsList = generators
-          ? generators.split(',').map((g) => g.trim())
-          : [];
-        const hasMaven = generatorsList.includes('gh-maven-build');
-
-        services.push({
-          path: path.relative(repoRoot, catalogPath),
-          hasMaven,
-          name: doc.getIn(['metadata', 'name']) || 'unknown',
-        });
-      }
-    } catch {
-      // Silently skip files that can't be parsed
-    }
-  };
-
-  loadCatalog(rootCatalogPath);
-
-  return {
-    hasMavenBuild: services.some((s) => s.hasMaven),
-    services,
-  };
+  // If markers exist, replace (preserve surrounding content)
+  return readmeContent.replace(markerRegex, templateContent.trim());
 }
 
 /**
  * Update README with Polaris Pipeline guide
  * Scans repository for services and build information, then updates README
+ * with content from multiple templates (README.md.tpl, README-buildenv.md.tpl, README-localenv.md.tpl)
  */
 export function updateReadmeWithPipelineGuide(generator) {
-  const scanResults = scanRepositoryForServices();
+  const services = scanRepositoryForComponents();
+  console.log(services);
 
   const templateData = {
-    hasMavenBuild: scanResults.hasMavenBuild,
-    services: scanResults.services,
-    isMonorepo: scanResults.services.length > 1,
-    isSingleServiceAtRoot:
-      scanResults.services.length === 1 &&
-      scanResults.services[0].path === BACKSTAGE_FILENAME,
+    hasMavenBuild: services.some((s) =>
+      hasGeneratorInDoc(s.doc, 'gh-maven-build'),
+    ),
+    services,
+    isMonorepo: services.length > 1,
   };
 
-  const readmePath = generator.destinationPath('README.md');
-  const readmeTemplatePath = generator.templatePath(POLARIS_README_TEMPLATE);
+  const readmePath = destinationGitPath('README.md');
 
-  if (!fs.existsSync(readmeTemplatePath)) {
-    return; // Template doesn't exist, skip
-  }
-
-  const templateContent = fs.readFileSync(readmeTemplatePath, 'utf8');
-  const rendered = ejs.render(templateContent, templateData);
-
-  // Check if file exists on disk (use fs, not generator.fs for actual files)
+  // Read the existing README content once (or empty string if it doesn't exist)
+  let readmeContent = '';
   if (fs.existsSync(readmePath)) {
-    // Read from actual filesystem for existing files
-    const readmeContent = fs.readFileSync(readmePath, 'utf8');
-    const readmeRegex = new RegExp(
-      '<!-- README\\.md\\.tpl:START -->.*<!-- README\\.md\\.tpl:END -->',
-      'gs',
-    );
-    if (!readmeRegex.test(readmeContent)) {
-      // If markers don't exist, append
-      generator.fs.append(readmePath, '\n' + rendered);
-    } else {
-      // If markers exist, replace (preserve surrounding content)
-      const updatedContent = readmeContent.replace(
-        readmeRegex,
-        rendered.trim(),
-      );
-      generator.fs.write(readmePath, updatedContent);
-    }
-  } else {
-    // If file doesn't exist, create it
-    generator.fs.write(readmePath, rendered);
+    readmeContent = fs.readFileSync(readmePath, 'utf8');
   }
+
+  // Process each template and accumulate changes
+  for (const template of README_TEMPLATES) {
+    const readmeTemplatePath = generator.templatePath(template.path);
+
+    if (!fs.existsSync(readmeTemplatePath)) {
+      continue; // Skip if template doesn't exist
+    }
+
+    const templateContent = fs.readFileSync(readmeTemplatePath, 'utf8');
+    const rendered = ejs.render(templateContent, templateData);
+
+    // Update content in memory
+    readmeContent = updateReadmeSection(
+      readmeContent,
+      rendered,
+      template.markerName,
+    );
+  }
+
+  // Write the file once with all accumulated changes
+  generator.fs.write(readmePath, readmeContent);
 }

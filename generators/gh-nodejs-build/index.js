@@ -28,7 +28,11 @@ import {
   getPromptToUsage,
 } from '../util/prompts.js';
 import { BACKSTAGE_FILENAME, BACKSTAGE_KIND_COMPONENT } from '../util/yaml.js';
-import { copyCommonBuildWorkflows, rmIfExists } from '../util/copyworkflows.js';
+import {
+  copyCommonBuildWorkflows,
+  rmIfExists,
+  updateReadmeWithPipelineGuide,
+} from '../util/copyworkflows.js';
 import { makeWorkflowBuildPublishPath } from '../util/github.js';
 import { outputReport } from '../util/report.js';
 
@@ -146,6 +150,8 @@ export default class extends Generator {
       packageArchitecture: 'nodejs',
       packageType: 'application/vnd.oci.image.layer.v1.tar+gzip',
     });
+
+    updateReadmeWithPipelineGuide(this);
 
     // Clean up old files if they exist (may remove in future)
     if (!isMonoRepo()) {

@@ -27,7 +27,6 @@ export default class extends Generator {
 
   // Generate common mono repo build files
   writing() {
-    this.log('Generating build files');
     const targets = this.config.getPath(['spec', 'targets']).split(',');
     const docs = targets.map((target) => {
       return new BackstageStorage(

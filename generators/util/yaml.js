@@ -454,7 +454,6 @@ export function scanRepositoryForComponents(
         components.push({ doc, path: relativePath, name });
       } else if (doc.get('kind') === BACKSTAGE_KIND_LOCATION) {
         const targets = doc.getIn(['spec', 'targets']);
-        console.log(`Found location with targets: ${targets}`);
         // Handle both plain arrays and YAML sequence nodes
         const targetArray = Array.isArray(targets)
           ? targets
@@ -475,9 +474,7 @@ export function scanRepositoryForComponents(
         }
       }
     } catch (err) {
-      console.error(
-        `Error loading catalog at ${catalogPath}: ${err.message}`,
-      );
+      console.error(`Error loading catalog at ${catalogPath}: ${err.message}`);
     }
   };
 

@@ -68,7 +68,6 @@ export default class extends Generator {
 
   // Generate files
   writing() {
-    this.log('Generating files');
     const jasperReportsWorkflowFile = `jasper-reports-${this.options.projectName}.yaml`;
 
     this.fs.copyTpl(

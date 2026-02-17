@@ -60,8 +60,6 @@ export default class extends Generator {
 
   // Generate Ansible playbook and variable files
   writing() {
-    this.log('Generating playbook files');
-
     // Initialize playbook variable files (copy vars/custom if they don't exist)
     const varsCustomPath = this.templatePath('./vars/custom');
     if (fs.existsSync(varsCustomPath)) {

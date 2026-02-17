@@ -46,8 +46,6 @@ export default class extends Generator {
   }
 
   writing() {
-    this.log('Generating playbook files');
-
     // Initialize playbook variable files (copy vars/custom if they don't exist)
     const varsCustomPath = this.templatePath('./vars/custom');
     if (fs.existsSync(varsCustomPath)) {

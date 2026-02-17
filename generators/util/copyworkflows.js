@@ -2,11 +2,7 @@ import path from 'path';
 import * as fs from 'node:fs';
 import * as ejs from 'ejs';
 import { destinationGitPath, relativeGitPath } from './git.js';
-import {
-  BACKSTAGE_FILENAME,
-  scanRepositoryForComponents,
-  hasGeneratorInDoc,
-} from './yaml.js';
+import { scanRepositoryForComponents, hasGeneratorInDoc } from './yaml.js';
 import {
   makeWorkflowBuildPublishFile,
   makeWorkflowDeployFile,
@@ -204,7 +200,6 @@ function updateReadmeSection(readmeContent, templateContent, markerName) {
  */
 export function updateReadmeWithPipelineGuide(generator) {
   const services = scanRepositoryForComponents();
-  console.log(services);
 
   const templateData = {
     hasMavenBuild: services.some((s) =>

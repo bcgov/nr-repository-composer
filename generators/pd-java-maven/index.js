@@ -1,7 +1,7 @@
 'use strict';
 import Generator from 'yeoman-generator';
 import { destinationGitPath } from '../util/git.js';
-import { updateReadmeWithPipelineGuide } from '../util/copyworkflows.js';
+import { updateReadmeWithPipelineGuide, rmIfExists } from '../util/copyworkflows.js';
 
 /**
  * Generate the files needed for Maven
@@ -50,5 +50,11 @@ export default class extends Generator {
 
     // Update README with Polaris Pipeline guide
     updateReadmeWithPipelineGuide(this);
+
+    // Clean up old files if they exist (may remove in future)
+    rmIfExists(
+      this,
+      destinationGitPath('.github/polaris-maven-settings.xml'),
+    );
   }
 }

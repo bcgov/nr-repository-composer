@@ -25,9 +25,11 @@ export POM_ROOT="<%= pomRoot %>"
 export MAVEN_ARGS="--file $POM_ROOT"
 <% } -%>
 
+<% if (toolsLocalBuildSecrets) { %>
 # Only fetch vault secrets if --skip-vault is not set
 if [[ "$SKIP_VAULT" == false ]]; then
-<% if (toolsLocalBuildSecrets) { for (const secret of toolsLocalBuildSecrets.split(',')) { -%>
+<% for (const secret of toolsLocalBuildSecrets.split(',')) { -%>
   export <%= secret.toUpperCase() %>=$(vault kv get -field=<%= secret.toLowerCase() %> "apps/tools/${PROJECT_NAME}/${SERVICE_NAME}")
-<% } } -%>
+<% } -%>
 fi
+<% } %>

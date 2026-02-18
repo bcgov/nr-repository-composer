@@ -8,6 +8,7 @@ const README_BASE_URL =
  * All available generators for pattern matching
  */
 export const ALL_GENERATORS = [
+  'nr-repository-composer',
   'backstage',
   'backstage-location',
   'gh-common-mono-build',
@@ -24,6 +25,7 @@ export const ALL_GENERATORS = [
  * Maps generator names to their README section anchors
  */
 export const GENERATOR_ANCHORS = {
+  'nr-repository-composer': 'nr-repository-composer-nr-repository-composer',
   backstage: 'backstage-backstage',
   'backstage-location': 'backstage-backstage-location',
   'gh-common-mono-build': 'github-gh-common-mono-build',
@@ -84,6 +86,28 @@ export function expandGeneratorPattern(pattern) {
  * Generator patterns support * wildcard (e.g., 'gh-*-build' matches 'gh-maven-build', 'gh-nodejs-build')
  */
 export const GENERATOR_REPORTS = {
+  'nr-repository-composer': {
+    description: 'Copied NR Repository Composer tool to repository root',
+    workflows: [],
+    nextSteps: [
+      {
+        generator: 'backstage',
+        description: 'Create Backstage component catalog file',
+      },
+      {
+        generator: 'backstage-location',
+        description: 'Create Backstage location catalog for monorepos',
+      },
+      {
+        generator: 'gh-maven-build',
+        description: 'Set up Maven build pipeline',
+      },
+      {
+        generator: 'gh-nodejs-build',
+        description: 'Set up Node.js build pipeline',
+      },
+    ],
+  },
   backstage: {
     description: 'Created Backstage component catalog file',
     workflows: [],

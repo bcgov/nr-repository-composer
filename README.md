@@ -16,6 +16,7 @@ The `backstage` generator creates the catalog file and is the first step for mos
 
 | Generator | Usage | Platform | Technologies |
 | ----------- | ----------- | ----------- | ----------- |
+| [nr-repository-composer](#nr-repository-composer-nr-repository-composer) | Tool setup | All | Podman, Docker |
 | [backstage](#backstage-backstage) | Catalog service | All | Backstage (kind: component) |
 | [backstage-location](#backstage-backstage-location) | Catalog monorepo | All | Backstage (kind: location) |
 | [gh-common-mono-build](#github-gh-common-mono-build) | Pipeline orchestration | GitHub | GitHub Actions |
@@ -25,6 +26,17 @@ The `backstage` generator creates the catalog file and is the first step for mos
 | [gh-nodejs-build](#github-nodejs-build-gh-nodejs-build) | Pipeline | GitHub | Node.js, GitHub Actions |
 | [gh-oci-deploy-onprem](#github-oci-on-prem-deploy-gh-oci-deploy-onprem) | Deploy | GitHub | OCI artifacts, GitHub Actions |
 | [migrations](#db-migrations-migrations) | Database | All | FlyWay, Liquibase |
+
+### NR Repository Composer: `nr-repository-composer`
+
+This is a utility generator that makes it easier for developers to run the NR Repository Composer in their repository.
+
+This generator copies [nr-repository-composer.sh](./nr-repository-composer.sh) to the root of the repository. This script provides a containerized way to run other generators without requiring local Node.js or Yeoman installation.
+
+**Suggested Next Steps:**
+- [`backstage`](#backstage-backstage) - Create Backstage component catalog file
+- [`backstage-location`](#backstage-backstage-location) - Create Backstage location catalog for monorepos
+- [`gh-maven-build`](#github-maven-build-gh-maven-build), [`gh-nodejs-build`](#github-nodejs-build-gh-nodejs-build) - Set up build pipeline
 
 ### Backstage: `backstage`
 
@@ -256,9 +268,21 @@ The generators will save your answers and update any `catalog-info.yaml` catalog
 
 The `nr-repository-composer.sh` script is the easiest way to run the composer. It automatically detects whether you have Podman or Docker installed (preferring Podman) and handles all the container configuration for you.
 
-You can clone this repository or download just the shell script from GitHub.
+**Add the script to your repository:**
 
-**Download the script:**
+The recommended way to add this script to your repository is to run the `nr-repository-composer` generator, which will copy the script to your repository root:
+
+```bash
+# Using the container directly
+podman run --rm -it -v ${PWD}:/src --userns keep-id ghcr.io/bcgov/nr-repository-composer:latest nr-repository-composer:nr-repository-composer
+
+# Or, run the generator from an existing copy
+./nr-repository-composer.sh /absolute/path/to/your/repo nr-repository-composer
+```
+
+**Alternative: Download the script manually:**
+
+If you prefer, you can download the script directly from GitHub:
 
 ```bash
 # Download to current directory

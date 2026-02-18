@@ -1,15 +1,35 @@
 'use strict';
-import BaseGenerator from '../pd-base-playbook/index.js';
+import Generator from 'yeoman-generator';
 import { destinationGitPath } from '../util/git.js';
 // eslint-disable-next-line no-unused-vars
 import chalk from 'chalk';
+import { updateReadmeWithPipelineGuide } from '../util/copyworkflows.js';
+import { BackstageStorage } from '../util/backstage.storage.js';
+import { BACKSTAGE_FILENAME, BACKSTAGE_KIND_COMPONENT } from '../util/yaml.js';
 
 /**
  * Generate the files needed for Jasper Reports deployments
  */
-export default class extends BaseGenerator {
+export default class extends Generator {
   constructor(args, opts) {
     super(args, opts);
+
+    this.argument('projectName', {
+      type: String,
+      required: true,
+      description: 'Project Name',
+    });
+    this.argument('serviceName', {
+      type: String,
+      required: true,
+      description: 'Service Name',
+    });
+    this.argument('playbookPath', {
+      type: String,
+      required: false,
+      description: 'Playbook Path',
+      default: 'playbooks',
+    });
 
     this.option('jasperProjectName', {
       type: String,
@@ -38,22 +58,18 @@ export default class extends BaseGenerator {
     });
   }
 
+  _getStorage() {
+    return new BackstageStorage(
+      this.rootGeneratorName(),
+      BACKSTAGE_KIND_COMPONENT,
+      this.destinationPath(BACKSTAGE_FILENAME),
+    );
+  }
+
   // Generate files
   writing() {
-    this.log('Generating files');
-    const playbook_args = [
-      this.options.projectName,
-      this.options.serviceName,
-      this.options.playbookPath,
-    ];
-    const playbook_options = {};
     const jasperReportsWorkflowFile = `jasper-reports-${this.options.projectName}.yaml`;
 
-    this.composeWith(
-      'nr-repository-composer:pd-base-playbook',
-      playbook_args,
-      playbook_options,
-    );
     this.fs.copyTpl(
       this.templatePath('jasper-reports-workflow.yaml'),
       destinationGitPath(`.github/workflows/${jasperReportsWorkflowFile}`),
@@ -107,5 +123,8 @@ export default class extends BaseGenerator {
         jasperAdditionalDataSources: this.options.jasperAdditionalDataSources,
       },
     );
+
+    // Update README with Polaris Pipeline guide
+    updateReadmeWithPipelineGuide(this);
   }
 }

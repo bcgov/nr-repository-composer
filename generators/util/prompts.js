@@ -52,6 +52,7 @@ export const PROMPT_LIFECYCLE = {
   type: 'input',
   name: 'lifecycle',
   message: 'Lifecycle (experimental, production, deprecated):',
+  default: 'production',
 };
 
 export const PROMPT_LICENSE = {
@@ -181,8 +182,15 @@ export const PROMPT_OCI_ARTIFACTS = {
 export const PROMPT_POM_ROOT = {
   type: 'input',
   name: 'pomRoot',
-  message: 'Path to pom.xml:',
+  message: 'Path to pom.xml (relative to service catalog root):',
   default: './',
+};
+export const PROMPT_NODE_PATTERN = {
+  type: 'list',
+  name: 'nodePattern',
+  message: 'Node pattern:',
+  choices: ['NPM', 'unknown'],
+  default: 'NPM',
 };
 export const PROMPT_NODE_VERSION = {
   type: 'list',
@@ -191,6 +199,13 @@ export const PROMPT_NODE_VERSION = {
   choices: ['20', '22', '24'],
   default: '24',
 };
+export const PROMPT_JAVA_PATTERN = {
+  type: 'list',
+  name: 'javaPattern',
+  message: 'Java pattern:',
+  choices: ['SpringBoot', 'Tomcat', 'unknown'],
+  default: 'SpringBoot',
+};
 export const PROMPT_JAVA_VERSION = {
   type: 'list',
   name: 'javaVersion',
@@ -198,34 +213,44 @@ export const PROMPT_JAVA_VERSION = {
   choices: ['8', '11', '17', '21'],
   default: '8',
 };
-export const PROMPT_GITHUB_PACKAGES = {
-  type: 'confirm',
-  name: 'gitHubPackages',
-  message: 'Publish to GitHub Packages:',
-  default: false,
+export const PROMPT_ARTIFACT_REPOSITORY_TYPE = {
+  type: 'list',
+  name: 'artifactRepositoryType',
+  message: 'Artifact destination repository type:',
+  choices: ['GitHubPackages', 'JFrogArtifactory'],
+  default: 'GitHubPackages',
 };
-export const PROMPT_ARTIFACTORY_PROJECT = {
+export const PROMPT_ARTIFACT_REPOSITORY_PATH = {
   type: 'input',
-  name: 'artifactoryProject',
-  message: 'Artifactory:',
-  default: 'cc20',
+  name: 'artifactRepositoryPath',
+  message: 'Artifact destination repository path:',
+  default: (answers) => {
+    switch (answers.artifactRepositoryType) {
+      case 'JFrogArtifactory':
+        return 'https://artifacts.developer.gov.bc.ca/artifactory/cc20-gen-maven-local';
+      case 'GitHubPackages':
+        return `https://maven.pkg.github.com/${answers.gitHubProjectSlug}`;
+      default:
+        return '';
+    }
+  },
 };
-export const PROMPT_ARTIFACTORY_PACKAGE_TYPE = {
+export const PROMPT_TOOLS_BUILD_SECRETS = {
   type: 'input',
-  name: 'artifactoryPackageType',
-  message: 'Artifactory Package Type (maven, ivy, npm):',
-  default: 'maven',
+  name: 'toolsBuildSecrets',
+  message: 'Tools secrets used with builds (comma-separated):',
+  default: 'ARTIFACTORY_USERNAME,ARTIFACTORY_PASSWORD',
 };
-export const PROMPT_CONFIGURE_NR_ARTIFACTORY = {
-  type: 'confirm',
-  name: 'configureNrArtifactory',
-  message: 'Configure NR Artifactory:',
-  default: false,
+export const PROMPT_TOOLS_LOCAL_BUILD_SECRETS = {
+  type: 'input',
+  name: 'toolsLocalBuildSecrets',
+  message: 'Local tools secrets used with builds (comma-separated):',
+  default: (answers) => answers.toolsBuildSecrets ?? '',
 };
 export const PROMPT_MAVEN_BUILD_COMMAND = {
   type: 'input',
   name: 'mavenBuildCommand',
-  message: 'Maven arguments',
+  message: 'Maven build arguments:',
 };
 export const PROMPT_DEPLOY_JASPER_REPORTS = {
   type: 'confirm',
@@ -384,6 +409,11 @@ export const PROMPT_TO_USAGE = {
       'A space separated list with the first used as the overall checksum.',
     example: 'dist node_modules package.json package-lock.json',
   },
+  javaPattern: {
+    description:
+      'The development pattern used for the service. If not unknown, this will be used to provide development and deployment workflows.',
+    example: 'SpringBoot',
+  },
   javaVersion: {
     description:
       'The Java version to use for building and deploying the Maven project. This will be used in the GitHub Actions workflow.',
@@ -400,22 +430,24 @@ export const PROMPT_TO_USAGE = {
     description: 'The path to the pom.xml file',
     example: './',
   },
-  gitHubPackages: {
-    description: 'Whether to publish to GitHub Packages or not',
+  artifactRepositoryType: {
+    description: 'The artifact destination repository type',
+    example: 'GitHubPackages',
   },
-  artifactoryProject: {
-    description: 'The Artifactory project to use (e.g. cc20)',
-  },
-  artifactoryPackageType: {
-    description: 'The Artifactory package type to use (e.g. maven, ivy, npm)',
-  },
-  configureNrArtifactory: {
-    description: 'Whether to include NR Artifactory settings or not',
+  artifactRepositoryPath: {
+    description: 'The artifact destination repository path',
   },
   mavenBuildCommand: {
     description: 'Arguments to pass to mvn',
-    example:
-      '--batch-mode -Dmaven.test.skip=true -Partifactory clean deploy --settings ./.github/polaris-maven-settings.xml --file <%= pomRoot %>pom.xml',
+    example: '--batch-mode -Dmaven.test.skip=true -Pgithub clean deploy',
+  },
+  toolsBuildSecrets: {
+    description: 'Tools secrets used with builds (comma-separated)',
+    example: 'ARTIFACTORY_USERNAME,ARTIFACTORY_PASSWORD',
+  },
+  toolsLocalBuildSecrets: {
+    description: 'Local tools secrets used with builds (comma-separated)',
+    example: 'ARTIFACTORY_USERNAME,ARTIFACTORY_PASSWORD',
   },
   deployJasperReports: {
     description: 'Whether to deploy Jasper Reports or not',
@@ -458,7 +490,6 @@ export const PROMPT_TO_USAGE = {
 };
 
 export function getPromptToUsage(question) {
-  console.log(question);
   const usage = PROMPT_TO_USAGE[question.name];
   return (
     `${chalk.bold(question.message)} (key: ${question.name})

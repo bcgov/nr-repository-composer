@@ -158,8 +158,11 @@ jobs:
         run: npm ci
         working-directory: ./<%= relativePath %>
       - name: Build artifact
-        run: npm run build --if-present
-        working-directory: ./<%= relativePath %>
+        run: |
+          source ./env.sh build ./<%= relativePath %> --skip-vault
+          cd ./<%= relativePath %>
+          npm run build --if-present
+        working-directory: ./
 <% if (ociArtifacts.length > 0) { _%>
       - name: Pull static artifacts
         run: |

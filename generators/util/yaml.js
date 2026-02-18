@@ -1,3 +1,8 @@
+import { destinationGitPath } from './git.js';
+import { parseDocument } from 'yaml';
+import * as fs from 'node:fs';
+import path from 'path';
+
 export const BACKSTAGE_FILENAME = 'catalog-info.yaml';
 export const BACKSTAGE_API_VERSION = 'backstage.io/v1alpha1';
 export const BACKSTAGE_KIND_COMPONENT = 'Component';
@@ -75,44 +80,39 @@ export const pathToProps = [
     path: [
       'metadata',
       'annotations',
-      'playbook.io.nrs.gov.bc.ca/gitHubPackages',
+      'playbook.io.nrs.gov.bc.ca/artifactRepositoryType',
     ],
-    prop: 'gitHubPackages',
+    prop: 'artifactRepositoryType',
     writeEmpty: false,
   },
   {
     path: [
       'metadata',
       'annotations',
-      'playbook.io.nrs.gov.bc.ca/artifactoryProject',
+      'playbook.io.nrs.gov.bc.ca/artifactRepositoryPath',
     ],
-    prop: 'artifactoryProject',
+    prop: 'artifactRepositoryPath',
     writeEmpty: false,
   },
   {
     path: [
       'metadata',
       'annotations',
-      'playbook.io.nrs.gov.bc.ca/artifactoryPackageType',
+      'playbook.io.nrs.gov.bc.ca/toolsBuildSecrets',
     ],
-    prop: 'artifactoryPackageType',
+    prop: 'toolsBuildSecrets',
     writeEmpty: false,
   },
   {
-    path: ['metadata', 'annotations', 'playbook.io.nrs.gov.bc.ca/deployOnPrem'],
-    prop: 'deployOnPrem',
+    path: [
+      'metadata',
+      'annotations',
+      'playbook.io.nrs.gov.bc.ca/toolsLocalBuildSecrets',
+    ],
+    prop: 'toolsLocalBuildSecrets',
     writeEmpty: false,
   },
   // Maven
-  {
-    path: [
-      'metadata',
-      'annotations',
-      'playbook.io.nrs.gov.bc.ca/configureNrArtifactory',
-    ],
-    prop: 'configureNrArtifactory',
-    writeEmpty: false,
-  },
   {
     path: [
       'metadata',
@@ -123,8 +123,27 @@ export const pathToProps = [
     writeEmpty: false,
   },
   {
+    path: [
+      'metadata',
+      'annotations',
+      'playbook.io.nrs.gov.bc.ca/mavenBuildProfiles',
+    ],
+    prop: 'mavenBuildProfiles',
+    writeEmpty: false,
+  },
+  {
+    path: ['metadata', 'annotations', 'playbook.io.nrs.gov.bc.ca/nodePattern'],
+    prop: 'nodePattern',
+    writeEmpty: false,
+  },
+  {
     path: ['metadata', 'annotations', 'playbook.io.nrs.gov.bc.ca/nodeVersion'],
     prop: 'nodeVersion',
+    writeEmpty: false,
+  },
+  {
+    path: ['metadata', 'annotations', 'playbook.io.nrs.gov.bc.ca/javaPattern'],
+    prop: 'javaPattern',
     writeEmpty: false,
   },
   {
@@ -285,6 +304,76 @@ export const pathToProps = [
     prop: 'schemaMigrationBasePath',
     writeEmpty: true,
   },
+  // Deprecated - Remove in future
+  {
+    path: [
+      'metadata',
+      'annotations',
+      'playbook.io.nrs.gov.bc.ca/artifactoryPackageType',
+    ],
+    prop: 'artifactoryPackageType',
+    writeEmpty: false,
+    deprecated: () => {},
+  },
+  {
+    path: [
+      'metadata',
+      'annotations',
+      'playbook.io.nrs.gov.bc.ca/artifactoryProject',
+    ],
+    prop: 'artifactoryProject',
+    writeEmpty: false,
+    deprecated: () => {},
+  },
+  {
+    path: [
+      'metadata',
+      'annotations',
+      'playbook.io.nrs.gov.bc.ca/configureNrArtifactory',
+    ],
+    prop: 'configureNrArtifactory',
+    writeEmpty: false,
+    deprecated: (config) => {
+      config.set(
+        'toolsBuildSecrets',
+        'ARTIFACTORY_USERNAME,ARTIFACTORY_PASSWORD',
+      );
+      config.set(
+        'toolsLocalBuildSecrets',
+        'ARTIFACTORY_USERNAME,ARTIFACTORY_PASSWORD',
+      );
+      // Build command will need updating
+      config.delete('mavenBuildCommand');
+    },
+  },
+  {
+    path: ['metadata', 'annotations', 'playbook.io.nrs.gov.bc.ca/deployOnPrem'],
+    prop: 'deployOnPrem',
+    writeEmpty: false,
+    deprecated: (config) => {
+      if (config.hasGenerator('gh-maven-build')) {
+        config.addGeneratorToDoc('gh-tomcat-deploy-onprem');
+      }
+      if (config.hasGenerator('gh-nodejs-build')) {
+        config.addGeneratorToDoc('gh-oci-deploy-onprem');
+      }
+    },
+  },
+  {
+    path: [
+      'metadata',
+      'annotations',
+      'playbook.io.nrs.gov.bc.ca/gitHubPackages',
+    ],
+    prop: 'gitHubPackages',
+    writeEmpty: false,
+    deprecated: (config, value) => {
+      config.set(
+        'artifactRepositoryType',
+        value ? 'GitHubPackages' : 'JFrogArtifactory',
+      );
+    },
+  },
 ];
 
 export const propRecord = pathToProps.reduce((acc, pathToProp) => {
@@ -298,7 +387,7 @@ export function extractFromYaml(doc, pathToProps) {
   if (doc) {
     for (const pathToProp of pathToProps) {
       const path = pathToProp.path;
-      if (doc.hasIn(path)) {
+      if (doc.hasIn(path) && !!pathToProp.deprecated) {
         answers[pathToProp.prop] = doc.getIn(path);
       }
     }
@@ -321,6 +410,14 @@ export function addGeneratorToDoc(doc, generator) {
   }
 }
 
+export function hasGeneratorInDoc(doc, generator) {
+  if (doc.hasIn(BACKSTAGE_GENERATOR_PATH)) {
+    const generators = doc.getIn(BACKSTAGE_GENERATOR_PATH).split(',');
+    return generators.indexOf(generator) !== -1;
+  }
+  return false;
+}
+
 /**
  * Create a predicate that determines whether a value with a given name should be considered
  * for setting an "answer" property based on an existing answers map and a flag.
@@ -339,23 +436,49 @@ export function generateSetAnswerPropPredicate(answers, keepAnswered) {
   };
 }
 
-// export function generateSetDefaultFromDoc(answers) {
-//   return (val) => {
-//     return {
-//       ...val,
-//       ...(answers[val.name] ? { default: answers[val.name] } : {}),
-//     };
-//   };
-// }
+export function scanRepositoryForComponents(
+  rootCatalogPath = BACKSTAGE_FILENAME,
+) {
+  const initCatalogPath = destinationGitPath(rootCatalogPath);
+  const gitRoot = destinationGitPath('.');
+  const components = [];
 
-// export function writePropToPath(doc, pathToProps, answers) {
-//   for (const pathToProp of pathToProps) {
-//     const path = pathToProp.path;
-//     const answer = answers[pathToProp.prop];
-//     console.log(answer);
-//     if (answer !== undefined && (pathToProp.writeEmpty || answer !== '')) {
-//       console.log(pathToProp.csv);
-//       doc.setIn(path, pathToProp.csv ? answer.split(',') : answer);
-//     }
-//   }
-// }
+  const loadCatalog = (catalogPath) => {
+    let doc;
+    try {
+      const content = fs.readFileSync(catalogPath, 'utf8');
+      doc = parseDocument(content);
+      if (doc.get('kind') === BACKSTAGE_KIND_COMPONENT) {
+        const name = doc.getIn(['metadata', 'name']) || 'unknown';
+        const relativePath = path.relative(gitRoot, catalogPath);
+        components.push({ doc, path: relativePath, name });
+      } else if (doc.get('kind') === BACKSTAGE_KIND_LOCATION) {
+        const targets = doc.getIn(['spec', 'targets']);
+        // Handle both plain arrays and YAML sequence nodes
+        const targetArray = Array.isArray(targets)
+          ? targets
+          : targets && targets.toJSON
+            ? targets.toJSON()
+            : null;
+        if (targetArray && Array.isArray(targetArray)) {
+          for (const target of targetArray) {
+            const targetPath = target.startsWith('/')
+              ? target.substring(1) // Remove leading slash
+              : target;
+            const resolvedPath = path.resolve(
+              path.dirname(catalogPath),
+              targetPath,
+            );
+            loadCatalog(resolvedPath);
+          }
+        }
+      }
+    } catch (err) {
+      console.error(`Error loading catalog at ${catalogPath}: ${err.message}`);
+    }
+  };
+
+  loadCatalog(initCatalogPath);
+
+  return components;
+}

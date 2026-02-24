@@ -88,6 +88,7 @@ export function copyCommonBuildWorkflows(generator, answers) {
         ? path.join(relativePath, answers.pomRoot)
         : undefined,
       toolsLocalBuildSecrets: answers.toolsLocalBuildSecrets,
+      artifactRepositoryPath: answers.artifactRepositoryPath,
     },
     { mode: 0o755 },
   );

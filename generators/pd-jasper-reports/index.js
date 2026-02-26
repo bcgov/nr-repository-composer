@@ -3,7 +3,7 @@ import Generator from 'yeoman-generator';
 import { destinationGitPath } from '../util/git.js';
 // eslint-disable-next-line no-unused-vars
 import chalk from 'chalk';
-import { updateReadmeWithPipelineGuide } from '../util/copyworkflows.js';
+import { updateReadmeWithPipelineGuide, rmIfExists } from '../util/copyworkflows.js';
 import { BackstageStorage } from '../util/backstage.storage.js';
 import { BACKSTAGE_FILENAME, BACKSTAGE_KIND_COMPONENT } from '../util/yaml.js';
 
@@ -126,5 +126,9 @@ export default class extends Generator {
 
     // Update README with Polaris Pipeline guide
     updateReadmeWithPipelineGuide(this);
+
+    // Clean up old files if they exist (may remove in future)
+    rmIfExists(this, destinationGitPath('.github/workflows/jasper-reports.yaml'));
+    rmIfExists(this, destinationGitPath('.github/workflows/run-jasper-reports.yaml'));
   }
 }

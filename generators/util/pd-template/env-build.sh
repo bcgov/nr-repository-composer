@@ -18,6 +18,7 @@ fi
 # Service-specific environment variables
 export PROJECT_NAME="<%= projectName %>"
 export SERVICE_NAME="<%= serviceName %>"
+export PACKAGE_REPO="<%= artifactRepositoryPath %>"
 
 <% if (pomRoot) { -%>
 # Maven build configuration

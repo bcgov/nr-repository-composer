@@ -201,7 +201,6 @@ jobs:
           ARTIFACT_NAME="${ARTIFACT_ID}-${PROJECT_VERSION}.${PACKAGE_TYPE}"
           source ./env.sh build ./<%= relativePath %> --skip-vault
           ./mvnw <%= mavenBuildCommand %>
-          cd ./<%= relativePath %>
           echo "artifact_sha256=$(sha256sum <%= pomRoot %>target/${ARTIFACT_NAME} | awk '{ print $1 }')" >> $GITHUB_OUTPUT
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}

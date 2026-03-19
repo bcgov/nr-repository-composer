@@ -7,7 +7,7 @@ echo "Current GitHub task start: $GH_TASK_START"
 sleep 30
 MAX_WAIT=30
 
-TRIGGER_ID=$(echo -n "${SERVICE_NAME} ${GITHUB_RUN_ID}" | jq -sRr @uri)
+TRIGGER_ID=$(echo -n "${SERVICE_NAME} ${TRIGGER_UUID}" | jq -sRr @uri)
 
 QUERY_URL="${BROKER_URL}/v1/intention/search?where=%7B%22event.trigger.id%22%3A%22${TRIGGER_ID}%22%7D&offset=0&limit=1"
 

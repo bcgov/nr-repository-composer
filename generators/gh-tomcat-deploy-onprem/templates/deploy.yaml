@@ -365,7 +365,7 @@ jobs:
           echo "trigger_uuid=$TRIGGER_UUID" >> $GITHUB_OUTPUT
           curl \
           --data-urlencode "token=${{ secrets.JENKINS_TOKEN }}" \
-          --data-urlencode "githubRunId=${{ github.run_id }}" \
+          --data-urlencode "githubRunId=${TRIGGER_UUID}" \
           --data-urlencode "githubToken=${{ secrets.GITHUB_TOKEN }}" \
           --data-urlencode "brokerJwt=${{ secrets.<%= brokerJwt %> }}" \
           --data-urlencode "artifactSha256=${ARTIFACT_SHA256}" \
@@ -378,7 +378,6 @@ jobs:
           --data-urlencode "downloadType=<% if (artifactRepositoryType === 'JFrogArtifactory') { -%>ARTIFACTORY<% } else { -%>GITHUB<% } -%>" \
           --data-urlencode "envLong=${{ inputs.environment }}" \
           --data-urlencode "triggerUrl=https://github.com/${{ github.repository }}/actions/runs/${{ github.run_id }}" \
-          --data-urlencode "triggerUuid=$TRIGGER_UUID" \
           --data-urlencode "deploymentApprover=${DEPLOYMENT_APPROVER}" \
           -H "Connection: close" \
           ${{ env.URL }}/${{ env.JOB }}
@@ -401,7 +400,6 @@ jobs:
           BROKER_URL: https://broker.io.nrs.gov.bc.ca
           BROKER_JWT: ${{ secrets.<%= brokerJwt %> }}
           SERVICE_NAME: ${{ env.SERVICE_NAME }}
-          GITHUB_RUN_ID: ${{ github.run_id }}
           TRIGGER_UUID: ${{ steps.submit-job.outputs.trigger_uuid}}
 <% if (postDeployTestsPath) { -%>
   post-deploy-test:

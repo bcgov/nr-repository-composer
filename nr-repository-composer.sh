@@ -16,12 +16,17 @@ USE_LOCAL="false"
 
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 
-# Check arguments
-if [ $# -lt 1 ]; then
+print_usage() {
     echo "Usage: $0 [--local] <working-directory> [generator] [options...]"
     echo ""
     echo "Options:"
-    echo "  --local    Use local image ($LOCAL_IMAGE) instead of GitHub registry"
+    echo "  --local           Use local image ($LOCAL_IMAGE) instead of GitHub registry"
+    echo ""
+    echo "Generator Options:"
+    echo "  --help-prompts    Show detailed descriptions of each prompt"
+    echo "  --ask-answered    Re-prompt for already configured options"
+    echo "  --force           Overwrite existing files without prompting"
+    echo "  --headless        Exit with error if any prompt is required (for CI/CD)"
     echo ""
     echo "Examples:"
     echo "  $0 /path/to/repo backstage"
@@ -31,11 +36,10 @@ if [ $# -lt 1 ]; then
     echo "  $0 --local . backstage"
     echo ""
     echo "Note: 'nr-repository-composer:' prefix is automatically added to the generator name"
-    exit 1
-fi
+}
 
 # Check for --local flag
-if [ "$1" = "--local" ]; then
+if [ "${1:-}" = "--local" ]; then
     USE_LOCAL="true"
     PULL_IMAGE="false"
     shift
@@ -44,6 +48,12 @@ fi
 # Select image based on --local flag
 if [ "$USE_LOCAL" = "true" ]; then
     IMAGE="$LOCAL_IMAGE"
+fi
+
+# Check arguments
+if [ $# -lt 1 ]; then
+    print_usage
+    exit 1
 fi
 
 # Detect container runtime (prefer podman over docker)

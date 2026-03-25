@@ -18,6 +18,7 @@ import {
   PROMPT_ARTIFACT_REPOSITORY_TYPE,
   PROMPT_ARTIFACT_REPOSITORY_PATH,
   PROMPT_CLIENT_ID,
+  PROMPT_DEPLOY_ON_PREM,
   PROMPT_JAVA_PATTERN,
   PROMPT_JAVA_VERSION,
   PROMPT_LICENSE,
@@ -108,7 +109,7 @@ export default class extends Generator {
     bailOnUnansweredQuestions(questions, this.answers, headless, askAnswered);
     const removedProps = this.config.processDeprecated();
     this.showGeneratorDeprecationWarning =
-      removedProps.indexOf('deployOnPrem') !== -1;
+      removedProps.indexOf(PROMPT_DEPLOY_ON_PREM.name) !== -1;
     this.answers = await this.prompt(questions, 'config');
   }
   // Generate GitHub workflows and NR Broker intention files

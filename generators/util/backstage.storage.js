@@ -42,7 +42,7 @@ export class BackstageStorage {
   }
 
   hasGenerator(generator) {
-    hasGeneratorInDoc(this.backstageDoc, generator);
+    return hasGeneratorInDoc(this.backstageDoc, generator);
   }
 
   save() {

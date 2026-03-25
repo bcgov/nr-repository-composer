@@ -20,7 +20,8 @@
     "ejs": "^5.0.1",
     "yaml": "^2.8.3",
     "yeoman-generator": "^8.1.2",
-    "yosay": "^3.0.0"
+    "yosay": "^3.0.0",
+    "ejs": "^3.1.9"
   },
   "devDependencies": {
     "@eslint/js": "^10.0.1",

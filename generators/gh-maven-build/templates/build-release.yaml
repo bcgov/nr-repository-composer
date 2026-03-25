@@ -25,12 +25,14 @@ concurrency:
 <% } else { -%>
   workflow_call:
 <% } -%>
+<% const SERVICE_ENV_NAME = serviceName.replace(/-/g, '_').toUpperCase(); -%>
 
 env:
   BROKER_URL: https://broker.io.nrs.gov.bc.ca
   BROKER_JWT: ${{ secrets.<%= brokerJwt %> }}
   SERVICE_PROJECT: <%= projectName %>
   SERVICE_NAME: <%= serviceName %>
+  DEFAULT_VERSION_<%=SERVICE_ENV_NAME%>: ${{ vars.DEFAULT_VERSION_<%=SERVICE_ENV_NAME%> || '0.0.0' }}-SNAPSHOT
 
 jobs:
   preflight:
@@ -134,25 +136,25 @@ jobs:
           if [[ ${{ startsWith(github.ref, 'refs/pull/') }} = true ]]; then
             echo "branch=${{ github.head_ref }}" >> "$GITHUB_OUTPUT"
           fi
-      - name: Update pom.xml
-        id: update-repo
+      - name: Set VERSION
+        id: set-version
         shell: bash
         working-directory: ./<%= relativePath %>
         run: |
           if [[ ${{ startsWith(github.ref, 'refs/tags/v') }} = true ]]; then
             TAG=${{ github.ref_name }}
-            VERSION=${TAG#v}
+            APP_VERSION=${TAG#v}
           else
-            VERSION=$(mvn help:evaluate -Dexpression=project.version -q -DforceStdout --file <%= pomRoot %>pom.xml)
-            VERSION=${VERSION/%SNAPSHOT/${{ steps.lookup-pr-merge-ref.outputs.version_modifier }}-SNAPSHOT}
+            APP_VERSION=${DEFAULT_VERSION_<%=SERVICE_ENV_NAME%>/%SNAPSHOT/${{ steps.lookup-pr-merge-ref.outputs.version_modifier }}-SNAPSHOT}
           fi
-          echo "VERSION=${VERSION}" >> $GITHUB_ENV
-          mvn versions:set -DnewVersion=${VERSION} --file <%= pomRoot %>pom.xml
+          echo "VERSION=${APP_VERSION}" >> $GITHUB_ENV
+        env:
+          DEFAULT_VERSION_<%=SERVICE_ENV_NAME%>: ${{ env.DEFAULT_VERSION_<%=SERVICE_ENV_NAME%> }}
       - name: Set build output parameters
         id: set-build-output-parameters
         working-directory: ./<%= relativePath %>
         run: |
-          echo "project_version=$(mvn help:evaluate -Dexpression=project.version -q -DforceStdout --file <%= pomRoot %>pom.xml)" >> $GITHUB_OUTPUT
+          echo "project_version=${VERSION}" >> $GITHUB_OUTPUT
           echo "artifact_id=$(mvn help:evaluate -Dexpression=project.artifactId -q -DforceStdout --file <%= pomRoot %>pom.xml)" >> $GITHUB_OUTPUT
           echo "package_type=$(mvn help:evaluate -Dexpression=project.packaging -q -DforceStdout --file <%= pomRoot %>pom.xml)" >> $GITHUB_OUTPUT
           echo "git_commit=$(git rev-parse --verify HEAD)" >> $GITHUB_OUTPUT
@@ -188,9 +190,7 @@ jobs:
           echo "Pulling artifact <%= artifact.artifact %> to <%= artifact.output %>"
           oras pull <%= artifact.artifact %> --output <%= artifact.output %>
           oras manifest fetch -o <%= artifact.output %>/manifest.json <%= artifact.artifact %>
-          <%_ } -%>
-        working-directory: ./<%= relativePath %>
-        env:
+          <% } -%><% const SERVICE_ENV_NAME = serviceName.replace(/-/g, '_').toUpperCase(); -%>
           PROJECT_TAG: ${{ steps.set-version.outputs.tag }}
 <% } -%>
       - name: Publish artifact
@@ -198,8 +198,10 @@ jobs:
         working-directory: ./
 <% if (artifactRepositoryType === 'GitHubPackages') { -%>
         run: |
+          set -euo pipefail
           ARTIFACT_NAME="${ARTIFACT_ID}-${PROJECT_VERSION}.${PACKAGE_TYPE}"
           source ./env.sh build ./<%= relativePath %> --skip-vault
+          cd ./<%= relativePath %>
           ./mvnw <%= mavenBuildCommand %>
           echo "artifact_sha256=$(sha256sum <%= pomRoot %>target/${ARTIFACT_NAME} | awk '{ print $1 }')" >> $GITHUB_OUTPUT
         env:

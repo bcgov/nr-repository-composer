@@ -1,6 +1,6 @@
 import path from 'path';
 import * as fs from 'node:fs';
-import * as ejs from 'ejs';
+import ejs from 'ejs';
 import { destinationGitPath, relativeGitPath } from './git.js';
 import { scanRepositoryForComponents, hasGeneratorInDoc } from './yaml.js';
 import {

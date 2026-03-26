@@ -175,7 +175,6 @@ export default class extends Generator {
     const java_playbook_args = [
       this.answers.projectName,
       this.answers.serviceName,
-      this.answers.playbookPath,
     ];
     const java_playbook_options = {
       tomcatContext: this.answers.tomcatContext,
@@ -193,7 +192,6 @@ export default class extends Generator {
       const jasper_reports_args = [
         this.answers.projectName,
         this.answers.jasperServiceName,
-        this.answers.playbookPath,
       ];
       const jasper_playbook_options = {
         jasperProjectName: this.answers.jasperProjectName,

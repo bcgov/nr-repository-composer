@@ -131,11 +131,7 @@ export default class extends Generator {
     copyCommonDeployWorkflows(this, this.answers);
 
     // Compose with OCI playbook generator
-    const playbook_args = [
-      this.answers.projectName,
-      this.answers.serviceName,
-      this.answers.playbookPath,
-    ];
+    const playbook_args = [this.answers.projectName, this.answers.serviceName];
 
     const playbook_options = {
       deployType: this.answers.deployType,

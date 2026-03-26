@@ -1,6 +1,7 @@
 import chalk from 'chalk';
 import { extractGitHubSlug, getGitRepoOriginUrl } from '../util/git.js';
 import { alphaDashValidate } from '../util/github.js';
+import { TOOLS_DEFAULT_PROPERTIES } from './constants.js';
 
 export const PROMPT_LOCATION_NAME = {
   type: 'input',
@@ -143,6 +144,13 @@ export const PROMPT_SCHEMA_MIGRATION_BASE_PATH = {
   message: 'Base path:',
 };
 
+export const PROMPT_DEPLOYMENT_CONFIG_PATHS = {
+  type: 'input',
+  name: 'deploymentConfigPaths',
+  message: 'Deployment config paths (comma-separated):',
+  default: 'playbooks',
+};
+
 export const PROMPT_PLAYBOOK_PATH = {
   type: 'input',
   name: 'playbookPath',
@@ -239,7 +247,7 @@ export const PROMPT_TOOLS_BUILD_SECRETS = {
   type: 'input',
   name: 'toolsBuildSecrets',
   message: 'Tools secrets used with builds (comma-separated):',
-  default: 'ARTIFACTORY_USERNAME,ARTIFACTORY_PASSWORD',
+  default: TOOLS_DEFAULT_PROPERTIES,
 };
 export const PROMPT_TOOLS_LOCAL_BUILD_SECRETS = {
   type: 'input',
@@ -422,9 +430,12 @@ export const PROMPT_TO_USAGE = {
   deployOnPrem: {
     description: 'Whether to deploy on-prem or not',
   },
-  playbookPath: {
+  deploymentConfigPaths: {
     description:
-      'The path to the playbook (e.g. ./playbooks/). If not provided, will be auto-detected from the git remote URL',
+      'A comma-separated list of paths to deployment configuration files (e.g. playbooks)',
+  },
+  playbookPath: {
+    description: 'The path to the playbook (e.g. ./playbooks/).',
   },
   pomRoot: {
     description: 'The path to the pom.xml file',
@@ -443,11 +454,11 @@ export const PROMPT_TO_USAGE = {
   },
   toolsBuildSecrets: {
     description: 'Tools secrets used with builds (comma-separated)',
-    example: 'ARTIFACTORY_USERNAME,ARTIFACTORY_PASSWORD',
+    example: TOOLS_DEFAULT_PROPERTIES,
   },
   toolsLocalBuildSecrets: {
     description: 'Local tools secrets used with builds (comma-separated)',
-    example: 'ARTIFACTORY_USERNAME,ARTIFACTORY_PASSWORD',
+    example: TOOLS_DEFAULT_PROPERTIES,
   },
   deployJasperReports: {
     description: 'Whether to deploy Jasper Reports or not',

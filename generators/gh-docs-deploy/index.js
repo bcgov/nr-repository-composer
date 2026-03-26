@@ -2,6 +2,10 @@
 import Generator from 'yeoman-generator';
 import chalk from 'chalk';
 import { nrsay } from '../util/nrsay.js';
+import {
+  YEOMAN_CONFIG_NAMESPACE,
+  YEOMAN_OPTION_ASK_ANSWERED,
+} from '../util/constants.js';
 import { BackstageStorage } from '../util/backstage.storage.js';
 import { OPTION_HEADLESS, OPTION_HELP_PROMPTS } from '../util/options.js';
 import { bailOnUnansweredQuestions } from '../util/process.js';
@@ -33,7 +37,7 @@ export default class extends Generator {
 
   async prompting() {
     const headless = this.options[OPTION_HEADLESS.name];
-    const askAnswered = this.options['ask-answered'];
+    const askAnswered = this.options[YEOMAN_OPTION_ASK_ANSWERED];
     const helpPrompts = this.options[OPTION_HELP_PROMPTS.name];
     this.answers = this.config.getAnswers();
 
@@ -61,7 +65,7 @@ export default class extends Generator {
     }
 
     bailOnUnansweredQuestions(questions, this.answers, headless, askAnswered);
-    this.answers = await this.prompt(questions, 'config');
+    this.answers = await this.prompt(questions, YEOMAN_CONFIG_NAMESPACE);
   }
 
   // Generate GitHub workflows

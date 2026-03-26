@@ -84,7 +84,7 @@ export default class extends Generator {
 
   async prompting() {
     // Display help and collect answers
-    this.answers = await this.prompt(questions, 'config');
+    this.answers = await this.prompt(questions, YEOMAN_CONFIG_NAMESPACE);
   }
 
   writing() {

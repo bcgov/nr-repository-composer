@@ -1,0 +1,53 @@
+name: Build deployment config
+
+on:
+  push:
+    tags:
+      - 'dc*'
+    branches:
+      - 'main'
+      - 'dc/*'
+concurrency:
+  group: ci-${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
+env:
+  BROKER_URL: https://broker.io.nrs.gov.bc.ca
+  BROKER_JWT: ${{ secrets.<%= brokerJwt %> }}
+
+jobs:
+  build-dc:
+    name: Build deployment config
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+      actions: read
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v6
+      - name: Setup ORAS
+        uses: oras-project/setup-oras@v1
+      - name: Create annotations files
+        run: |
+          cat <<EOF > annotations.json
+
+            "\$manifest": {
+              "org.opencontainers.image.description": "Deployment configuration ${PROJECT_TAG}",
+              "org.opencontainers.image.source": "${{ github.repositoryUrl }}",
+              "org.opencontainers.image.title": "deployment-config",
+              "org.opencontainers.image.version": "${PROJECT_TAG}"
+            }
+          }
+          EOF
+        env:
+          PROJECT_TAG: ${{ github.ref_name }}
+      - name: Push deployment config to registry
+        run: |
+          oras login ghcr.io -u ${{ github.actor }} --password-stdin <<< ${{ secrets.GITHUB_TOKEN }}
+          oras push --annotation-file annotation.json --export-manifest manifest.json ghcr.io/${{ github.repository }}/deployment-config:${PROJECT_TAG} <%= deploymentConfigPaths %>
+          MANIFEST=$(cat ./manifest.json)
+          echo $MANIFEST
+          echo "artifact_sha256=$(echo $MANIFEST | jq -r '.layers[] | select(.annotations["org.opencontainers.image.title"] == "dist") | .digest')" >> $GITHUB_OUTPUT
+          echo "artifact_size=$(echo $MANIFEST | jq -r '.layers | map(.size) | add')" >> $GITHUB_OUTPUT
+        env:
+          PROJECT_TAG: ${{ steps.set-version.outputs.tag }}

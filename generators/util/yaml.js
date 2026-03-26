@@ -1,4 +1,5 @@
 import { destinationGitPath } from './git.js';
+import { TOOLS_DEFAULT_PROPERTIES } from './constants.js';
 import { parseDocument } from 'yaml';
 import * as fs from 'node:fs';
 import path from 'path';
@@ -55,6 +56,16 @@ export const pathToProps = [
   {
     path: ['metadata', 'annotations', 'github.com/project-slug'],
     prop: 'gitHubProjectSlug',
+    writeEmpty: false,
+  },
+  // Deployment Configuration
+  {
+    path: [
+      'metadata',
+      'annotations',
+      'playbook.io.nrs.gov.bc.ca/deploymentConfigPaths',
+    ],
+    prop: 'deploymentConfigPaths',
     writeEmpty: false,
   },
   // Playbook
@@ -217,11 +228,6 @@ export const pathToProps = [
     transform: (val) => (val === '' || val === undefined ? val : Number(val)),
   },
   {
-    path: ['metadata', 'annotations', 'playbook.io.nrs.gov.bc.ca/playbookPath'],
-    prop: 'playbookPath',
-    writeEmpty: false,
-  },
-  {
     path: [
       'metadata',
       'annotations',
@@ -306,6 +312,14 @@ export const pathToProps = [
   },
   // Deprecated - Remove in future
   {
+    path: ['metadata', 'annotations', 'playbook.io.nrs.gov.bc.ca/playbookPath'],
+    prop: 'playbookPath',
+    writeEmpty: false,
+    deprecated: (config, value) => {
+      config.set('deploymentConfigPaths', value);
+    },
+  },
+  {
     path: [
       'metadata',
       'annotations',
@@ -334,14 +348,8 @@ export const pathToProps = [
     prop: 'configureNrArtifactory',
     writeEmpty: false,
     deprecated: (config) => {
-      config.set(
-        'toolsBuildSecrets',
-        'ARTIFACTORY_USERNAME,ARTIFACTORY_PASSWORD',
-      );
-      config.set(
-        'toolsLocalBuildSecrets',
-        'ARTIFACTORY_USERNAME,ARTIFACTORY_PASSWORD',
-      );
+      config.set('toolsBuildSecrets', TOOLS_DEFAULT_PROPERTIES);
+      config.set('toolsLocalBuildSecrets', TOOLS_DEFAULT_PROPERTIES);
       // Build command will need updating
       config.delete('mavenBuildCommand');
     },

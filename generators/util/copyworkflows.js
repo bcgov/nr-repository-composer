@@ -111,12 +111,53 @@ export function copyCommonBuildWorkflows(generator, answers) {
   );
 }
 
+export function copyCommonDeploymentConfigWorkflow(
+  brokerJwt,
+  generator,
+  answers,
+) {
+  const services = scanRepositoryForComponents();
+  const allPaths = new Set();
+  for (const service of services) {
+    const configPaths = service.doc.getIn([
+      'metadata',
+      'annotations',
+      'playbook.io.nrs.gov.bc.ca/deploymentConfigPaths',
+    ]);
+    allPaths.add('catalog-info.yaml'); // Always include root catalog-info.yaml for scanning
+    if (configPaths) {
+      const serviceDir = path.dirname(service.path);
+      allPaths.add(service.path);
+      configPaths
+        .split(',')
+        .map((p) => path.join(serviceDir, p.trim()))
+        .filter(Boolean)
+        .forEach((p) => allPaths.add(p));
+    }
+  }
+  const deploymentConfigPaths = [...allPaths].join(' ');
+
+  if (deploymentConfigPaths) {
+    generator.fs.copyTpl(
+      generator.templatePath(`${COMMON_GH_TEMPLATE_PATH}/build-dc.yaml`),
+      destinationGitPath(`.github/workflows/build-dc.yaml`),
+      {
+        brokerJwt,
+        deploymentConfigPaths,
+        gitHubProjectSlug: answers.gitHubProjectSlug,
+      },
+    );
+  }
+}
+
 export function copyCommonDeployWorkflows(generator, answers) {
   const relativePath = relativeGitPath();
 
   const brokerJwt = answers.clientId.trim()
     ? `broker-jwt:${answers.clientId.trim()}`.replace(/[^a-zA-Z0-9_]/g, '_')
     : 'BROKER_JWT';
+
+  copyCommonDeploymentConfigWorkflow(brokerJwt, generator, answers);
 
   generator.fs.copyTpl(
     generator.templatePath(

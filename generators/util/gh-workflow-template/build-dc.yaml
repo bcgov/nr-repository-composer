@@ -3,10 +3,10 @@ name: Build deployment config
 on:
   push:
     tags:
-      - 'dc*'
+      - 'd*'
     branches:
       - 'main'
-      - 'dc/*'
+      - 'deploy/*'
 concurrency:
   group: ci-${{ github.workflow }}-${{ github.ref }}
   cancel-in-progress: true
@@ -37,7 +37,7 @@ jobs:
           if [[ ${{ startsWith(github.ref, 'refs/pull/') }} = true ]]; then
             echo "tag=${SAFE_REF_NAME}" >> "$GITHUB_OUTPUT"
           fi
-          if [[ ${{ startsWith(github.ref, 'refs/tags/v') }} = true ]]; then
+          if [[ ${{ startsWith(github.ref, 'refs/tags/d') }} = true ]]; then
             echo "tag=${{ github.ref_name }}" >> "$GITHUB_OUTPUT"
           fi
       - name: Setup ORAS

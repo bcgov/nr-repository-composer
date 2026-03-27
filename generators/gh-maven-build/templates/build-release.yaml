@@ -100,7 +100,6 @@ jobs:
             ref: ${{ steps.lookup-pr-merge-ref.outputs.checkout_ref }}
 <% if (ociArtifacts.length > 0) { _%>
       - name: Set version
-        working-directory: ./<%= relativePath %>
         id: set-version
         run: |
           REF_NAME="${{ github.ref_name }}"

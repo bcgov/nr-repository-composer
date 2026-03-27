@@ -104,7 +104,6 @@ jobs:
           node-version: <%= nodeVersion %>
           cache: 'npm'
       - name: Set version
-        working-directory: ./<%= relativePath %>
         id: set-version
         run: |
           REF_NAME="${{ github.ref_name }}"

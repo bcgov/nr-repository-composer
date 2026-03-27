@@ -29,7 +29,7 @@ import { outputReport } from '../util/report.js';
  * Deploy type prompt - determines which playbook to use
  */
 const PROMPT_DEPLOY_TYPE = {
-  type: 'list',
+  type: 'select',
   name: 'deployType',
   message: 'Deployment type',
   description: 'Select the type of application being deployed',

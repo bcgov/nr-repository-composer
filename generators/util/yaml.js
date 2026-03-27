@@ -70,6 +70,11 @@ export const pathToProps = [
   },
   // Playbook
   {
+    path: ['metadata', 'annotations', 'playbook.io.nrs.gov.bc.ca/deployType'],
+    prop: 'deployType',
+    writeEmpty: true,
+  },
+  {
     path: [
       'metadata',
       'annotations',

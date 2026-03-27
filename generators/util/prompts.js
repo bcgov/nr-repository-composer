@@ -194,35 +194,35 @@ export const PROMPT_POM_ROOT = {
   default: './',
 };
 export const PROMPT_NODE_PATTERN = {
-  type: 'list',
+  type: 'select',
   name: 'nodePattern',
   message: 'Node pattern:',
   choices: ['NPM', 'unknown'],
   default: 'NPM',
 };
 export const PROMPT_NODE_VERSION = {
-  type: 'list',
+  type: 'select',
   name: 'nodeVersion',
   message: 'Node.js version:',
   choices: ['20', '22', '24'],
   default: '24',
 };
 export const PROMPT_JAVA_PATTERN = {
-  type: 'list',
+  type: 'select',
   name: 'javaPattern',
   message: 'Java pattern:',
   choices: ['SpringBoot', 'Tomcat', 'unknown'],
   default: 'SpringBoot',
 };
 export const PROMPT_JAVA_VERSION = {
-  type: 'list',
+  type: 'select',
   name: 'javaVersion',
   message: 'Java version:',
   choices: ['8', '11', '17', '21'],
   default: '8',
 };
 export const PROMPT_ARTIFACT_REPOSITORY_TYPE = {
-  type: 'list',
+  type: 'select',
   name: 'artifactRepositoryType',
   message: 'Artifact destination repository type:',
   choices: ['GitHubPackages', 'JFrogArtifactory'],

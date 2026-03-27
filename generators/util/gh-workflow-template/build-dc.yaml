@@ -25,12 +25,28 @@ jobs:
     steps:
       - name: Checkout repository
         uses: actions/checkout@v6
+      - name: Set version
+        working-directory: ./<%= relativePath %>
+        id: set-version
+        run: |
+          REF_NAME="${{ github.ref_name }}"
+          SAFE_REF_NAME=$(echo "$REF_NAME" | tr '/' '-')
+
+          if [[ ${{ startsWith(github.ref, 'refs/heads/') }} = true ]]; then
+            echo "tag=${SAFE_REF_NAME}" >> "$GITHUB_OUTPUT"
+          fi
+          if [[ ${{ startsWith(github.ref, 'refs/pull/') }} = true ]]; then
+            echo "tag=${SAFE_REF_NAME}" >> "$GITHUB_OUTPUT"
+          fi
+          if [[ ${{ startsWith(github.ref, 'refs/tags/v') }} = true ]]; then
+            echo "tag=${{ github.ref_name }}" >> "$GITHUB_OUTPUT"
+          fi
       - name: Setup ORAS
         uses: oras-project/setup-oras@v1
       - name: Create annotations files
         run: |
-          cat <<EOF > annotations.json
-
+          cat <<EOF > annotation.json
+          {
             "\$manifest": {
               "org.opencontainers.image.description": "Deployment configuration ${PROJECT_TAG}",
               "org.opencontainers.image.source": "${{ github.repositoryUrl }}",
@@ -40,7 +56,7 @@ jobs:
           }
           EOF
         env:
-          PROJECT_TAG: ${{ github.ref_name }}
+          PROJECT_TAG: ${{ steps.set-version.outputs.tag }}
       - name: Push deployment config to registry
         run: |
           oras login ghcr.io -u ${{ github.actor }} --password-stdin <<< ${{ secrets.GITHUB_TOKEN }}

@@ -115,9 +115,10 @@ export function copyCommonDeploymentConfigWorkflow(
   brokerJwt,
   generator,
   answers,
+  additionalPaths = [],
 ) {
   const services = scanRepositoryForComponents();
-  const allPaths = new Set();
+  const allPaths = new Set(additionalPaths);
   for (const service of services) {
     const configPaths = service.doc.getIn([
       'metadata',
@@ -152,12 +153,15 @@ export function copyCommonDeploymentConfigWorkflow(
 
 export function copyCommonDeployWorkflows(generator, answers) {
   const relativePath = relativeGitPath();
+  const JENKINS_DIR = '.jenkins';
 
   const brokerJwt = answers.clientId.trim()
     ? `broker-jwt:${answers.clientId.trim()}`.replace(/[^a-zA-Z0-9_]/g, '_')
     : 'BROKER_JWT';
 
-  copyCommonDeploymentConfigWorkflow(brokerJwt, generator, answers);
+  copyCommonDeploymentConfigWorkflow(brokerJwt, generator, answers, [
+    JENKINS_DIR,
+  ]);
 
   generator.fs.copyTpl(
     generator.templatePath(
@@ -181,7 +185,7 @@ export function copyCommonDeployWorkflows(generator, answers) {
       `${COMMON_GH_TEMPLATE_PATH}/deployment-intention.json`,
     ),
     destinationGitPath(
-      `.jenkins/${answers.serviceName}-deployment-intention.json`,
+      `${JENKINS_DIR}/${answers.serviceName}-deployment-intention.json`,
     ),
     {
       projectName: answers.projectName,

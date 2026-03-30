@@ -190,7 +190,9 @@ jobs:
           echo "Pulling artifact <%= artifact.artifact %> to <%= artifact.output %>"
           oras pull <%= artifact.artifact %> --output <%= artifact.output %>
           oras manifest fetch -o <%= artifact.output %>/manifest.json <%= artifact.artifact %>
-          <% } -%><% const SERVICE_ENV_NAME = serviceName.replace(/-/g, '_').toUpperCase(); -%>
+          <%_ } -%>
+        working-directory: ./<%= relativePath %>
+        env:
           PROJECT_TAG: ${{ steps.set-version.outputs.tag }}
 <% } -%>
       - name: Publish artifact

@@ -204,17 +204,28 @@ If used as a static asset, the manifest file (which includes all the required an
 
 If you are using the OCI artifact as hosted static files (example: frontend JavaScript application), it is recommened that the `dist` folder be configured as the static file root. The `manifest.json` and other support files should not be avialable to a user.
 
-## Deployment Configuration
+## Deployment Configuration (experimental)
 
 A deployment configuration is an OCI Artifact that bundles together the deployment files. It is triggered by pushing a `d*` tag that uses semantic versioning. The tag should be manually created, annotated and pushed to the repository. The GitHub release workflow should not be used to create the tag.
+
 ```
 % git tag -a d1.0.0 -m 'Initial deployment config'
 % git push origin d1.0.0
-```bash
+```
 
-The deployment configuration is used with a release to deploy an artifact. It allows the developer to update the deployment without needing to update a release. A deployment configuration does not guarantee the same outcome every time as the configuration may have dyanamic elements. As an example, the deployment configuration may specify to deploy a major version of a software package. The exact version used will then depend on what minor (patch) versions are avialable when the deployment occurs.
+The deployment configuration artifact is essentially a checkout of the tag from the git repository with non-deployment files stripped out. There are a number of reasons why using the git repository directly is less ideal compared to creating and using an artifact. Chiefly, it is more efficient and easier to use the artifact.
 
-The workflow 'Build deployment config' will be created when a deployment generator is run. If you want to test out deployment changes, create a branch using the pattern `deploy/*` as this will trigger the configuration build as well.
+The deployment configuration is combined with an artifact to create a deployment. It allows the developer to roll back or change the deployment configuration without needing to update the artifact.
+
+A deployment configuration does not guarantee the same outcome every time, as the configuration may have dynamic elements. For example, the deployment configuration may specify deploying a major version of a software package. The exact version used will then depend on what minor (patch) versions are available when the deployment occurs.
+
+The workflow 'Build deployment config' will be created when a deployment generator is run. If you want to test deployment changes, create a branch using the pattern `deploy/*`, as this will trigger the configuration build as well.
+
+Like software releases, changes to deployment configurations should always be tested in all environments, even if no change is expected. Developers should avoid mixing code and deployment configuration changes in the same pull request.
+
+### Tag Format
+
+The tag should start with a 'd' followed by a version number. This version number should use semantic versioning. There is no requirement that the service and deployment configuration versions match.
 
 ## Command Options
 

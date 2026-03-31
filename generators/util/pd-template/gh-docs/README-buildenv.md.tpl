@@ -34,7 +34,6 @@ source env.sh local
 source env.sh build --skip-vault
 ```
 
-
 #### Setting the Artifact Version
 
 The `pom.xml` uses a `VERSION` environment variable and the `${revision}` property for the project version (see https://maven.apache.org/guides/mini/guide-maven-ci-friendly.html).

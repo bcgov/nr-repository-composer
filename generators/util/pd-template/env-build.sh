@@ -26,6 +26,7 @@ export POM_ROOT="<%= pomRoot %>"
 export MAVEN_ARGS="--file $POM_ROOT"
 <% } -%>
 
+export VERSION="${VERSION:-0.0.0-SNAPSHOT}"
 <% if (toolsLocalBuildSecrets) { %>
 # Only fetch vault secrets if --skip-vault is not set
 if [[ "$SKIP_VAULT" == false ]]; then

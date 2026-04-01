@@ -25,14 +25,13 @@ concurrency:
 <% } else { -%>
   workflow_call:
 <% } -%>
-<% const SERVICE_ENV_NAME = serviceName.replace(/-/g, '_').toUpperCase(); -%>
 
 env:
   BROKER_URL: https://broker.io.nrs.gov.bc.ca
   BROKER_JWT: ${{ secrets.<%= brokerJwt %> }}
   SERVICE_PROJECT: <%= projectName %>
   SERVICE_NAME: <%= serviceName %>
-  DEFAULT_VERSION_<%=SERVICE_ENV_NAME%>: ${{ vars.DEFAULT_VERSION_<%=SERVICE_ENV_NAME%> || '0.0.0' }}-SNAPSHOT
+  DEFAULT_VERSION: ${{ vars.DEFAULT_VERSION || '0.0.0' }}-SNAPSHOT
 
 jobs:
   preflight:
@@ -144,11 +143,11 @@ jobs:
             TAG=${{ github.ref_name }}
             APP_VERSION=${TAG#v}
           else
-            APP_VERSION=${DEFAULT_VERSION_<%=SERVICE_ENV_NAME%>/%SNAPSHOT/${{ steps.lookup-pr-merge-ref.outputs.version_modifier }}-SNAPSHOT}
+            APP_VERSION=${DEFAULT_VERSION/%SNAPSHOT/${{ steps.lookup-pr-merge-ref.outputs.version_modifier }}-SNAPSHOT}
           fi
           echo "VERSION=${APP_VERSION}" >> $GITHUB_ENV
         env:
-          DEFAULT_VERSION_<%=SERVICE_ENV_NAME%>: ${{ env.DEFAULT_VERSION_<%=SERVICE_ENV_NAME%> }}
+          DEFAULT_VERSION: ${{ env.DEFAULT_VERSION }}
       - name: Set build output parameters
         id: set-build-output-parameters
         run: |

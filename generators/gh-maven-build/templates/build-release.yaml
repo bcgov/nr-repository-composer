@@ -135,7 +135,7 @@ jobs:
           if [[ ${{ startsWith(github.ref, 'refs/pull/') }} = true ]]; then
             echo "branch=${{ github.head_ref }}" >> "$GITHUB_OUTPUT"
           fi
-      - name: Set VERSION
+      - name: Set version
         id: set-version
         shell: bash
         run: |

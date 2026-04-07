@@ -199,11 +199,22 @@ jobs:
           source ./env.sh build ./<%= relativePath %> --skip-vault
           ./mvnw <%= mavenBuildCommand %>
 <% if (type !== 'library') { -%>
+          cat <<EOF > annotation.json
+          {
+            "\$manifest": {
+              "org.opencontainers.image.description": "Build artifact for <%= serviceName %> version ${PROJECT_TAG}",
+              "org.opencontainers.image.licenses": "<%= license %>",
+              "org.opencontainers.image.source": "${{ github.repositoryUrl }}",
+              "org.opencontainers.image.title": "<%= serviceName %>-artifact",
+              "org.opencontainers.image.version": "${PROJECT_TAG}"
+            }
+          }
+          EOF
           oras login ghcr.io -u ${{ github.actor }} --password-stdin <<< ${{ secrets.GITHUB_TOKEN }}
           oras push --annotation-file annotation.json --export-manifest manifest.json ghcr.io/${{ github.repository }}/<%= serviceName %>:${PROJECT_TAG} <%= publishArtifactSuffix %>
           MANIFEST=$(cat ./manifest.json)
           echo $MANIFEST
-          echo "artifact_sha256=$(echo $MANIFEST | jq -r '.layers[] | select(.annotations["org.opencontainers.image.title"] == "dist") | .digest')" >> $GITHUB_OUTPUT
+          echo "artifact_sha256=$(echo $MANIFEST | jq -r '.layers[] | select(.annotations["org.opencontainers.image.title"] == "<%= serviceName %>-artifact") | .digest')" >> $GITHUB_OUTPUT
           echo "artifact_size=$(echo $MANIFEST | jq -r '.layers | map(.size) | add')" >> $GITHUB_OUTPUT
 <% } else { -%>
           ARTIFACT_NAME="${ARTIFACT_ID}-${PROJECT_VERSION}.${PACKAGE_TYPE}"

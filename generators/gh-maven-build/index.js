@@ -19,7 +19,6 @@ import { makeWorkflowBuildPublishPath } from '../util/github.js';
 import {
   PROMPT_PROJECT,
   PROMPT_SERVICE,
-  PROMPT_ARTIFACT_REPOSITORY_TYPE,
   PROMPT_ARTIFACT_REPOSITORY_PATH,
   PROMPT_CLIENT_ID,
   PROMPT_DEPLOY_ON_PREM,
@@ -57,7 +56,6 @@ const questions = [
     when: (answers) => answers.type !== 'library',
   },
   PROMPT_UNIT_TESTS_PATH,
-  PROMPT_ARTIFACT_REPOSITORY_TYPE,
   PROMPT_ARTIFACT_REPOSITORY_PATH,
   PROMPT_TOOLS_BUILD_SECRETS,
   PROMPT_TOOLS_LOCAL_BUILD_SECRETS,

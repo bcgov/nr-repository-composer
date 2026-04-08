@@ -96,7 +96,7 @@ jobs:
             fetch-tags: true
             ref: ${{ steps.lookup-pr-merge-ref.outputs.checkout_ref }}
       - name: Setup ORAS
-        uses: oras-project/setup-oras@v1
+        uses: oras-project/setup-oras@v2
       - name: Set up Node
         uses: actions/setup-node@v6
         with:

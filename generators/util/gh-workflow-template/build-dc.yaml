@@ -41,7 +41,7 @@ jobs:
             echo "tag=${{ github.ref_name }}" >> "$GITHUB_OUTPUT"
           fi
       - name: Setup ORAS
-        uses: oras-project/setup-oras@v1
+        uses: oras-project/setup-oras@v2
       - name: Create annotations files
         run: |
           cat <<EOF > annotation.json

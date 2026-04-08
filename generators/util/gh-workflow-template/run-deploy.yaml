@@ -11,10 +11,16 @@ on:
           - development
           - test
           - production
-      config_branch:
-        description: 'Use playbook folder from different branch (optional)'
+      deploy_tag:
+        description: 'Deployment config tag (If not provided, will auto-detect latest tag)'
         required: false
         type: string
+<% if (artifactSrc && artifactSrc !== 'repo') { -%>
+      artifact_tag:
+        description: 'Artifact/package tag (required for non-repository artifact sources)'
+        required: true
+        type: string
+<% } -%>
 
 permissions:
   contents: read
@@ -33,13 +39,34 @@ jobs:
     secrets:
       token: ${{ secrets.<%= brokerJwt %> }}
 
+  find_tag:
+    name: Find latest deployment tag
+    runs-on: ubuntu-latest
+    outputs:
+      deploy_tag: ${{ steps.set_tag.outputs.deploy_tag }}
+    steps:
+      - name: Find highest semantic version deployment tag
+        id: set_tag
+        run: |
+          #!/bin/bash
+          # List tags starting with 'd' and matching semantic version
+          tag=$(git tag --list 'd*' | grep -E '^d[0-9]+\.[0-9]+\.[0-9]+$' | sort -V | tail -n1)
+          if [ -z "$tag" ]; then
+            echo "::error::No deployment tags found. Please create a tag starting with 'd' and using semantic versioning (e.g., d1.0.0). See the README for instructions."
+            exit 1
+          fi
+          echo "deploy_tag=$tag" >> $GITHUB_OUTPUT
+
   deploy-development:
     name: Deploy to development
     uses: ./.github/workflows/<%= deployWorkflowFile %>
-    needs: preflight
+    needs: [preflight, find_tag]
     with:
       environment: development
-      config_branch: ${{ github.event.inputs.config_branch }}
+      deploy_tag: ${{ github.event.inputs.deploy_tag != '' && github.event.inputs.deploy_tag || needs.find_tag.outputs.deploy_tag }}
+<% if (artifactSrc && artifactSrc !== 'repo') { -%>
+      artifact_tag: ${{ github.event.inputs.artifact_tag }}
+<% } -%>
     secrets: inherit
     if: |
       github.event.inputs.environment == 'development' ||
@@ -48,11 +75,14 @@ jobs:
 
   deploy-test:
     name: Deploy to test
-    needs: deploy-development
+    needs: [deploy-development, find_tag]
     uses: ./.github/workflows/<%= deployWorkflowFile %>
     with:
       environment: test
-      config_branch: ${{ github.event.inputs.config_branch }}
+      deploy_tag: ${{ github.event.inputs.deploy_tag != '' && github.event.inputs.deploy_tag || needs.find_tag.outputs.deploy_tag }}
+<% if (artifactSrc && artifactSrc !== 'repo') { -%>
+      artifact_tag: ${{ github.event.inputs.artifact_tag }}
+<% } -%>
     secrets: inherit
     if: |
       github.event.inputs.environment == 'test' ||
@@ -60,10 +90,13 @@ jobs:
 
   deploy-production:
     name: Deploy to production
-    needs: deploy-test
+    needs: [deploy-test, find_tag]
     uses: ./.github/workflows/<%= deployWorkflowFile %>
     with:
       environment: production
-      config_branch: ${{ github.event.inputs.config_branch }}
+      deploy_tag: ${{ github.event.inputs.deploy_tag != '' && github.event.inputs.deploy_tag || needs.find_tag.outputs.deploy_tag }}
+<% if (artifactSrc && artifactSrc !== 'repo') { -%>
+      artifact_tag: ${{ github.event.inputs.artifact_tag }}
+<% } -%>
     secrets: inherit
     if: github.event.inputs.environment == 'production'

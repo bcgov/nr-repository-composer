@@ -157,6 +157,17 @@ export const PROMPT_PLAYBOOK_PATH = {
   message: 'Playbook path:',
   default: 'playbooks',
 };
+export const PROMPT_ARTIFACT_SRC = {
+  type: 'select',
+  name: 'artifactSrc',
+  message: 'Artifact source:',
+  choices: [
+    { name: 'This repository', value: 'repo' },
+    { name: 'GitHub (public)', value: 'github' },
+    { name: 'Artifactory (private)', value: 'artifactory' },
+  ],
+  default: 'repo',
+};
 export const PROMPT_OCI_ARTIFACTS = {
   type: 'input',
   name: 'ociArtifacts',
@@ -436,6 +447,11 @@ export const PROMPT_TO_USAGE = {
   },
   playbookPath: {
     description: 'The path to the playbook (e.g. ./playbooks/).',
+  },
+  artifactSrc: {
+    description:
+      'Where deployment artifacts are sourced from: current repository, public GitHub, or private Artifactory.',
+    example: 'repo',
   },
   pomRoot: {
     description: 'The path to the pom.xml file',

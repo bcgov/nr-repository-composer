@@ -347,7 +347,6 @@ jobs:
           --data-urlencode "catalogInfo=<%= catalogInfo %>" \
           --data-urlencode "projectVersion=${PROJECT_VERSION}" \
           --data-urlencode "envLong=${{ inputs.environment }}" \
-          --data-urlencode "gitBranch=${{ github.ref_name }}" \
           --data-urlencode "triggerUrl=https://github.com/${{ github.repository }}/actions/runs/${{ github.run_id }}" \
           --data-urlencode "deploymentApprover=${DEPLOYMENT_APPROVER}" \
           --data-urlencode "intentionId=${BUILD_GUID}" \

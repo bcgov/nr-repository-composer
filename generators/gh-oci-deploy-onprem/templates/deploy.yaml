@@ -333,7 +333,7 @@ jobs:
             exit 1
           fi
 
-          DEPLOY_URL="ghcr.io/${{ github.repository }}/<%= serviceName %>/deployment-config:${{ inputs.deploy_tag }}"
+          DEPLOY_URL="ghcr.io/${{ github.repository }}/deployment-config:${{ inputs.deploy_tag }}"
 
           curl \
           --data-urlencode "token=${{ secrets.JENKINS_TOKEN }}" \

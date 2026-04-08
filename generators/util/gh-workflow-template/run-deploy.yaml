@@ -39,12 +39,16 @@ jobs:
     secrets:
       token: ${{ secrets.<%= brokerJwt %> }}
 
-  find_tag:
+  find-tag:
     name: Find latest deployment tag
     runs-on: ubuntu-latest
     outputs:
       deploy_tag: ${{ steps.set_tag.outputs.deploy_tag }}
     steps:
+      - name: Checkout repository
+        uses: actions/checkout@v6
+        with:
+          fetch-tags: true
       - name: Find highest semantic version deployment tag
         id: set_tag
         run: |
@@ -60,10 +64,10 @@ jobs:
   deploy-development:
     name: Deploy to development
     uses: ./.github/workflows/<%= deployWorkflowFile %>
-    needs: [preflight, find_tag]
+    needs: [preflight, find-tag]
     with:
       environment: development
-      deploy_tag: ${{ github.event.inputs.deploy_tag != '' && github.event.inputs.deploy_tag || needs.find_tag.outputs.deploy_tag }}
+      deploy_tag: ${{ github.event.inputs.deploy_tag != '' && github.event.inputs.deploy_tag || needs.find-tag.outputs.deploy_tag }}
 <% if (artifactSrc && artifactSrc !== 'repo') { -%>
       artifact_tag: ${{ github.event.inputs.artifact_tag }}
 <% } -%>
@@ -75,11 +79,11 @@ jobs:
 
   deploy-test:
     name: Deploy to test
-    needs: [deploy-development, find_tag]
+    needs: [deploy-development, find-tag]
     uses: ./.github/workflows/<%= deployWorkflowFile %>
     with:
       environment: test
-      deploy_tag: ${{ github.event.inputs.deploy_tag != '' && github.event.inputs.deploy_tag || needs.find_tag.outputs.deploy_tag }}
+      deploy_tag: ${{ github.event.inputs.deploy_tag != '' && github.event.inputs.deploy_tag || needs.find-tag.outputs.deploy_tag }}
 <% if (artifactSrc && artifactSrc !== 'repo') { -%>
       artifact_tag: ${{ github.event.inputs.artifact_tag }}
 <% } -%>
@@ -90,11 +94,11 @@ jobs:
 
   deploy-production:
     name: Deploy to production
-    needs: [deploy-test, find_tag]
+    needs: [deploy-test, find-tag]
     uses: ./.github/workflows/<%= deployWorkflowFile %>
     with:
       environment: production
-      deploy_tag: ${{ github.event.inputs.deploy_tag != '' && github.event.inputs.deploy_tag || needs.find_tag.outputs.deploy_tag }}
+      deploy_tag: ${{ github.event.inputs.deploy_tag != '' && github.event.inputs.deploy_tag || needs.find-tag.outputs.deploy_tag }}
 <% if (artifactSrc && artifactSrc !== 'repo') { -%>
       artifact_tag: ${{ github.event.inputs.artifact_tag }}
 <% } -%>

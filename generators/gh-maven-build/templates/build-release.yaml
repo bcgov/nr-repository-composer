@@ -153,8 +153,16 @@ jobs:
         run: |
           source ./env.sh build ./<%= relativePath %> --skip-vault
           echo "project_version=${VERSION}" >> $GITHUB_OUTPUT
+<% if (deployableArtifactId) { -%>
+          echo "artifact_id=<%= deployableArtifactId %>" >> $GITHUB_OUTPUT
+<% } else { -%>
           echo "artifact_id=$(./mvnw help:evaluate -Dexpression=project.artifactId -q -DforceStdout)" >> $GITHUB_OUTPUT
+<% } -%>
+<% if (javaPattern !== 'unknown') { -%>
+          echo "package_type=<%= javaPattern === 'Tomcat' ? 'war' : 'jar' %>" >> $GITHUB_OUTPUT
+<% } else { -%>
           echo "package_type=$(./mvnw help:evaluate -Dexpression=project.packaging -q -DforceStdout)" >> $GITHUB_OUTPUT
+<% } -%>
           echo "git_commit=$(git rev-parse --verify HEAD)" >> $GITHUB_OUTPUT
           echo "build_guid=uuid::$(uuidgen)" >> $GITHUB_OUTPUT
       - name: Build intention

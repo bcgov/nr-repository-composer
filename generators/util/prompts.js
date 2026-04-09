@@ -185,6 +185,12 @@ export const PROMPT_POM_ROOT = {
   message: 'Path to pom.xml (relative to service catalog root):',
   default: './',
 };
+export const PROMPT_DEPLOYABLE_ARTIFACT_ID = {
+  type: 'input',
+  name: 'deployableArtifactId',
+  message: 'Deployable artifact ID (leave blank to read from pom.xml):',
+  default: '',
+};
 export const PROMPT_NODE_PATTERN = {
   type: 'list',
   name: 'nodePattern',

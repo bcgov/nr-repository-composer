@@ -45,6 +45,15 @@ export const pathToProps = [
     prop: 'pomRoot',
     writeEmpty: false,
   },
+  {
+    path: [
+      'metadata',
+      'annotations',
+      'playbook.io.nrs.gov.bc.ca/deployableArtifactId',
+    ],
+    prop: 'deployableArtifactId',
+    writeEmpty: false,
+  },
   // License
   {
     path: ['metadata', 'annotations', 'license'],

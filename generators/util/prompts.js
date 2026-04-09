@@ -215,7 +215,7 @@ export const PROMPT_NODE_VERSION = {
   type: 'select',
   name: 'nodeVersion',
   message: 'Node.js version:',
-  choices: ['20', '22', '24'],
+  choices: ['22', '24'],
   default: '24',
 };
 export const PROMPT_JAVA_PATTERN = {

@@ -359,10 +359,10 @@ jobs:
           --data-urlencode "githubToken=${{ secrets.GITHUB_TOKEN }}" \
           --data-urlencode "brokerJwt=${{ secrets.<%= brokerJwt %> }}" \
           --data-urlencode "deployUrl=${DEPLOY_URL}" \
+          --data-urlencode "deployRoot=<%= deployRoot %>" \
           --data-urlencode "artifactUrl=${DOWNLOAD_URL}" \
           --data-urlencode "artifactSrc=<%= artifactSrc && artifactSrc !== 'repo' ? artifactSrc : 'github' %>" \
           --data-urlencode "artifactSha256=${ARTIFACT_SHA256}" \
-          --data-urlencode "catalogInfo=<%= catalogInfo %>" \
           --data-urlencode "projectVersion=${PROJECT_VERSION}" \
           --data-urlencode "envLong=${{ inputs.environment }}" \
           --data-urlencode "triggerUrl=https://github.com/${{ github.repository }}/actions/runs/${{ github.run_id }}" \

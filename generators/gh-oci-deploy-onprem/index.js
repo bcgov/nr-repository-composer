@@ -123,7 +123,7 @@ export default class extends Generator {
 
   // Generate GitHub deploy workflow and NR Broker intention files
   writingWorkflow() {
-    const catalogInfo = relativeGitPath(BACKSTAGE_FILENAME);
+    const deployRoot = relativeGitPath();
     const brokerJwt = this.answers.clientId.trim()
       ? `broker-jwt:${this.answers.clientId.trim()}`.replace(
           /[^a-zA-Z0-9_]/g,
@@ -141,7 +141,7 @@ export default class extends Generator {
         brokerJwt,
         gitHubProjectSlug: this.answers.gitHubProjectSlug,
         postDeployTestsPath: this.answers.postDeployTestsPath,
-        catalogInfo,
+        deployRoot,
       },
     );
 

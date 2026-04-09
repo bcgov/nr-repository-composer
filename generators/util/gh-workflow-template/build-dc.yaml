@@ -62,7 +62,7 @@ jobs:
           oras push --annotation-file annotation.json --export-manifest manifest.json ghcr.io/${{ github.repository }}/deployment-config:${PROJECT_TAG} <%= deploymentConfigPaths %>
           MANIFEST=$(cat ./manifest.json)
           echo $MANIFEST
-          echo "artifact_sha256=$(echo $MANIFEST | jq -r '.layers[] | select(.annotations["org.opencontainers.image.title"] == "dist") | .digest')" >> $GITHUB_OUTPUT
+          echo "artifact_sha256=$(echo $MANIFEST | sha256sum)" >> $GITHUB_OUTPUT
           echo "artifact_size=$(echo $MANIFEST | jq -r '.layers | map(.size) | add')" >> $GITHUB_OUTPUT
         env:
           PROJECT_TAG: ${{ steps.set-version.outputs.tag }}

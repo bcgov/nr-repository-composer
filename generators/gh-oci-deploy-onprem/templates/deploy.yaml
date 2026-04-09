@@ -48,8 +48,14 @@ jobs:
         id: lookup-pr-merge-ref
         run: |
 <% if (artifactSrc && artifactSrc !== 'repo') { -%>
+          WHERE_QUERY=$(jq -rn \
+            --arg serviceProject "$SERVICE_PROJECT" \
+            --arg serviceName "$SERVICE_NAME" \
+            --arg artifactTag "$ARTIFACT_TAG" \
+            '{"actions.action":"package-build","actions.service.project":$serviceProject,"actions.service.name":$serviceName,"actions.package.version":$artifactTag} | @uri')
+
           RESPONSE=$(curl -s -X 'POST' \
-            "${BROKER_URL}/v1/intention/search?where=%7B%22actions.action%22%3A%22package-build%22%2C%22actions.service.project%22%3A%22${SERVICE_PROJECT}%22%2C%22actions.service.name%22%3A%22${SERVICE_NAME}%22%2C%22actions.package.version%22%3A%22${ARTIFACT_TAG}%22%7D&offset=0&limit=1" \
+            "${BROKER_URL}/v1/intention/search?where=${WHERE_QUERY}&offset=0&limit=1" \
             -H 'accept: application/json' \
             -H 'Authorization: Bearer '"${BROKER_JWT}"'' \
             -d '')
@@ -122,8 +128,14 @@ jobs:
       - name: Set build output
         id: set-build-output
         run: |
+          WHERE_QUERY=$(jq -rn \
+            --arg serviceProject "$SERVICE_PROJECT" \
+            --arg serviceName "$SERVICE_NAME" \
+            --arg buildSha "$BUILD_SHA" \
+            '{"actions.action":"package-build","actions.service.project":$serviceProject,"actions.service.name":$serviceName,"actions.package.buildVersion":$buildSha} | @uri')
+
           RESPONSE=$(curl -s -X 'POST' \
-            "${BROKER_URL}/v1/intention/search?where=%7B%22actions.action%22%3A%22package-build%22%2C%22actions.service.project%22%3A%22${SERVICE_PROJECT}%22%2C%22actions.service.name%22%3A%22${SERVICE_NAME}%22%2C%22actions.package.buildVersion%22%3A%22${BUILD_SHA}%22%7D&offset=0&limit=1" \
+            "${BROKER_URL}/v1/intention/search?where=${WHERE_QUERY}&offset=0&limit=1" \
             -H 'accept: application/json' \
             -H 'Authorization: Bearer '"${BROKER_JWT}"'' \
             -d '')
@@ -202,8 +214,14 @@ jobs:
           TAG=${{ github.ref_name }}
           PROJECT_VERSION=${TAG#v}
 <% } -%>
+          WHERE_QUERY=$(jq -rn \
+            --arg serviceProject "$SERVICE_PROJECT" \
+            --arg serviceName "$SERVICE_NAME" \
+            --arg projectVersion "$PROJECT_VERSION" \
+            '{"actions.action":"package-build","actions.service.project":$serviceProject,"actions.service.name":$serviceName,"actions.package.version":$projectVersion} | @uri')
+
           RESPONSE=$(curl -s -X 'POST' \
-            "${BROKER_URL}/v1/intention/search?where=%7B%22actions.action%22%3A%22package-build%22%2C%22actions.service.project%22%3A%22${SERVICE_PROJECT}%22%2C%22actions.service.name%22%3A%22${SERVICE_NAME}%22%2C%22actions.package.version%22%3A%22${PROJECT_VERSION}%22%7D&offset=0&limit=1" \
+            "${BROKER_URL}/v1/intention/search?where=${WHERE_QUERY}&offset=0&limit=1" \
             -H 'accept: application/json' \
             -H 'Authorization: Bearer '"${BROKER_JWT}"'' \
             -d '')

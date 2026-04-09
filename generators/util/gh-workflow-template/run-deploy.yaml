@@ -59,6 +59,7 @@ jobs:
             echo "::error::No deployment tags found. Please create a tag starting with 'd' and using semantic versioning (e.g., d1.0.0). See the README for instructions."
             exit 1
           fi
+          echo "Latest deployment tag: $tag"
           echo "deploy_tag=$tag" >> $GITHUB_OUTPUT
 
   deploy-development:

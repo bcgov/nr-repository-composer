@@ -31,6 +31,7 @@ env:
   BROKER_JWT: ${{ secrets.<%= brokerJwt %> }}
   SERVICE_PROJECT: <%= projectName %>
   SERVICE_NAME: <%= serviceName %>
+  DEFAULT_VERSION: ${{ vars.DEFAULT_VERSION || '0.0.0' }}-SNAPSHOT
 
 jobs:
   preflight:
@@ -133,27 +134,26 @@ jobs:
           if [[ ${{ startsWith(github.ref, 'refs/pull/') }} = true ]]; then
             echo "branch=${{ github.head_ref }}" >> "$GITHUB_OUTPUT"
           fi
-      - name: Update pom.xml
-        id: update-repo
+      - name: Set version
+        id: set-version
         shell: bash
-        working-directory: ./<%= relativePath %>
         run: |
           if [[ ${{ startsWith(github.ref, 'refs/tags/v') }} = true ]]; then
             TAG=${{ github.ref_name }}
-            VERSION=${TAG#v}
+            APP_VERSION=${TAG#v}
           else
-            VERSION=$(mvn help:evaluate -Dexpression=project.version -q -DforceStdout --file <%= pomRoot %>pom.xml)
-            VERSION=${VERSION/%SNAPSHOT/${{ steps.lookup-pr-merge-ref.outputs.version_modifier }}-SNAPSHOT}
+            APP_VERSION=${DEFAULT_VERSION/%SNAPSHOT/${{ steps.lookup-pr-merge-ref.outputs.version_modifier }}-SNAPSHOT}
           fi
-          echo "VERSION=${VERSION}" >> $GITHUB_ENV
-          mvn versions:set -DnewVersion=${VERSION} --file <%= pomRoot %>pom.xml
+          echo "VERSION=${APP_VERSION}" >> $GITHUB_ENV
+        env:
+          DEFAULT_VERSION: ${{ env.DEFAULT_VERSION }}
       - name: Set build output parameters
         id: set-build-output-parameters
-        working-directory: ./<%= relativePath %>
         run: |
-          echo "project_version=$(mvn help:evaluate -Dexpression=project.version -q -DforceStdout --file <%= pomRoot %>pom.xml)" >> $GITHUB_OUTPUT
-          echo "artifact_id=$(mvn help:evaluate -Dexpression=project.artifactId -q -DforceStdout --file <%= pomRoot %>pom.xml)" >> $GITHUB_OUTPUT
-          echo "package_type=$(mvn help:evaluate -Dexpression=project.packaging -q -DforceStdout --file <%= pomRoot %>pom.xml)" >> $GITHUB_OUTPUT
+          source ./env.sh build ./<%= relativePath %> --skip-vault
+          echo "project_version=${VERSION}" >> $GITHUB_OUTPUT
+          echo "artifact_id=$(./mvnw help:evaluate -Dexpression=project.artifactId -q -DforceStdout)" >> $GITHUB_OUTPUT
+          echo "package_type=$(./mvnw help:evaluate -Dexpression=project.packaging -q -DforceStdout)" >> $GITHUB_OUTPUT
           echo "git_commit=$(git rev-parse --verify HEAD)" >> $GITHUB_OUTPUT
           echo "build_guid=uuid::$(uuidgen)" >> $GITHUB_OUTPUT
       - name: Build intention

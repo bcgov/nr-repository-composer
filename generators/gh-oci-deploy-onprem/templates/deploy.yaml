@@ -189,7 +189,7 @@ jobs:
           PACKAGE_TAG: ${{ steps.lookup-pr-merge-ref.outputs.package_tag}}
           PACKAGE_REPO: ${{ env.PACKAGE_REPO }}
   deploy-release-build:
-    name: Trigger production deployment
+    name: Trigger deployment
     if: ${{ startsWith(github.ref, 'refs/tags/') }}
     runs-on: ubuntu-latest
     environment: ${{ inputs.environment }}
@@ -352,10 +352,12 @@ jobs:
           fi
 
           DEPLOY_URL="ghcr.io/${{ github.repository }}/deployment-config:${{ inputs.deploy_tag }}"
+          TRIGGER_UUID=$(uuidgen)
+          echo "trigger_uuid=$TRIGGER_UUID" >> $GITHUB_OUTPUT
 
           curl \
           --data-urlencode "token=${{ secrets.JENKINS_TOKEN }}" \
-          --data-urlencode "githubRunId=${{ github.run_id }}" \
+          --data-urlencode "githubRunId=${TRIGGER_UUID}" \
           --data-urlencode "githubToken=${{ secrets.GITHUB_TOKEN }}" \
           --data-urlencode "brokerJwt=${{ secrets.<%= brokerJwt %> }}" \
           --data-urlencode "deployUrl=${DEPLOY_URL}" \
@@ -388,7 +390,7 @@ jobs:
           BROKER_URL: https://broker.io.nrs.gov.bc.ca
           BROKER_JWT: ${{ secrets.<%= brokerJwt %> }}
           SERVICE_NAME: ${{ env.SERVICE_NAME }}
-          GITHUB_RUN_ID: ${{ github.run_id }}
+          TRIGGER_UUID: ${{ steps.submit-job.outputs.trigger_uuid}}
 <% if (postDeployTestsPath) { -%>
   post-deploy-test:
     name: Post-deploy Test

@@ -41,7 +41,7 @@ jobs:
             echo "tag=${{ github.ref_name }}" >> "$GITHUB_OUTPUT"
           fi
       - name: Setup ORAS
-        uses: oras-project/setup-oras@v1
+        uses: oras-project/setup-oras@v2
       - name: Create annotations files
         run: |
           cat <<EOF > annotation.json
@@ -61,8 +61,11 @@ jobs:
           oras login ghcr.io -u ${{ github.actor }} --password-stdin <<< ${{ secrets.GITHUB_TOKEN }}
           oras push --annotation-file annotation.json --export-manifest manifest.json ghcr.io/${{ github.repository }}/deployment-config:${PROJECT_TAG} <%= deploymentConfigPaths %>
           MANIFEST=$(cat ./manifest.json)
+          ARTIFACT_SHA256=$(echo $MANIFEST | sha256sum | awk '{print $1}')
+          ARTIFACT_SIZE=$(echo $MANIFEST | jq -r '.layers | map(.size) | add')
+          echo "artifact_sha256=$ARTIFACT_SHA256" >> $GITHUB_OUTPUT
+          echo "artifact_size=$ARTIFACT_SIZE" >> $GITHUB_OUTPUT
           echo $MANIFEST
-          echo "artifact_sha256=$(echo $MANIFEST | jq -r '.layers[] | select(.annotations["org.opencontainers.image.title"] == "dist") | .digest')" >> $GITHUB_OUTPUT
-          echo "artifact_size=$(echo $MANIFEST | jq -r '.layers | map(.size) | add')" >> $GITHUB_OUTPUT
+          echo "sha256: $ARTIFACT_SHA256"
         env:
           PROJECT_TAG: ${{ steps.set-version.outputs.tag }}

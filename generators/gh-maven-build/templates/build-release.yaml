@@ -115,7 +115,7 @@ jobs:
             echo "tag=${{ github.ref_name }}" >> "$GITHUB_OUTPUT"
           fi
       - name: Setup ORAS
-        uses: oras-project/setup-oras@v1
+        uses: oras-project/setup-oras@v2
 <% } -%>
       - name: Set up Java
         uses: actions/setup-java@v5
@@ -195,17 +195,36 @@ jobs:
       - name: Publish artifact
         id: publish-artifact
         working-directory: ./
-<% if (artifactRepositoryType === 'GitHubPackages') { -%>
         run: |
-          ARTIFACT_NAME="${ARTIFACT_ID}-${PROJECT_VERSION}.${PACKAGE_TYPE}"
           source ./env.sh build ./<%= relativePath %> --skip-vault
           ./mvnw <%= mavenBuildCommand %>
+<% if (type !== 'library') { -%>
+          cat <<EOF > annotation.json
+          {
+            "\$manifest": {
+              "org.opencontainers.image.description": "Build artifact for <%= serviceName %> version ${PROJECT_TAG}",
+              "org.opencontainers.image.licenses": "<%= license %>",
+              "org.opencontainers.image.source": "${{ github.repositoryUrl }}",
+              "org.opencontainers.image.title": "<%= serviceName %>-artifact",
+              "org.opencontainers.image.version": "${PROJECT_TAG}"
+            }
+          }
+          EOF
+          oras login ghcr.io -u ${{ github.actor }} --password-stdin <<< ${{ secrets.GITHUB_TOKEN }}
+          oras push --annotation-file annotation.json --export-manifest manifest.json ghcr.io/${{ github.repository }}/<%= serviceName %>:${PROJECT_TAG} <%= publishArtifactSuffix %>
+          MANIFEST=$(cat ./manifest.json)
+          echo $MANIFEST
+          echo "artifact_sha256=$(echo $MANIFEST | sha256sum)" >> $GITHUB_OUTPUT
+          echo "artifact_size=$(echo $MANIFEST | jq -r '.layers | map(.size) | add')" >> $GITHUB_OUTPUT
+<% } else { -%>
+          ARTIFACT_NAME="${ARTIFACT_ID}-${PROJECT_VERSION}.${PACKAGE_TYPE}"
           echo "artifact_sha256=$(sha256sum <%= pomRoot %>target/${ARTIFACT_NAME} | awk '{ print $1 }')" >> $GITHUB_OUTPUT
+<% } -%>
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
 <% if (toolsBuildSecrets) { for (const secret of toolsBuildSecrets.split(',')) { -%>
           <%= secret.toUpperCase() %>: ${{ secrets.<%= secret.toUpperCase() %> }}
-<% } } -%>
+<% } -%>
           PROJECT_VERSION: ${{ steps.set-build-output-parameters.outputs.project_version }}
           ARTIFACT_ID: ${{ steps.set-build-output-parameters.outputs.artifact_id }}
           PACKAGE_TYPE: ${{ steps.set-build-output-parameters.outputs.package_type }}

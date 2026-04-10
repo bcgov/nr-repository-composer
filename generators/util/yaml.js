@@ -111,6 +111,12 @@ export const pathToProps = [
     writeEmpty: false,
   },
   {
+    path: ['metadata', 'annotations', 'playbook.io.nrs.gov.bc.ca/artifactSrc'],
+    prop: 'artifactSrc',
+    writeEmpty: false,
+  },
+
+  {
     path: [
       'metadata',
       'annotations',

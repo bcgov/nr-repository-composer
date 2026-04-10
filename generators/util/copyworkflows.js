@@ -200,6 +200,7 @@ export function copyCommonDeployWorkflows(generator, answers) {
     ),
     {
       serviceName: answers.serviceName,
+      artifactSrc: answers.artifactSrc,
       brokerJwt,
       buildWorkflowFile: makeWorkflowBuildPublishFile(answers.serviceName),
       relativePath,

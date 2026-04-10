@@ -9,14 +9,16 @@ import { nrsay } from '../util/nrsay.js';
 import { BackstageStorage } from '../util/backstage.storage.js';
 import { OPTION_HEADLESS, OPTION_HELP_PROMPTS } from '../util/options.js';
 import { bailOnUnansweredQuestions } from '../util/process.js';
-import { destinationGitPath } from '../util/git.js';
+import { destinationGitPath, relativeGitPath } from '../util/git.js';
 import {
   PROMPT_PROJECT,
   PROMPT_SERVICE,
+  PROMPT_TYPE,
   PROMPT_CLIENT_ID,
   PROMPT_POST_DEPLOY_TESTS_PATH,
   PROMPT_GITHUB_PROJECT_SLUG,
   PROMPT_DEPLOYMENT_CONFIG_PATHS,
+  PROMPT_ARTIFACT_SRC,
   PROMPT_PLAYBOOK_PATH,
   getPromptToUsage,
 } from '../util/prompts.js';
@@ -48,6 +50,8 @@ const questions = [
   PROMPT_POST_DEPLOY_TESTS_PATH,
   PROMPT_GITHUB_PROJECT_SLUG,
   PROMPT_DEPLOY_TYPE,
+  PROMPT_TYPE,
+  PROMPT_ARTIFACT_SRC,
   PROMPT_DEPLOYMENT_CONFIG_PATHS,
 ];
 
@@ -105,10 +109,21 @@ export default class extends Generator {
     this.showGeneratorDeprecationWarning =
       removedProps.indexOf(PROMPT_PLAYBOOK_PATH.name) !== -1;
     this.answers = await this.prompt(questions, YEOMAN_CONFIG_NAMESPACE);
+
+    // Abort if type is 'library'
+    if (
+      this.answers.type &&
+      typeof this.answers.type === 'string' &&
+      this.answers.type.trim().toLowerCase() === 'library'
+    ) {
+      this.log(chalk.red.bold('\nERROR: Libraries cannot be deployed\n'));
+      process.exit(1);
+    }
   }
 
   // Generate GitHub deploy workflow and NR Broker intention files
   writingWorkflow() {
+    const deployRoot = relativeGitPath();
     const brokerJwt = this.answers.clientId.trim()
       ? `broker-jwt:${this.answers.clientId.trim()}`.replace(
           /[^a-zA-Z0-9_]/g,
@@ -122,9 +137,11 @@ export default class extends Generator {
       {
         projectName: this.answers.projectName,
         serviceName: this.answers.serviceName,
+        artifactSrc: this.answers.artifactSrc,
         brokerJwt,
         gitHubProjectSlug: this.answers.gitHubProjectSlug,
         postDeployTestsPath: this.answers.postDeployTestsPath,
+        deployRoot,
       },
     );
 

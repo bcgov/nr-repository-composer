@@ -19,7 +19,6 @@ import { makeWorkflowBuildPublishPath } from '../util/github.js';
 import {
   PROMPT_PROJECT,
   PROMPT_SERVICE,
-  PROMPT_ARTIFACT_REPOSITORY_TYPE,
   PROMPT_ARTIFACT_REPOSITORY_PATH,
   PROMPT_CLIENT_ID,
   PROMPT_DEPLOY_ON_PREM,
@@ -29,9 +28,11 @@ import {
   PROMPT_GITHUB_PROJECT_SLUG,
   PROMPT_MAVEN_BUILD_COMMAND,
   PROMPT_OCI_ARTIFACTS,
+  PROMPT_PUBLISH_ARTIFACT_SUFFIX,
   PROMPT_POM_ROOT,
   PROMPT_TOOLS_BUILD_SECRETS,
   PROMPT_TOOLS_LOCAL_BUILD_SECRETS,
+  PROMPT_TYPE,
   PROMPT_UNIT_TESTS_PATH,
   getPromptToUsage,
 } from '../util/prompts.js';
@@ -42,6 +43,7 @@ import { outputReport } from '../util/report.js';
 const questions = [
   PROMPT_PROJECT,
   PROMPT_SERVICE,
+  PROMPT_TYPE,
   PROMPT_LICENSE,
   PROMPT_CLIENT_ID,
   PROMPT_GITHUB_PROJECT_SLUG,
@@ -49,15 +51,18 @@ const questions = [
   PROMPT_JAVA_PATTERN,
   PROMPT_POM_ROOT,
   PROMPT_OCI_ARTIFACTS,
+  {
+    ...PROMPT_PUBLISH_ARTIFACT_SUFFIX,
+    when: (answers) => answers.type !== 'library',
+  },
   PROMPT_UNIT_TESTS_PATH,
-  PROMPT_ARTIFACT_REPOSITORY_TYPE,
   PROMPT_ARTIFACT_REPOSITORY_PATH,
   PROMPT_TOOLS_BUILD_SECRETS,
   PROMPT_TOOLS_LOCAL_BUILD_SECRETS,
   {
     ...PROMPT_MAVEN_BUILD_COMMAND,
     default: (answers) =>
-      `--batch-mode -Dmaven.test.skip=true -P${answers.artifactRepositoryType === 'GitHubPackages' ? 'github' : 'artifactory'} clean deploy`,
+      `--batch-mode -Dmaven.test.skip=true -Pgithub clean ${answers.type !== 'library' ? 'package' : 'deploy'}`,
   },
 ];
 

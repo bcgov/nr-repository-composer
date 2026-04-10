@@ -216,9 +216,6 @@ jobs:
           echo $MANIFEST
           echo "artifact_sha256=$(echo $MANIFEST | sha256sum)" >> $GITHUB_OUTPUT
           echo "artifact_size=$(echo $MANIFEST | jq -r '.layers | map(.size) | add')" >> $GITHUB_OUTPUT
-<% } else { -%>
-          ARTIFACT_NAME="${ARTIFACT_ID}-${PROJECT_VERSION}.${PACKAGE_TYPE}"
-          echo "artifact_sha256=$(sha256sum <%= pomRoot %>target/${ARTIFACT_NAME} | awk '{ print $1 }')" >> $GITHUB_OUTPUT
 <% } -%>
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
@@ -228,6 +225,7 @@ jobs:
           PROJECT_VERSION: ${{ steps.set-build-output-parameters.outputs.project_version }}
           ARTIFACT_ID: ${{ steps.set-build-output-parameters.outputs.artifact_id }}
           PACKAGE_TYPE: ${{ steps.set-build-output-parameters.outputs.package_type }}
+<% if (type !== 'library') { -%>
       - name: Send build info
         run: |
           curl -s POST ${{ env.BROKER_URL }}/v1/intention/action/patch \
@@ -237,6 +235,7 @@ jobs:
         env:
           ARTIFACT_SHA256: ${{ steps.publish-artifact.outputs.artifact_sha256 }}
           BUILD_TOKEN: ${{ env.ACTION_TOKEN_BUILD }}
+<% } -%>
 <% } else { -%>
         run: |
           source ./env.sh build ./<%= relativePath %> --skip-vault
@@ -264,6 +263,7 @@ jobs:
           echo "artifact_name=$(echo ${BUILD_INFO} | jq -r '.buildInfo.modules[0].artifacts[0].name')" >> $GITHUB_OUTPUT
         env:
           ARTIFACT_ID: ${{ steps.set-build-output-parameters.outputs.artifact_id }}
+<% if (type !== 'library') { -%>
       - name: Send build info
         run: |
           curl -s -X POST ${{ env.BROKER_URL }}/v1/intention/action/patch \
@@ -273,6 +273,7 @@ jobs:
         env:
           ARTIFACT_SHA256: ${{ steps.set-build-info.outputs.artifact_sha256 }}
           BUILD_TOKEN: ${{ env.ACTION_TOKEN_BUILD }}
+<% } -%>
 <% } -%>
       - name: Close intention
         if: ${{ success() && env.INTENTION_TOKEN != '' }}

@@ -204,9 +204,9 @@ If used as a static asset, the manifest file (which includes all the required an
 
 If you are using the OCI artifact as hosted static files (example: frontend JavaScript application), it is recommened that the `dist` folder be configured as the static file root. The `manifest.json` and other support files should not be avialable to a user.
 
-## Deployment Configuration (experimental)
+## Deployment Configuration
 
-A deployment configuration is an OCI Artifact that bundles together the deployment files. It is triggered by pushing a `d*` tag that uses semantic versioning. The tag should be manually created, annotated and pushed to the repository. The GitHub release workflow should not be used to create the tag.
+A deployment configuration is an OCI Artifact that bundles together the deployment files. It is triggered by pushing a `d*` tag that uses semantic versioning. The tag should be manually created, annotated and pushed to the GitHub repository. The GitHub release workflow should not be used to create the tag.
 
 ```
 % git tag -a d1.0.0 -m 'Initial deployment config'

@@ -23,7 +23,7 @@ do
     case "$1" in
         -l | --list) OPT_LIST=1; shift ;;
         --) shift; break ;;
-        *) echo "Unexpected option: $1 - review $SCRIPT_NAME option parsing."; print_usage ;;
+        *) echo "Unexpected option: $1 - review $SCRIPT_NAME option parsing."; print_usage; exit 1 ;;
     esac
 done
 

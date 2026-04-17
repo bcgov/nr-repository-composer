@@ -6,10 +6,14 @@ on:
       environment:
         required: true
         type: string
-      config_branch:
-        description: 'Use branch for testing configuration changes'
-        required: false
+      deploy_tag:
+        required: true
         type: string
+<% if (artifactSrc && artifactSrc !== 'repo') { -%>
+      artifact_tag:
+        required: true
+        type: string
+<% } -%>
 
 concurrency:
   group: ${{ github.workflow }}-${{ github.ref }}
@@ -43,6 +47,53 @@ jobs:
       - name: Lookup PR Merge Ref
         id: lookup-pr-merge-ref
         run: |
+<% if (artifactSrc && artifactSrc !== 'repo') { -%>
+          WHERE_QUERY=$(jq -rn \
+            --arg serviceProject "$SERVICE_PROJECT" \
+            --arg serviceName "$SERVICE_NAME" \
+            --arg artifactTag "$ARTIFACT_TAG" \
+            '{"actions.action":"package-build","actions.service.project":$serviceProject,"actions.service.name":$serviceName,"actions.package.version":$artifactTag} | @uri')
+
+          RESPONSE=$(curl -s -X 'POST' \
+            "${BROKER_URL}/v1/intention/search?where=${WHERE_QUERY}&offset=0&limit=1" \
+            -H 'accept: application/json' \
+            -H 'Authorization: Bearer '"${BROKER_JWT}"'' \
+            -d '')
+
+          if echo "$RESPONSE" | jq -e '.statusCode == 401' > /dev/null; then
+            echo "Status code is 401. This indicates an authorization error."
+            echo "Please check if your Broker Token is valid. Teams can generate a new one in Broker if needed."
+            echo "Link: https://broker.io.nrs.gov.bc.ca/browse/brokerAccount"
+            echo "Exiting..."
+            exit 1
+          fi
+
+          if [ "$(echo "$RESPONSE" | jq '.data | length')" -eq 0 ] || \
+             [ "$(echo "$RESPONSE" | jq '.data[].actions[].artifacts | length')" -eq 0 ]; then
+            echo
+            echo "============================================================"
+            echo "Error: Broker API response data is empty."
+            echo "------------------------------------------------------------"
+            echo "Explanation: No build information was found for this artifact_tag."
+            echo "Why it matters: The deployment cannot proceed without build metadata."
+            echo "Check if the build completed and published the artifact to Broker."
+            echo "--- Broker API response below ---"
+            echo "$RESPONSE"
+            echo "============================================================"
+            echo
+            exit 1
+          fi
+
+          BUILD_SHA=$(echo "$RESPONSE" | jq -r '.data[].actions[].package.buildVersion' | head -n1)
+          if [[ -z "${BUILD_SHA}" || "${BUILD_SHA}" == "null" ]]; then
+            echo "::error::Unable to resolve build SHA from Broker response for artifact_tag ${ARTIFACT_TAG}."
+            exit 1
+          fi
+
+          echo "build_sha=${BUILD_SHA}" >> $GITHUB_OUTPUT
+          echo "checkout_ref=${BUILD_SHA}" >> $GITHUB_OUTPUT
+          echo "package_tag=${ARTIFACT_TAG}" >> $GITHUB_OUTPUT
+<% } else { -%>
           if [[ ${{ github.ref_name != 'main' }} = true ]]; then
             RESPONSE=$(curl -s "https://api.github.com/repos/<%= gitHubProjectSlug %>/pulls?head=<%= gitHubProjectSlug.split('/')[0] %>:${{ github.ref_name }}&state=open&base=main" \
               -H "Authorization: token ${{ secrets.GITHUB_TOKEN }}" \
@@ -65,11 +116,26 @@ jobs:
             echo "checkout_ref=${{ github.ref }}" >> $GITHUB_OUTPUT
             echo "package_tag=${{ github.ref_name }}" >> $GITHUB_OUTPUT
           fi
+<% } -%>
+        env:
+          BROKER_URL: https://broker.io.nrs.gov.bc.ca
+          BROKER_JWT: ${{ secrets.<%= brokerJwt %> }}
+          SERVICE_PROJECT: ${{ env.SERVICE_PROJECT }}
+          SERVICE_NAME: ${{ env.SERVICE_NAME }}
+<% if (artifactSrc && artifactSrc !== 'repo') { -%>
+          ARTIFACT_TAG: ${{ inputs.artifact_tag }}
+<% } -%>
       - name: Set build output
         id: set-build-output
         run: |
+          WHERE_QUERY=$(jq -rn \
+            --arg serviceProject "$SERVICE_PROJECT" \
+            --arg serviceName "$SERVICE_NAME" \
+            --arg buildSha "$BUILD_SHA" \
+            '{"actions.action":"package-build","actions.service.project":$serviceProject,"actions.service.name":$serviceName,"actions.package.buildVersion":$buildSha} | @uri')
+
           RESPONSE=$(curl -s -X 'POST' \
-            "${BROKER_URL}/v1/intention/search?where=%7B%22actions.action%22%3A%22package-build%22%2C%22actions.service.project%22%3A%22${SERVICE_PROJECT}%22%2C%22actions.service.name%22%3A%22${SERVICE_NAME}%22%2C%22actions.package.buildVersion%22%3A%22${BUILD_SHA}%22%7D&offset=0&limit=1" \
+            "${BROKER_URL}/v1/intention/search?where=${WHERE_QUERY}&offset=0&limit=1" \
             -H 'accept: application/json' \
             -H 'Authorization: Bearer '"${BROKER_JWT}"'' \
             -d '')
@@ -113,7 +179,7 @@ jobs:
             fetch-depth: 0
             fetch-tags: true
             ref: ${{ steps.lookup-pr-merge-ref.outputs.checkout_ref }}
-      - name: Set nodejs package download URL
+      - name: Set package download URL
         id: set-download-url
         run: |
           DOWNLOAD_URL="${PACKAGE_REPO}:${PACKAGE_TAG}"
@@ -123,7 +189,7 @@ jobs:
           PACKAGE_TAG: ${{ steps.lookup-pr-merge-ref.outputs.package_tag}}
           PACKAGE_REPO: ${{ env.PACKAGE_REPO }}
   deploy-release-build:
-    name: Trigger production deployment
+    name: Trigger deployment
     if: ${{ startsWith(github.ref, 'refs/tags/') }}
     runs-on: ubuntu-latest
     environment: ${{ inputs.environment }}
@@ -141,10 +207,21 @@ jobs:
       - name: Set tag output
         id: set-tag-output
         run: |
+<% if (artifactSrc && artifactSrc !== 'repo') { -%>
+          TAG=${ARTIFACT_TAG}
+          PROJECT_VERSION=${ARTIFACT_TAG}
+<% } else { -%>
           TAG=${{ github.ref_name }}
           PROJECT_VERSION=${TAG#v}
+<% } -%>
+          WHERE_QUERY=$(jq -rn \
+            --arg serviceProject "$SERVICE_PROJECT" \
+            --arg serviceName "$SERVICE_NAME" \
+            --arg projectVersion "$PROJECT_VERSION" \
+            '{"actions.action":"package-build","actions.service.project":$serviceProject,"actions.service.name":$serviceName,"actions.package.version":$projectVersion} | @uri')
+
           RESPONSE=$(curl -s -X 'POST' \
-            "${BROKER_URL}/v1/intention/search?where=%7B%22actions.action%22%3A%22package-build%22%2C%22actions.service.project%22%3A%22${SERVICE_PROJECT}%22%2C%22actions.service.name%22%3A%22${SERVICE_NAME}%22%2C%22actions.package.version%22%3A%22${PROJECT_VERSION}%22%7D&offset=0&limit=1" \
+            "${BROKER_URL}/v1/intention/search?where=${WHERE_QUERY}&offset=0&limit=1" \
             -H 'accept: application/json' \
             -H 'Authorization: Bearer '"${BROKER_JWT}"'' \
             -d '')
@@ -172,6 +249,11 @@ jobs:
           fi
           echo "project_tag=${TAG}" >> $GITHUB_OUTPUT
           echo "project_version=${PROJECT_VERSION}" >> $GITHUB_OUTPUT
+<% if (artifactSrc && artifactSrc !== 'repo') { -%>
+          echo "checkout_ref=$(echo ${RESPONSE} | jq -r '.data[].actions[].package.buildVersion' | head -n1)" >> $GITHUB_OUTPUT
+<% } else { -%>
+          echo "checkout_ref=${{ github.ref }}" >> $GITHUB_OUTPUT
+<% } -%>
           echo "build_guid=$(echo ${RESPONSE} | jq -r '.data[].id')" >> $GITHUB_OUTPUT
           echo "build_number=$(echo ${RESPONSE} | jq -r '.data[].actions[].package.buildNumber')" >> $GITHUB_OUTPUT
           echo "artifact_name=$(echo ${RESPONSE} | jq -r '.data[].actions[].artifacts[].name')" >> $GITHUB_OUTPUT
@@ -182,12 +264,15 @@ jobs:
           BROKER_JWT: ${{ secrets.<%= brokerJwt %> }}
           SERVICE_PROJECT: ${{ env.SERVICE_PROJECT }}
           SERVICE_NAME: ${{ env.SERVICE_NAME }}
+<% if (artifactSrc && artifactSrc !== 'repo') { -%>
+          ARTIFACT_TAG: ${{ inputs.artifact_tag }}
+<% } -%>
       - name: Checkout repository
         uses: actions/checkout@v6
         with:
             fetch-depth: 0
             fetch-tags: true
-            ref: ${{ github.ref }}
+            ref: ${{ steps.set-tag-output.outputs.checkout_ref || github.ref }}
       - name: Set download URL
         id: set-download-url
         run: |
@@ -266,22 +351,25 @@ jobs:
             exit 1
           fi
 
+          DEPLOY_URL="ghcr.io/${{ github.repository }}/deployment-config:${{ inputs.deploy_tag }}"
+          TRIGGER_UUID=$(uuidgen)
+          echo "trigger_uuid=$TRIGGER_UUID" >> $GITHUB_OUTPUT
+
           curl \
           --data-urlencode "token=${{ secrets.JENKINS_TOKEN }}" \
-          --data-urlencode "githubRunId=${{ github.run_id }}" \
+          --data-urlencode "githubRunId=${TRIGGER_UUID}" \
           --data-urlencode "githubToken=${{ secrets.GITHUB_TOKEN }}" \
           --data-urlencode "brokerJwt=${{ secrets.<%= brokerJwt %> }}" \
+          --data-urlencode "deployUrl=${DEPLOY_URL}" \
+          --data-urlencode "deployRoot=<%= deployRoot %>" \
+          --data-urlencode "artifactUrl=${DOWNLOAD_URL}" \
+          --data-urlencode "artifactSrc=<%= artifactSrc && artifactSrc !== 'repo' ? artifactSrc : 'github' %>" \
           --data-urlencode "artifactSha256=${ARTIFACT_SHA256}" \
           --data-urlencode "projectVersion=${PROJECT_VERSION}" \
-          --data-urlencode "gitBranch=${{ github.ref_name }}" \
-          --data-urlencode "intentionId=${BUILD_GUID}" \
-          --data-urlencode "gitTag=${{ (startsWith(github.ref, 'refs/tags/') && github.ref_name) || '' }}" \
-          --data-urlencode "configBranch=${{ inputs.config_branch || '' }}" \
-          --data-urlencode "downloadUrl=${DOWNLOAD_URL}" \
-          --data-urlencode "downloadType=OCI" \
           --data-urlencode "envLong=${{ inputs.environment }}" \
           --data-urlencode "triggerUrl=https://github.com/${{ github.repository }}/actions/runs/${{ github.run_id }}" \
           --data-urlencode "deploymentApprover=${DEPLOYMENT_APPROVER}" \
+          --data-urlencode "intentionId=${BUILD_GUID}" \
           -H "Connection: close" \
           ${{ env.URL }}/${{ env.JOB }}
         env:
@@ -302,7 +390,7 @@ jobs:
           BROKER_URL: https://broker.io.nrs.gov.bc.ca
           BROKER_JWT: ${{ secrets.<%= brokerJwt %> }}
           SERVICE_NAME: ${{ env.SERVICE_NAME }}
-          GITHUB_RUN_ID: ${{ github.run_id }}
+          TRIGGER_UUID: ${{ steps.submit-job.outputs.trigger_uuid}}
 <% if (postDeployTestsPath) { -%>
   post-deploy-test:
     name: Post-deploy Test

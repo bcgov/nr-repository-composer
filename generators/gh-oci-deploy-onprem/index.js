@@ -1,17 +1,24 @@
 'use strict';
 import Generator from 'yeoman-generator';
 import chalk from 'chalk';
+import {
+  YEOMAN_CONFIG_NAMESPACE,
+  YEOMAN_OPTION_ASK_ANSWERED,
+} from '../util/constants.js';
 import { nrsay } from '../util/nrsay.js';
 import { BackstageStorage } from '../util/backstage.storage.js';
 import { OPTION_HEADLESS, OPTION_HELP_PROMPTS } from '../util/options.js';
 import { bailOnUnansweredQuestions } from '../util/process.js';
-import { destinationGitPath } from '../util/git.js';
+import { destinationGitPath, relativeGitPath } from '../util/git.js';
 import {
   PROMPT_PROJECT,
   PROMPT_SERVICE,
+  PROMPT_TYPE,
   PROMPT_CLIENT_ID,
   PROMPT_POST_DEPLOY_TESTS_PATH,
   PROMPT_GITHUB_PROJECT_SLUG,
+  PROMPT_DEPLOYMENT_CONFIG_PATHS,
+  PROMPT_ARTIFACT_SRC,
   PROMPT_PLAYBOOK_PATH,
   getPromptToUsage,
 } from '../util/prompts.js';
@@ -24,7 +31,7 @@ import { outputReport } from '../util/report.js';
  * Deploy type prompt - determines which playbook to use
  */
 const PROMPT_DEPLOY_TYPE = {
-  type: 'list',
+  type: 'select',
   name: 'deployType',
   message: 'Deployment type',
   description: 'Select the type of application being deployed',
@@ -43,7 +50,9 @@ const questions = [
   PROMPT_POST_DEPLOY_TESTS_PATH,
   PROMPT_GITHUB_PROJECT_SLUG,
   PROMPT_DEPLOY_TYPE,
-  PROMPT_PLAYBOOK_PATH,
+  PROMPT_TYPE,
+  PROMPT_ARTIFACT_SRC,
+  PROMPT_DEPLOYMENT_CONFIG_PATHS,
 ];
 
 /**
@@ -66,7 +75,7 @@ export default class extends Generator {
 
   async prompting() {
     const headless = this.options[OPTION_HEADLESS.name];
-    const askAnswered = this.options['ask-answered'];
+    const askAnswered = this.options[YEOMAN_OPTION_ASK_ANSWERED];
     const helpPrompts = this.options[OPTION_HELP_PROMPTS.name];
     this.answers = this.config.getAnswers();
 
@@ -96,11 +105,25 @@ export default class extends Generator {
     }
 
     bailOnUnansweredQuestions(questions, this.answers, headless, askAnswered);
-    this.answers = await this.prompt(questions, 'config');
+    const removedProps = this.config.processDeprecated();
+    this.showGeneratorDeprecationWarning =
+      removedProps.indexOf(PROMPT_PLAYBOOK_PATH.name) !== -1;
+    this.answers = await this.prompt(questions, YEOMAN_CONFIG_NAMESPACE);
+
+    // Abort if type is 'library'
+    if (
+      this.answers.type &&
+      typeof this.answers.type === 'string' &&
+      this.answers.type.trim().toLowerCase() === 'library'
+    ) {
+      this.log(chalk.red.bold('\nERROR: Libraries cannot be deployed\n'));
+      process.exit(1);
+    }
   }
 
   // Generate GitHub deploy workflow and NR Broker intention files
   writingWorkflow() {
+    const deployRoot = relativeGitPath();
     const brokerJwt = this.answers.clientId.trim()
       ? `broker-jwt:${this.answers.clientId.trim()}`.replace(
           /[^a-zA-Z0-9_]/g,
@@ -114,20 +137,18 @@ export default class extends Generator {
       {
         projectName: this.answers.projectName,
         serviceName: this.answers.serviceName,
+        artifactSrc: this.answers.artifactSrc,
         brokerJwt,
         gitHubProjectSlug: this.answers.gitHubProjectSlug,
         postDeployTestsPath: this.answers.postDeployTestsPath,
+        deployRoot,
       },
     );
 
     copyCommonDeployWorkflows(this, this.answers);
 
     // Compose with OCI playbook generator
-    const playbook_args = [
-      this.answers.projectName,
-      this.answers.serviceName,
-      this.answers.playbookPath,
-    ];
+    const playbook_args = [this.answers.projectName, this.answers.serviceName];
 
     const playbook_options = {
       deployType: this.answers.deployType,

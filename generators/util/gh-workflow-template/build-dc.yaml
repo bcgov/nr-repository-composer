@@ -1,0 +1,71 @@
+name: Build deployment config
+
+on:
+  push:
+    tags:
+      - 'd*'
+    branches:
+      - 'main'
+      - 'deploy/*'
+concurrency:
+  group: ci-${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
+env:
+  BROKER_URL: https://broker.io.nrs.gov.bc.ca
+  BROKER_JWT: ${{ secrets.<%= brokerJwt %> }}
+
+jobs:
+  build-dc:
+    name: Build deployment config
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+      packages: write
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v6
+      - name: Set version
+        id: set-version
+        run: |
+          REF_NAME="${{ github.ref_name }}"
+          SAFE_REF_NAME=$(echo "$REF_NAME" | tr '/' '-')
+
+          if [[ ${{ startsWith(github.ref, 'refs/heads/') }} = true ]]; then
+            echo "tag=${SAFE_REF_NAME}" >> "$GITHUB_OUTPUT"
+          fi
+          if [[ ${{ startsWith(github.ref, 'refs/pull/') }} = true ]]; then
+            echo "tag=${SAFE_REF_NAME}" >> "$GITHUB_OUTPUT"
+          fi
+          if [[ ${{ startsWith(github.ref, 'refs/tags/d') }} = true ]]; then
+            echo "tag=${{ github.ref_name }}" >> "$GITHUB_OUTPUT"
+          fi
+      - name: Setup ORAS
+        uses: oras-project/setup-oras@v2
+      - name: Create annotations files
+        run: |
+          cat <<EOF > annotation.json
+          {
+            "\$manifest": {
+              "org.opencontainers.image.description": "Deployment configuration ${PROJECT_TAG}",
+              "org.opencontainers.image.source": "${{ github.repositoryUrl }}",
+              "org.opencontainers.image.title": "deployment-config",
+              "org.opencontainers.image.version": "${PROJECT_TAG}"
+            }
+          }
+          EOF
+        env:
+          PROJECT_TAG: ${{ steps.set-version.outputs.tag }}
+      - name: Push deployment config to registry
+        run: |
+          oras login ghcr.io -u ${{ github.actor }} --password-stdin <<< ${{ secrets.GITHUB_TOKEN }}
+          oras push --annotation-file annotation.json --export-manifest manifest.json ghcr.io/${{ github.repository }}/deployment-config:${PROJECT_TAG} <%= deploymentConfigPaths %>
+          MANIFEST=$(cat ./manifest.json)
+          ARTIFACT_SHA256=$(echo $MANIFEST | sha256sum | awk '{print $1}')
+          ARTIFACT_SIZE=$(echo $MANIFEST | jq -r '.layers | map(.size) | add')
+          echo "artifact_sha256=$ARTIFACT_SHA256" >> $GITHUB_OUTPUT
+          echo "artifact_size=$ARTIFACT_SIZE" >> $GITHUB_OUTPUT
+          echo $MANIFEST
+          echo "sha256: $ARTIFACT_SHA256"
+        env:
+          PROJECT_TAG: ${{ steps.set-version.outputs.tag }}

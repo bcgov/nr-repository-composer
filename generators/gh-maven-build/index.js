@@ -2,6 +2,10 @@
 import Generator from 'yeoman-generator';
 import chalk from 'chalk';
 import { nrsay } from '../util/nrsay.js';
+import {
+  YEOMAN_CONFIG_NAMESPACE,
+  YEOMAN_OPTION_ASK_ANSWERED,
+} from '../util/constants.js';
 import { BackstageStorage } from '../util/backstage.storage.js';
 import { OPTION_HEADLESS, OPTION_HELP_PROMPTS } from '../util/options.js';
 import { bailOnUnansweredQuestions } from '../util/process.js';
@@ -15,7 +19,6 @@ import { makeWorkflowBuildPublishPath } from '../util/github.js';
 import {
   PROMPT_PROJECT,
   PROMPT_SERVICE,
-  PROMPT_ARTIFACT_REPOSITORY_TYPE,
   PROMPT_ARTIFACT_REPOSITORY_PATH,
   PROMPT_CLIENT_ID,
   PROMPT_DEPLOY_ON_PREM,
@@ -25,9 +28,11 @@ import {
   PROMPT_GITHUB_PROJECT_SLUG,
   PROMPT_MAVEN_BUILD_COMMAND,
   PROMPT_OCI_ARTIFACTS,
+  PROMPT_PUBLISH_ARTIFACT_SUFFIX,
   PROMPT_POM_ROOT,
   PROMPT_TOOLS_BUILD_SECRETS,
   PROMPT_TOOLS_LOCAL_BUILD_SECRETS,
+  PROMPT_TYPE,
   PROMPT_UNIT_TESTS_PATH,
   getPromptToUsage,
 } from '../util/prompts.js';
@@ -38,6 +43,7 @@ import { outputReport } from '../util/report.js';
 const questions = [
   PROMPT_PROJECT,
   PROMPT_SERVICE,
+  PROMPT_TYPE,
   PROMPT_LICENSE,
   PROMPT_CLIENT_ID,
   PROMPT_GITHUB_PROJECT_SLUG,
@@ -45,15 +51,18 @@ const questions = [
   PROMPT_JAVA_PATTERN,
   PROMPT_POM_ROOT,
   PROMPT_OCI_ARTIFACTS,
+  {
+    ...PROMPT_PUBLISH_ARTIFACT_SUFFIX,
+    when: (answers) => answers.type !== 'library',
+  },
   PROMPT_UNIT_TESTS_PATH,
-  PROMPT_ARTIFACT_REPOSITORY_TYPE,
   PROMPT_ARTIFACT_REPOSITORY_PATH,
   PROMPT_TOOLS_BUILD_SECRETS,
   PROMPT_TOOLS_LOCAL_BUILD_SECRETS,
   {
     ...PROMPT_MAVEN_BUILD_COMMAND,
     default: (answers) =>
-      `--batch-mode -Dmaven.test.skip=true -P${answers.artifactRepositoryType === 'GitHubPackages' ? 'github' : 'artifactory'} clean deploy`,
+      `--batch-mode -Dmaven.test.skip=true -Pgithub clean ${answers.type !== 'library' ? 'package' : 'deploy'}`,
   },
 ];
 
@@ -77,7 +86,7 @@ export default class extends Generator {
 
   async prompting() {
     const headless = this.options[OPTION_HEADLESS.name];
-    const askAnswered = this.options['ask-answered'];
+    const askAnswered = this.options[YEOMAN_OPTION_ASK_ANSWERED];
     const helpPrompts = this.options[OPTION_HELP_PROMPTS.name];
     this.answers = this.config.getAnswers();
 
@@ -110,7 +119,7 @@ export default class extends Generator {
     const removedProps = this.config.processDeprecated();
     this.showGeneratorDeprecationWarning =
       removedProps.indexOf(PROMPT_DEPLOY_ON_PREM.name) !== -1;
-    this.answers = await this.prompt(questions, 'config');
+    this.answers = await this.prompt(questions, YEOMAN_CONFIG_NAMESPACE);
   }
   // Generate GitHub workflows and NR Broker intention files
   writingWorkflow() {

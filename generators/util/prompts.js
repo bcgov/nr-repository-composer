@@ -1,6 +1,7 @@
 import chalk from 'chalk';
 import { extractGitHubSlug, getGitRepoOriginUrl } from '../util/git.js';
 import { alphaDashValidate } from '../util/github.js';
+import { TOOLS_DEFAULT_PROPERTIES } from './constants.js';
 
 export const PROMPT_LOCATION_NAME = {
   type: 'input',
@@ -143,11 +144,29 @@ export const PROMPT_SCHEMA_MIGRATION_BASE_PATH = {
   message: 'Base path:',
 };
 
+export const PROMPT_DEPLOYMENT_CONFIG_PATHS = {
+  type: 'input',
+  name: 'deploymentConfigPaths',
+  message: 'Deployment config paths (comma-separated):',
+  default: 'playbooks',
+};
+
 export const PROMPT_PLAYBOOK_PATH = {
   type: 'input',
   name: 'playbookPath',
   message: 'Playbook path:',
   default: 'playbooks',
+};
+export const PROMPT_ARTIFACT_SRC = {
+  type: 'select',
+  name: 'artifactSrc',
+  message: 'Artifact source:',
+  choices: [
+    { name: 'This repository', value: 'repo' },
+    { name: 'GitHub (public)', value: 'github' },
+    { name: 'Artifactory (private)', value: 'artifactory' },
+  ],
+  default: 'repo',
 };
 export const PROMPT_OCI_ARTIFACTS = {
   type: 'input',
@@ -186,35 +205,35 @@ export const PROMPT_POM_ROOT = {
   default: './',
 };
 export const PROMPT_NODE_PATTERN = {
-  type: 'list',
+  type: 'select',
   name: 'nodePattern',
   message: 'Node pattern:',
   choices: ['NPM', 'unknown'],
   default: 'NPM',
 };
 export const PROMPT_NODE_VERSION = {
-  type: 'list',
+  type: 'select',
   name: 'nodeVersion',
   message: 'Node.js version:',
-  choices: ['20', '22', '24'],
+  choices: ['22', '24'],
   default: '24',
 };
 export const PROMPT_JAVA_PATTERN = {
-  type: 'list',
+  type: 'select',
   name: 'javaPattern',
   message: 'Java pattern:',
   choices: ['SpringBoot', 'Tomcat', 'unknown'],
   default: 'SpringBoot',
 };
 export const PROMPT_JAVA_VERSION = {
-  type: 'list',
+  type: 'select',
   name: 'javaVersion',
   message: 'Java version:',
   choices: ['8', '11', '17', '21'],
   default: '8',
 };
 export const PROMPT_ARTIFACT_REPOSITORY_TYPE = {
-  type: 'list',
+  type: 'select',
   name: 'artifactRepositoryType',
   message: 'Artifact destination repository type:',
   choices: ['GitHubPackages', 'JFrogArtifactory'],
@@ -239,7 +258,7 @@ export const PROMPT_TOOLS_BUILD_SECRETS = {
   type: 'input',
   name: 'toolsBuildSecrets',
   message: 'Tools secrets used with builds (comma-separated):',
-  default: 'ARTIFACTORY_USERNAME,ARTIFACTORY_PASSWORD',
+  default: TOOLS_DEFAULT_PROPERTIES,
 };
 export const PROMPT_TOOLS_LOCAL_BUILD_SECRETS = {
   type: 'input',
@@ -422,9 +441,17 @@ export const PROMPT_TO_USAGE = {
   deployOnPrem: {
     description: 'Whether to deploy on-prem or not',
   },
-  playbookPath: {
+  deploymentConfigPaths: {
     description:
-      'The path to the playbook (e.g. ./playbooks/). If not provided, will be auto-detected from the git remote URL',
+      'A comma-separated list of paths to deployment configuration files (e.g. playbooks)',
+  },
+  playbookPath: {
+    description: 'The path to the playbook (e.g. ./playbooks/).',
+  },
+  artifactSrc: {
+    description:
+      'Where deployment artifacts are sourced from: current repository, public GitHub, or private Artifactory.',
+    example: 'repo',
   },
   pomRoot: {
     description: 'The path to the pom.xml file',
@@ -443,11 +470,11 @@ export const PROMPT_TO_USAGE = {
   },
   toolsBuildSecrets: {
     description: 'Tools secrets used with builds (comma-separated)',
-    example: 'ARTIFACTORY_USERNAME,ARTIFACTORY_PASSWORD',
+    example: TOOLS_DEFAULT_PROPERTIES,
   },
   toolsLocalBuildSecrets: {
     description: 'Local tools secrets used with builds (comma-separated)',
-    example: 'ARTIFACTORY_USERNAME,ARTIFACTORY_PASSWORD',
+    example: TOOLS_DEFAULT_PROPERTIES,
   },
   deployJasperReports: {
     description: 'Whether to deploy Jasper Reports or not',

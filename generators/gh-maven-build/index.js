@@ -156,6 +156,9 @@ export default class extends Generator {
         mavenBuildCommand: this.answers.mavenBuildCommand,
         toolsLocalBuildSecrets: this.answers.toolsLocalBuildSecrets,
         ociArtifacts,
+        type: this.answers.type,
+        license: this.answers.license,
+        publishArtifactSuffix: this.answers.publishArtifactSuffix,
       },
     );
     copyCommonBuildWorkflows(this, {

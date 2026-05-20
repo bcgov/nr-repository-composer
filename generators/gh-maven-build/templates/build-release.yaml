@@ -165,7 +165,11 @@ jobs:
           PACKAGE_BUILD_GUID:  ${{ steps.set-build-output-parameters.outputs.build_guid }}
           PACKAGE_BUILD_NUMBER: ${{ github.run_number }}
           PACKAGE_BUILD_VERSION: ${{ steps.set-build-output-parameters.outputs.git_commit }}
+<% if (type !== 'library') { -%>
           PACKAGE_TYPE: application/vnd.oci.image.layer.v1.tar+gzip
+<% } else { -%>
+          PACKAGE_TYPE: ${{ steps.set-build-output-parameters.outputs.package_type }}
+<% } -%>
           PACKAGE_VERSION: ${{ steps.set-build-output-parameters.outputs.project_version }}
       - name: Open intention
         uses: bcgov-nr/action-broker-intention-open@v2
@@ -200,8 +204,8 @@ jobs:
           ARTIFACT_NAME="${ARTIFACT_ID}-${PROJECT_VERSION}.${PACKAGE_TYPE}"
           source ./env.sh build ./<%= relativePath %> --skip-vault
           ./mvnw <%= mavenBuildCommand %>
-          cd target
 <% if (type !== 'library') { -%>
+          cd target
           cat <<EOF > annotation.json
           {
             "\$manifest": {

@@ -254,6 +254,18 @@ export const PROMPT_ARTIFACT_REPOSITORY_PATH = {
     }
   },
 };
+export const PROMPT_DEPLOY_TYPE = {
+  type: 'list',
+  name: 'deployType',
+  message: 'Deployment type',
+  description: 'Select the type of application being deployed',
+  choices: [
+    { name: 'Node.js application', value: 'nodejs' },
+    { name: 'Java/Tomcat application', value: 'tomcat' },
+  ],
+  default: 'nodejs',
+  store: true,
+};
 export const PROMPT_TOOLS_BUILD_SECRETS = {
   type: 'input',
   name: 'toolsBuildSecrets',
@@ -463,6 +475,9 @@ export const PROMPT_TO_USAGE = {
   },
   artifactRepositoryPath: {
     description: 'The artifact destination repository path',
+  },
+  deployType: {
+    description: 'OCI Artifact type to deploy',
   },
   mavenBuildCommand: {
     description: 'Arguments to pass to mvn',

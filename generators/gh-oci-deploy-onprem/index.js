@@ -20,28 +20,13 @@ import {
   PROMPT_DEPLOYMENT_CONFIG_PATHS,
   PROMPT_ARTIFACT_SRC,
   PROMPT_PLAYBOOK_PATH,
+  PROMPT_DEPLOY_TYPE,
   getPromptToUsage,
 } from '../util/prompts.js';
 import { BACKSTAGE_FILENAME, BACKSTAGE_KIND_COMPONENT } from '../util/yaml.js';
 import { copyCommonDeployWorkflows } from '../util/copyworkflows.js';
 import { makeWorkflowDeployPath } from '../util/github.js';
 import { outputReport } from '../util/report.js';
-
-/**
- * Deploy type prompt - determines which playbook to use
- */
-const PROMPT_DEPLOY_TYPE = {
-  type: 'select',
-  name: 'deployType',
-  message: 'Deployment type',
-  description: 'Select the type of application being deployed',
-  choices: [
-    { name: 'Node.js application', value: 'nodejs' },
-    { name: 'Java/Tomcat application', value: 'tomcat' },
-  ],
-  default: 'nodejs',
-  store: true,
-};
 
 const questions = [
   PROMPT_PROJECT,

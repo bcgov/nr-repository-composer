@@ -173,6 +173,11 @@ export const pathToProps = [
     prop: 'javaVersion',
     writeEmpty: false,
   },
+  {
+    path: ['metadata', 'annotations', 'playbook.io.nrs.gov.bc.ca/deployType'],
+    prop: 'deployType',
+    writeEmpty: false,
+  },
   // Jasper
   {
     path: [

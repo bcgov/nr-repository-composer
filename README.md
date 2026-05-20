@@ -130,9 +130,9 @@ The generated workflow file appears in `.github/workflows/build-release.yaml` an
 
 ### GitHub Maven Build: `gh-maven-build`
 
-This generates the CI workflow and NR Broker intention files for building a Java application using Maven in GitHub. The WAR artifact can then be used in a Tomcat deployment.
+This generates the CI workflow and NR Broker intention files for building a Java application using Maven in GitHub. The WAR artifact is packaged into an [OCI artifact](#build-outputs) which can then be used in a Tomcat deployment.
 
-The build can optionally pull [OCI artifacts as static assets](#static-assets) from other builds (e.g., frontend artifacts for a backend service).
+The build can optionally pull additional [OCI artifacts as static assets](#static-assets) from other builds (e.g., frontend artifacts for a backend service).
 
 The generated files will appear in your `.github/workflows` and `.jenkins` directories.
 
@@ -153,7 +153,7 @@ This generator should be run at the root directory of your component (service) w
 
 This generates the CI workflow and NR Broker intention files for building Node.js applications in GitHub. The workflow assumes that your `package.json` has a `build` command. The build is output as an [OCI artifact](#build-outputs).
 
-The build can optionally pull [OCI artifacts as static assets](#static-assets) from other builds (e.g., frontend artifacts for a backend service).
+The build can optionally pull additional [OCI artifacts as static assets](#static-assets) from other builds (e.g., frontend artifacts for a backend service).
 
 The generated files will appear in your `.github/workflows` and `.jenkins` directories.
 

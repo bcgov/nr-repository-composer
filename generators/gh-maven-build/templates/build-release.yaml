@@ -115,9 +115,9 @@ jobs:
           if [[ ${{ startsWith(github.ref, 'refs/tags/v') }} = true ]]; then
             echo "tag=${{ github.ref_name }}" >> "$GITHUB_OUTPUT"
           fi
+<% } -%>
       - name: Setup ORAS
         uses: oras-project/setup-oras@v2
-<% } -%>
       - name: Set up Java
         uses: actions/setup-java@v5
         with:
@@ -165,7 +165,7 @@ jobs:
           PACKAGE_BUILD_GUID:  ${{ steps.set-build-output-parameters.outputs.build_guid }}
           PACKAGE_BUILD_NUMBER: ${{ github.run_number }}
           PACKAGE_BUILD_VERSION: ${{ steps.set-build-output-parameters.outputs.git_commit }}
-          PACKAGE_TYPE: ${{ steps.set-build-output-parameters.outputs.package_type }}
+          PACKAGE_TYPE: application/vnd.oci.image.layer.v1.tar+gzip
           PACKAGE_VERSION: ${{ steps.set-build-output-parameters.outputs.project_version }}
       - name: Open intention
         uses: bcgov-nr/action-broker-intention-open@v2
@@ -196,25 +196,28 @@ jobs:
         id: publish-artifact
         working-directory: ./
         run: |
+          set -euo pipefail
+          ARTIFACT_NAME="${ARTIFACT_ID}-${PROJECT_VERSION}.${PACKAGE_TYPE}"
           source ./env.sh build ./<%= relativePath %> --skip-vault
           ./mvnw <%= mavenBuildCommand %>
+          cd target
 <% if (type !== 'library') { -%>
           cat <<EOF > annotation.json
           {
             "\$manifest": {
-              "org.opencontainers.image.description": "Build artifact for <%= serviceName %> version ${PROJECT_TAG}",
+              "org.opencontainers.image.description": "Build artifact for <%= serviceName %> version ${PROJECT_VERSION}",
               "org.opencontainers.image.licenses": "<%= license %>",
               "org.opencontainers.image.source": "${{ github.repositoryUrl }}",
               "org.opencontainers.image.title": "<%= serviceName %>-artifact",
-              "org.opencontainers.image.version": "${PROJECT_TAG}"
+              "org.opencontainers.image.version": "${PROJECT_VERSION}"
             }
           }
           EOF
           oras login ghcr.io -u ${{ github.actor }} --password-stdin <<< ${{ secrets.GITHUB_TOKEN }}
-          oras push --annotation-file annotation.json --export-manifest manifest.json ghcr.io/${{ github.repository }}/<%= serviceName %>:${PROJECT_TAG} <%= publishArtifactSuffix %>
+          oras push --annotation-file annotation.json --export-manifest manifest.json ghcr.io/${{ github.repository }}/<%= serviceName %>:${PROJECT_VERSION} <%= publishArtifactSuffix %>
           MANIFEST=$(cat ./manifest.json)
           echo $MANIFEST
-          echo "artifact_sha256=$(echo $MANIFEST | sha256sum)" >> $GITHUB_OUTPUT
+          echo "artifact_sha256=$(echo $MANIFEST | jq -r '.layers | map(.digest) | join(",")' | sha256sum | awk '{print $1}')" >> $GITHUB_OUTPUT
           echo "artifact_size=$(echo $MANIFEST | jq -r '.layers | map(.size) | add')" >> $GITHUB_OUTPUT
 <% } -%>
         env:

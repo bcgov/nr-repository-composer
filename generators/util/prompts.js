@@ -106,8 +106,8 @@ export const PROMPT_POST_DEPLOY_TESTS_PATH = {
 export const PROMPT_PUBLISH_ARTIFACT_SUFFIX = {
   type: 'input',
   name: 'publishArtifactSuffix',
-  message: 'Published files/folders (required: dist):',
-  default: 'dist',
+  message: 'Published files/folders:',
+  default: '${ARTIFACT_NAME}',
 };
 
 export const PROMPT_DEPLOY_ON_PREM = {
@@ -481,7 +481,7 @@ export const PROMPT_TO_USAGE = {
   },
   mavenBuildCommand: {
     description: 'Arguments to pass to mvn',
-    example: '--batch-mode -Dmaven.test.skip=true -Pgithub clean deploy',
+    example: '--batch-mode -Dmaven.test.skip=true clean package',
   },
   toolsBuildSecrets: {
     description: 'Tools secrets used with builds (comma-separated)',

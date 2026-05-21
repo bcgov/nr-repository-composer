@@ -11,6 +11,11 @@ Services in this repository:
 <% }); -%>
 <% } -%>
 
+### Management on Packages
+The Polaris Pipeline also generates jobs to manage unnecessary packages during developments period:
+- Delete PR package when PR merged
+- Only keep top {number} non-release packages
+
 Refer to [nr-polaris-docs](https://bcgov.github.io/nr-polaris-docs/#/) for more information about how to use the Polaris Pipeline.
 
 ## Resources

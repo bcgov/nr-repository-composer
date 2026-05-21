@@ -100,6 +100,26 @@ export function copyCommonBuildWorkflows(generator, answers) {
     destinationGitPath(`.github/workflows/check-release-package.yaml`),
   );
 
+  generator.fs.copyTpl(
+    generator.templatePath(`${COMMON_GH_TEMPLATE_PATH}/delete-pr-image.yaml`),
+    destinationGitPath('.github/workflows/delete-pr-image.yaml'),
+    {
+      gitHubProjectSlug: answers.gitHubProjectSlug,
+      serviceName: answers.serviceName,
+    },
+  );
+
+  generator.fs.copyTpl(
+    generator.templatePath(
+      `${COMMON_GH_TEMPLATE_PATH}/delete-pre-packages.yaml`,
+    ),
+    destinationGitPath('.github/workflows/delete-pre-packages.yaml'),
+    {
+      gitHubProjectSlug: answers.gitHubProjectSlug,
+      serviceName: answers.serviceName,
+    },
+  );
+
   // Clean up old files if they exist (may remove in future)
   rmIfExists(
     generator,

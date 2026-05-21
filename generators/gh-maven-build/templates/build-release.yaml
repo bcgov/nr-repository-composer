@@ -201,11 +201,11 @@ jobs:
         working-directory: ./
         run: |
           set -euo pipefail
-          ARTIFACT_NAME="${ARTIFACT_ID}-${PROJECT_VERSION}.${PACKAGE_TYPE}"
           source ./env.sh build ./<%= relativePath %> --skip-vault
           ./mvnw <%= mavenBuildCommand %>
 <% if (type !== 'library') { -%>
           cd target
+          ARTIFACT_NAME="${ARTIFACT_ID}-${PROJECT_VERSION}.${PACKAGE_TYPE}"
           cat <<EOF > annotation.json
           {
             "\$manifest": {

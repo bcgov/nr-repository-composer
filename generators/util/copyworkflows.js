@@ -89,6 +89,7 @@ export function copyCommonBuildWorkflows(generator, answers) {
         : undefined,
       toolsLocalBuildSecrets: answers.toolsLocalBuildSecrets,
       artifactRepositoryPath: answers.artifactRepositoryPath,
+      publishArtifactSuffix: answers.publishArtifactSuffix,
     },
     { mode: 0o755 },
   );

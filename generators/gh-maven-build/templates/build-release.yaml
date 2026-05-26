@@ -183,7 +183,7 @@ jobs:
           echo "intention_id=${INTENTION_ID}" >> $GITHUB_OUTPUT
         env:
           INTENTION_ID: ${{ env.INTENTION_ID }}
-<% if (ociArtifacts.length > 0) { _%>
+<% if (type !== 'library' && ociArtifacts.length > 0) { _%>
       - name: Pull static artifacts
         run: |
           oras login ghcr.io -u ${{ github.actor }} --password-stdin <<< ${{ secrets.GITHUB_TOKEN }}

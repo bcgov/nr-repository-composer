@@ -222,9 +222,10 @@ jobs:
             }
           }
           EOF
+          cd dist
           oras login ghcr.io -u ${{ github.actor }} --password-stdin <<< ${{ secrets.GITHUB_TOKEN }}
-          oras push --annotation-file annotation.json --export-manifest manifest.json ghcr.io/${{ github.repository }}/<%= serviceName %>:${PROJECT_TAG} <%= publishArtifactSuffix %>
-          MANIFEST=$(cat ./manifest.json)
+          oras push --annotation-file ../annotation.json --export-manifest ../manifest.json ghcr.io/${{ github.repository }}/<%= serviceName %>:${PROJECT_TAG} .
+          MANIFEST=$(cat ../manifest.json)
           echo $MANIFEST
           echo "artifact_sha256=$(echo $MANIFEST | jq -r '.layers | map(.digest) | join(",")' | sha256sum | awk '{print $1}')" >> $GITHUB_OUTPUT
           echo "artifact_size=$(echo $MANIFEST | jq -r '.layers | map(.size) | add')" >> $GITHUB_OUTPUT

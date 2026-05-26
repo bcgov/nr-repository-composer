@@ -19,6 +19,7 @@ fi
 export PROJECT_NAME="<%= projectName %>"
 export SERVICE_NAME="<%= serviceName %>"
 export PACKAGE_REPO="<%= artifactRepositoryPath %>"
+export PUBLISH_DIR="<%= (typeof publishArtifactSuffix !== 'undefined' && publishArtifactSuffix ? publishArtifactSuffix.split(' ')[0] : 'dist') %>"
 
 <% if (pomRoot) { -%>
 # Maven build configuration

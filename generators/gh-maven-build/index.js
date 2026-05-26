@@ -19,6 +19,7 @@ import { makeWorkflowBuildPublishPath } from '../util/github.js';
 import {
   PROMPT_PROJECT,
   PROMPT_SERVICE,
+  PROMPT_ARTIFACT_REPOSITORY_TYPE,
   PROMPT_ARTIFACT_REPOSITORY_PATH,
   PROMPT_CLIENT_ID,
   PROMPT_DEPLOY_ON_PREM,
@@ -56,6 +57,7 @@ const questions = [
     when: (answers) => answers.type !== 'library',
   },
   PROMPT_UNIT_TESTS_PATH,
+  PROMPT_ARTIFACT_REPOSITORY_TYPE,
   PROMPT_ARTIFACT_REPOSITORY_PATH,
   PROMPT_TOOLS_BUILD_SECRETS,
   PROMPT_TOOLS_LOCAL_BUILD_SECRETS,
@@ -141,10 +143,12 @@ export default class extends Generator {
       {
         projectName: this.answers.projectName,
         serviceName: this.answers.serviceName,
+        type: this.answers.type,
         brokerJwt,
         artifactoryProject: '',
         artifactRepositoryType: this.answers.artifactRepositoryType,
         artifactRepositoryPath: this.answers.artifactRepositoryPath,
+        license: this.answers.license,
         pomRoot: this.answers.pomRoot,
         javaVersion: this.answers.javaVersion,
         javaPattern: this.answers.javaPattern,
@@ -154,6 +158,7 @@ export default class extends Generator {
         isMonoRepo: isMonoRepo(),
         toolsBuildSecrets: this.answers.toolsBuildSecrets,
         mavenBuildCommand: this.answers.mavenBuildCommand,
+        publishArtifactSuffix: this.answers.publishArtifactSuffix,
         toolsLocalBuildSecrets: this.answers.toolsLocalBuildSecrets,
         ociArtifacts,
         type: this.answers.type,
@@ -164,7 +169,12 @@ export default class extends Generator {
     copyCommonBuildWorkflows(this, {
       ...this.answers,
       packageArchitecture: 'jvm',
-      packageType: this.answers.javaPattern === 'Tomcat' ? 'war' : 'jar',
+      packageType:
+        this.answers.type !== 'library'
+          ? 'application/vnd.oci.image.layer.v1.tar+gzip'
+          : this.answers.javaPattern === 'Tomcat'
+            ? 'war'
+            : 'jar',
     });
     const maven_args = [this.answers.projectName, this.answers.serviceName];
     const maven_opts = {
@@ -209,7 +219,7 @@ export default class extends Generator {
             chalk.yellow(
               ' This generator no longer handles deployments.\n' +
                 '   Please use generator ' +
-                chalk.cyan('gh-tomcat-deploy-onprem') +
+                chalk.cyan('gh-oci-deploy-onprem') +
                 ' to update your deployment configuration.\n',
             ),
         );

@@ -99,9 +99,9 @@ jobs:
             fetch-depth: 0
             fetch-tags: true
             ref: ${{ steps.lookup-pr-merge-ref.outputs.checkout_ref }}
-<% if (ociArtifacts.length > 0) { _%>
+<% if (type !== 'library' || ociArtifacts.length > 0) { _%>
       - name: Set version
-        id: set-version
+        id: set-oci-tag
         run: |
           REF_NAME="${{ github.ref_name }}"
           SAFE_REF_NAME=$(echo "$REF_NAME" | tr '/' '-')
@@ -165,7 +165,11 @@ jobs:
           PACKAGE_BUILD_GUID:  ${{ steps.set-build-output-parameters.outputs.build_guid }}
           PACKAGE_BUILD_NUMBER: ${{ github.run_number }}
           PACKAGE_BUILD_VERSION: ${{ steps.set-build-output-parameters.outputs.git_commit }}
+<% if (type !== 'library') { -%>
+          PACKAGE_TYPE: application/vnd.oci.image.layer.v1.tar+gzip
+<% } else { -%>
           PACKAGE_TYPE: ${{ steps.set-build-output-parameters.outputs.package_type }}
+<% } -%>
           PACKAGE_VERSION: ${{ steps.set-build-output-parameters.outputs.project_version }}
       - name: Open intention
         uses: bcgov-nr/action-broker-intention-open@v2
@@ -190,15 +194,23 @@ jobs:
           <%_ } -%>
         working-directory: ./<%= relativePath %>
         env:
-          PROJECT_TAG: ${{ steps.set-version.outputs.tag }}
+          PROJECT_TAG: ${{ steps.set-oci-tag.outputs.tag }}
 <% } -%>
+<% if (type !== 'library') { -%>
       - name: Publish artifact
         id: publish-artifact
         working-directory: ./
         run: |
           source ./env.sh build ./<%= relativePath %> --skip-vault
           ./mvnw <%= mavenBuildCommand %>
-<% if (type !== 'library') { -%>
+          ARTIFACT_FILE="target/${ARTIFACT_ID}-${PROJECT_VERSION}.${PACKAGE_TYPE}"
+          if [ ! -f "$ARTIFACT_FILE" ]; then
+            echo "::error ::Expected Maven output not found: $ARTIFACT_FILE"
+            exit 1
+          fi
+          mkdir -p dist
+          cp "$ARTIFACT_FILE" dist/
+
           cat <<EOF > annotation.json
           {
             "\$manifest": {
@@ -214,32 +226,32 @@ jobs:
           oras push --annotation-file annotation.json --export-manifest manifest.json ghcr.io/${{ github.repository }}/<%= serviceName %>:${PROJECT_TAG} <%= publishArtifactSuffix %>
           MANIFEST=$(cat ./manifest.json)
           echo $MANIFEST
-          echo "artifact_sha256=$(echo $MANIFEST | sha256sum)" >> $GITHUB_OUTPUT
+          echo "artifact_sha256=$(echo $MANIFEST | jq -r '.layers | map(.digest) | join(",")' | sha256sum | awk '{print $1}')" >> $GITHUB_OUTPUT
           echo "artifact_size=$(echo $MANIFEST | jq -r '.layers | map(.size) | add')" >> $GITHUB_OUTPUT
-<% } -%>
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
 <% if (toolsBuildSecrets) { for (const secret of toolsBuildSecrets.split(',')) { -%>
           <%= secret.toUpperCase() %>: ${{ secrets.<%= secret.toUpperCase() %> }}
-<% } -%>
+<% } } -%>
           PROJECT_VERSION: ${{ steps.set-build-output-parameters.outputs.project_version }}
+          PROJECT_TAG: ${{ steps.set-build-output-parameters.outputs.project_version }}
           ARTIFACT_ID: ${{ steps.set-build-output-parameters.outputs.artifact_id }}
           PACKAGE_TYPE: ${{ steps.set-build-output-parameters.outputs.package_type }}
-<% if (type !== 'library') { -%>
       - name: Send build info
         run: |
           curl -s POST ${{ env.BROKER_URL }}/v1/intention/action/patch \
               -H 'Content-Type: application/json' \
               -H 'X-Broker-Token: '"${BUILD_TOKEN}"'' \
-              -d '{"package":{"checksum": "sha256:'${ARTIFACT_SHA256}'"}}'
+              -d '{"package":{"checksum": "sha256:'${ARTIFACT_SHA256}'", "size": '${ARTIFACT_SIZE}'}}'
         env:
           ARTIFACT_SHA256: ${{ steps.publish-artifact.outputs.artifact_sha256 }}
+          ARTIFACT_SIZE: ${{ steps.publish-artifact.outputs.artifact_size }}
           BUILD_TOKEN: ${{ env.ACTION_TOKEN_BUILD }}
-<% } -%>
 <% } else { -%>
+      - name: Publish artifact
         run: |
           source ./env.sh build ./<%= relativePath %> --skip-vault
-          ./mvnw <% mavenBuildCommand %>
+          ./mvnw <%= mavenBuildCommand %>
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
 <% if (toolsBuildSecrets) { for (const secret of toolsBuildSecrets.split(',')) { -%>
@@ -263,17 +275,6 @@ jobs:
           echo "artifact_name=$(echo ${BUILD_INFO} | jq -r '.buildInfo.modules[0].artifacts[0].name')" >> $GITHUB_OUTPUT
         env:
           ARTIFACT_ID: ${{ steps.set-build-output-parameters.outputs.artifact_id }}
-<% if (type !== 'library') { -%>
-      - name: Send build info
-        run: |
-          curl -s -X POST ${{ env.BROKER_URL }}/v1/intention/action/patch \
-              -H 'Content-Type: application/json' \
-              -H 'X-Broker-Token: '"${BUILD_TOKEN}"'' \
-              -d '{"package":{"checksum": "sha256:'${ARTIFACT_SHA256}'"}}'
-        env:
-          ARTIFACT_SHA256: ${{ steps.set-build-info.outputs.artifact_sha256 }}
-          BUILD_TOKEN: ${{ env.ACTION_TOKEN_BUILD }}
-<% } -%>
 <% } -%>
       - name: Close intention
         if: ${{ success() && env.INTENTION_TOKEN != '' }}

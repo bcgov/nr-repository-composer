@@ -130,7 +130,7 @@ The generated workflow file appears in `.github/workflows/build-release.yaml` an
 
 ### GitHub Maven Build: `gh-maven-build`
 
-This generates the CI workflow and NR Broker intention files for building a Java application using Maven in GitHub. The WAR artifact can then be used in a Tomcat deployment.
+This generates the CI workflow and NR Broker intention files for building a Java application using Maven in GitHub. For application services, the build output is published as an OCI artifact (via ORAS).
 
 The build can optionally pull [OCI artifacts as static assets](#static-assets) from other builds (e.g., frontend artifacts for a backend service).
 
@@ -139,7 +139,8 @@ The generated files will appear in your `.github/workflows` and `.jenkins` direc
 This generator should be run at the root directory of your component (service) which should contain the `catalog-info.yaml` for it.
 
 **Suggested Next Steps:**
-- [`gh-tomcat-deploy-onprem`](#github-tomcat-on-prem-deploy-gh-tomcat-deploy-onprem) - Set up on-premises Tomcat deployment workflow
+- [`gh-oci-deploy-onprem`](#github-oci-on-prem-deploy-gh-oci-deploy-onprem) - Set up on-premises OCI deployment workflow
+- [`gh-tomcat-deploy-onprem`](#github-tomcat-on-prem-deploy-gh-tomcat-deploy-onprem) - Optional: use only when deploying directly from Maven package repositories
 
 ### GitHub Tomcat On-Prem Deploy: `gh-tomcat-deploy-onprem`
 

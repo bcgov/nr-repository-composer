@@ -23,7 +23,7 @@ concurrency:
   group: ci-${{ github.workflow }}-${{ github.ref }}
   cancel-in-progress: true
 <% } else { -%>
-          PACKAGE_TYPE: application/vnd.oci.image.layer.v1.tar+gzip
+  workflow_call:
 <% } -%>
 
 env:

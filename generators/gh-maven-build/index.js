@@ -64,7 +64,7 @@ const questions = [
   {
     ...PROMPT_MAVEN_BUILD_COMMAND,
     default: (answers) =>
-      `--batch-mode -Dmaven.test.skip=true -Pgithub clean ${answers.type !== 'library' ? 'package' : 'deploy'}`,
+      `--batch-mode -Dmaven.test.skip=true${answers.type !== 'library' ? '' : ' -Pgithub'} clean ${answers.type !== 'library' ? 'package' : 'deploy'}`,
   },
 ];
 

@@ -23,7 +23,7 @@ concurrency:
   group: ci-${{ github.workflow }}-${{ github.ref }}
   cancel-in-progress: true
 <% } else { -%>
-  workflow_call:
+          PACKAGE_TYPE: application/vnd.oci.image.layer.v1.tar+gzip
 <% } -%>
 
 env:
@@ -287,3 +287,23 @@ jobs:
         with:
           intention_token: ${{ env.INTENTION_TOKEN }}
           outcome: failure
+      - name: Generate build summary
+        if: always()
+        run: |
+          cat >> $GITHUB_STEP_SUMMARY << EOF
+          # Build Summary
+
+          | | |
+          | - | - |
+          | **Ref** | \`${{ env.CHECKOUT_REF }}\` |
+          | **Commit** | [${COMMIT_HASH:0:7}](https://github.com/${{ github.repository }}/tree/${COMMIT_HASH}) |
+          | **Version** | ${PROJECT_VERSION} |
+          | **Artifact SHA256** | ${ARTIFACT_SHA256} |
+
+          EOF
+        env:
+          CHECKOUT_REF: ${{ steps.lookup-pr-merge-ref.outputs.checkout_ref }}
+          COMMIT_HASH: ${{ steps.set-build-output-parameters.outputs.git_commit }}
+          PROJECT_VERSION: ${{ steps.set-build-output-parameters.outputs.project_version }}
+          ARTIFACT_SHA256: ${{ steps.publish-artifact.outputs.artifact_sha256 }}
+

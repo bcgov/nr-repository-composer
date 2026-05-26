@@ -210,15 +210,9 @@ jobs:
             echo "::error ::Expected Maven output not found: $ARTIFACT_FILE"
             exit 1
           fi
-          if [ ! -d "$PACKAGE_DIR" ]; then
-            echo "::error ::Expected Maven publish directory not found: $PACKAGE_DIR"
-            echo "Configure Maven to place publishable files in this directory or update publishArtifactSuffix."
-            exit 1
-          fi
-          if [ -z "$(ls -A "$PACKAGE_DIR")" ]; then
-            echo "::error ::Maven publish directory is empty: $PACKAGE_DIR"
-            exit 1
-          fi
+          rm -rf "$PACKAGE_DIR"
+          mkdir -p "$PACKAGE_DIR"
+          unzip -o "$ARTIFACT_FILE" -d "$PACKAGE_DIR"
 
           cat <<EOF > annotation.json
           {

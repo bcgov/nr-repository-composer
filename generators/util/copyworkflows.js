@@ -160,6 +160,15 @@ export function copyCommonDeploymentConfigWorkflow(
 
   if (deploymentConfigPaths) {
     generator.fs.copyTpl(
+      generator.templatePath(`${COMMON_GH_TEMPLATE_PATH}/build-dc.json`),
+      destinationGitPath(`.github/workflows/build-dc.json`),
+      {
+        projectName: answers.projectName,
+        serviceName: answers.serviceName,
+        license: answers.license,
+      },
+    );
+    generator.fs.copyTpl(
       generator.templatePath(`${COMMON_GH_TEMPLATE_PATH}/build-dc.yaml`),
       destinationGitPath(`.github/workflows/build-dc.yaml`),
       {

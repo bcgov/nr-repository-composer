@@ -7,7 +7,7 @@
   "actions": [
     {
       "action": "package-build",
-      "id": "build",
+      "id": "dcbuild",
       "provision": [],
       "service": {
         "project": "<%= projectName %>",
@@ -15,13 +15,12 @@
         "environment": "tools"
       },
       "package": {
-        "architecture": "<%= packageArchitecture %>",
-        "category": "software",
+        "category": "infrastructure",
         "version": "",
         "buildVersion": "",
         "buildNumber": 0,
-        "name": "<%= serviceName %>",
-        "type": "<%= packageType %>",
+        "name": "<%= serviceName %>-dc",
+        "type": "oci-archive",
         "license": "<%= license %>"
       }
     }

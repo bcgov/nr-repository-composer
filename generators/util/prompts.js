@@ -481,7 +481,7 @@ export const PROMPT_TO_USAGE = {
   },
   mavenBuildCommand: {
     description: 'Arguments to pass to mvn',
-    example: '--batch-mode -Dmaven.test.skip=true clean package',
+    example: 'clean deploy',
   },
   toolsBuildSecrets: {
     description: 'Tools secrets used with builds (comma-separated)',

@@ -140,7 +140,6 @@ This generator should be run at the root directory of your component (service) w
 
 **Suggested Next Steps:**
 - [`gh-oci-deploy-onprem`](#github-oci-on-prem-deploy-gh-oci-deploy-onprem) - Set up on-premises OCI deployment workflow
-- [`gh-tomcat-deploy-onprem`](#github-tomcat-on-prem-deploy-gh-tomcat-deploy-onprem) - Optional: use only when deploying directly from Maven package repositories
 
 ### GitHub Tomcat On-Prem Deploy: `gh-tomcat-deploy-onprem`
 

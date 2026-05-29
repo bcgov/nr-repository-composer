@@ -74,3 +74,23 @@
     #         src: "web.xml.j2",
     #         dest: "{{ polaris_apps_service_install_home }}/webapps/{{ alt_app_dir_name | default(context) }}/WEB-INF/web.xml"
     #       }
+
+    - name: "java-maven-pipeline-example: Stop"
+      ansible.builtin.include_role:
+        name: service_control
+      vars:
+        service_control_action: 'stop'
+
+    - meta: flush_handlers
+
+    - name: "java-maven-pipeline-example: {{ polaris_control_handler }} setup"
+      ansible.builtin.include_role:
+        name: service_control
+      vars:
+        service_control_action: 'setup'
+
+    - name: "java-maven-pipeline-example: Start"
+      ansible.builtin.include_role:
+        name: service_control
+      vars:
+        service_control_action: 'start'

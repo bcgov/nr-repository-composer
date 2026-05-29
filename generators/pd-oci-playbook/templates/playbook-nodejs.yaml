@@ -57,3 +57,23 @@
     #       src: "configuration.ts.j2",
     #       dest: "{{ nodejs_app_service_install_app_home }}/dist/src/config/configuration.js"
     #     }
+
+    - name: "java-maven-pipeline-example: Stop"
+      ansible.builtin.include_role:
+        name: service_control
+      vars:
+        service_control_action: 'stop'
+
+    - meta: flush_handlers
+
+    - name: "java-maven-pipeline-example: {{ polaris_control_handler }} setup"
+      ansible.builtin.include_role:
+        name: service_control
+      vars:
+        service_control_action: 'setup'
+
+    - name: "java-maven-pipeline-example: Start"
+      ansible.builtin.include_role:
+        name: service_control
+      vars:
+        service_control_action: 'start'

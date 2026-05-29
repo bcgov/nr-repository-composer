@@ -31,9 +31,14 @@
     - role: tomcat
 <% } -%>
 <% if (addLog4j2Config) { %>
-    # Install log4j2 config from template
+    # Add log4j2 config from template
     # See: https://github.com/bcgov/nr-polaris-collection/tree/main/polaris/deploy/roles/log4j2 
     - role: log4j2
+<% } -%>
+<% if (addTomcatContext) { %>
+    # Add tomcat context from template
+    # See: https://github.com/bcgov/nr-polaris-collection/tree/main/polaris/deploy/roles/tomcat_context
+    - role: tomcat_context
 <% } -%>
 
     # Install OCI application (webapp)

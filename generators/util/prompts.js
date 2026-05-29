@@ -340,6 +340,12 @@ export const PROMPT_ADD_LOG4J2_CONFIG = {
   message: 'Add log4j2 configuration:',
   default: true,
 };
+export const PROMPT_ADD_TOMCAT_CONTEXT = {
+  type: 'confirm',
+  name: 'addTomcatContext',
+  message: 'Add tomcat context:',
+  default: true,
+};
 
 export const PROMPT_TO_USAGE = {
   locationName: {
@@ -522,6 +528,9 @@ export const PROMPT_TO_USAGE = {
   },
   addLog4j2Config: {
     description: 'Whether to add log4j2 configuration or not',
+  },
+  addTomcatContext: {
+    description: 'Whether to add tomcat context or not',
   },
 };
 

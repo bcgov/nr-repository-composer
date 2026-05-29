@@ -25,10 +25,15 @@
     # create a self signed certificate to allow for HTTPS
     # See: https://github.com/bcgov/nr-polaris-collection/tree/main/polaris/deploy/roles/self_signed_cert
     - role: self_signed_cert
-<%if (deployType === 'tomcat') { %>
+<% if (deployType === 'tomcat') { %>
     # Install & configure the Tomcat container
     # See: https://github.com/bcgov/nr-polaris-collection/tree/main/polaris/deploy/roles/tomcat
     - role: tomcat
+<% } -%>
+<% if (addLog4j2Config) { %>
+    # Install log4j2 config from template
+    # See: https://github.com/bcgov/nr-polaris-collection/tree/main/polaris/deploy/roles/log4j2 
+    - role: log4j2
 <% } -%>
 
     # Install OCI application (webapp)

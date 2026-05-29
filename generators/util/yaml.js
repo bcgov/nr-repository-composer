@@ -275,6 +275,15 @@ export const pathToProps = [
     writeEmpty: false,
   },
   {
+    path: [
+      'metadata',
+      'annotations',
+      'playbook.io.nrs.gov.bc.ca/addLog4j2Config',
+    ],
+    prop: 'addLog4j2Config',
+    writeEmpty: false,
+  },
+  {
     path: ['metadata', 'annotations', 'playbook.io.nrs.gov.bc.ca/clientId'],
     prop: 'clientId',
     writeEmpty: false,

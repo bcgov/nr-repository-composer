@@ -72,6 +72,7 @@ export default class extends Generator {
         serviceName: this.options.serviceName,
         addWebadeConfig: this.options.addWebadeConfig,
         deployType: deployType,
+        addLog4j2Config: this.options.addLog4j2Config,
       },
     );
     this.fs.copyTpl(

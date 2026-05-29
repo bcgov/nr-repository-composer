@@ -347,7 +347,7 @@ export const PROMPT_ADD_TOMCAT_CONTEXT = {
   default: true,
 };
 export const PROMPT_CREATE_DATA_TMP_DIR = {
-  type: 'confirm'
+  type: 'confirm',
   name: 'createDataTmpDir',
   message: 'Create data temp dir:',
   default: false,

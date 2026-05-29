@@ -20,6 +20,10 @@ import {
   PROMPT_DEPLOYMENT_CONFIG_PATHS,
   PROMPT_ARTIFACT_SRC,
   PROMPT_PLAYBOOK_PATH,
+  PROMPT_JAVA_VERSION,
+  PROMPT_TOMCAT_CONTEXT,
+  PROMPT_USE_ALT_APP_DIR_NAME,
+  PROMPT_ALT_APP_DIR_NAME,
   getPromptToUsage,
 } from '../util/prompts.js';
 import { BACKSTAGE_FILENAME, BACKSTAGE_KIND_COMPONENT } from '../util/yaml.js';
@@ -53,6 +57,22 @@ const questions = [
   PROMPT_TYPE,
   PROMPT_ARTIFACT_SRC,
   PROMPT_DEPLOYMENT_CONFIG_PATHS,
+  {
+    ...PROMPT_JAVA_VERSION,
+    when: (answers) => answers.deployType === 'tomcat',
+  },
+  {
+    ...PROMPT_TOMCAT_CONTEXT,
+    when: (answers) => answers.deployType === 'tomcat',
+  },
+  {
+    ...PROMPT_USE_ALT_APP_DIR_NAME,
+    when: (answers) => answers.deployType === 'tomcat',
+  },
+  {
+    ...PROMPT_ALT_APP_DIR_NAME,
+    when: (answers) => answers.useAltAppDirName,
+  },
 ];
 
 /**
@@ -152,6 +172,9 @@ export default class extends Generator {
 
     const playbook_options = {
       deployType: this.answers.deployType,
+      javaVersion: this.answers.javaVersion,
+      tomcatContext: this.answers.tomcatContext,
+      altAppDirName: this.answers.altAppDirName,
     };
     this.composeWith(
       'nr-repository-composer:pd-oci-playbook',

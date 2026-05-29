@@ -71,6 +71,7 @@ export default class extends Generator {
         projectName: this.options.projectName,
         serviceName: this.options.serviceName,
         addWebadeConfig: this.options.addWebadeConfig,
+        deployType: deployType,
       },
     );
     this.fs.copyTpl(
@@ -82,6 +83,9 @@ export default class extends Generator {
         projectNameUpperCase: this.options.projectName.toUpperCase(),
         deployType: deployType,
         shutdownScript: this.options.shutdownScript || '',
+        javaVersion: this.options.javaVersion,
+        tomcatContext: this.options.tomcatContext,
+        altAppDirName: this.options.altAppDirName,
       },
     );
 

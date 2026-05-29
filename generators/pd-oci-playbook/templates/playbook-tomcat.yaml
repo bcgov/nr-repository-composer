@@ -35,7 +35,7 @@
     # See: https://github.com/bcgov/nr-polaris-collection/tree/main/polaris/deploy/roles/oci_app
     - role: oci_app
       vars:
-        oci_app_service_install_app_home: {{ oci_app_service_install_home }}/webapps/{{ context }}
+        oci_app_service_install_app_home: "{{ oci_app_service_install_home }}/webapps/{{ context }}"
         oci_app_startup_command: "{{ tomcat_install_dir_current }}/bin/catalina.sh run"
 <% if (addWebadeConfig === 'true') { %>
     # create a WebADE connection jar for the container

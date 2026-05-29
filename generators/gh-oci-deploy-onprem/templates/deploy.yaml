@@ -43,10 +43,48 @@ jobs:
       artifact_name: ${{ steps.set-build-output.outputs.artifact_name }}
       artifact_sha256: ${{ steps.set-build-output.outputs.artifact_sha256 }}
       download_url: ${{ steps.set-download-url.outputs.download_url }}
+      checkout_ref: ${{ steps.lookup-pr-merge-ref.outputs.checkout_ref }}
+      deploy_ref: ${{ steps.lookup-pr-merge-ref.outputs.deploy_ref }}
     steps:
       - name: Lookup PR Merge Ref
         id: lookup-pr-merge-ref
         run: |
+<% if (artifactSrc && artifactSrc !== 'repo') { -%>
+          if [[ "${{ github.ref_type }}" == "tag" ]]; then
+            echo "deploy_ref=${{ github.ref }}" >> $GITHUB_OUTPUT
+          elif  [[ ${{ github.ref_name != 'main' }} = true ]]; then
+<% } else { -%>
+          if [[ ${{ github.ref_name != 'main' }} = true ]]; then
+<% } -%>
+            RESPONSE=$(curl -s "https://api.github.com/repos/<%= gitHubProjectSlug %>/pulls?head=<%= gitHubProjectSlug.split('/')[0] %>:${{ github.ref_name }}&state=open&base=main" \
+              -H "Authorization: token ${{ secrets.GITHUB_TOKEN }}" \
+              -H "Accept: application/vnd.github+json")
+            PULL_REQUEST_NUMBER=$(echo "${RESPONSE}" | jq -r .[0].number)
+            RESPONSE=$(curl -s "https://api.github.com/repos/<%= gitHubProjectSlug %>/pulls/$PULL_REQUEST_NUMBER" \
+              -H "Authorization: token ${{ secrets.GITHUB_TOKEN }}" \
+              -H "Accept: application/vnd.github+json")
+            MERGEABLE=$(echo "${RESPONSE}" | jq -r .mergeable)
+            if [[ "$MERGEABLE" != "true" ]]; then
+              echo "::error ::Pull request #$PULL_REQUEST_NUMBER is not mergeable… aborted."
+              echo "This can be resolved by resolving the merge conflict with the main branch."
+              exit 1
+            fi
+<% if (artifactSrc && artifactSrc !== 'repo') { -%>
+            echo "deploy_ref=refs/pull/$PULL_REQUEST_NUMBER/merge" >> $GITHUB_OUTPUT
+          else
+            echo "deploy_ref=${{ github.ref_name }}" >> $GITHUB_OUTPUT
+          fi
+<% } else { -%>
+            echo "build_sha=$(echo ${RESPONSE} | jq -r .merge_commit_sha)" >> $GITHUB_OUTPUT
+            echo "checkout_ref=refs/pull/${PULL_REQUEST_NUMBER}/merge" >> $GITHUB_OUTPUT
+            echo "package_tag=${PULL_REQUEST_NUMBER}-merge" >> $GITHUB_OUTPUT
+          else
+            echo "build_sha=${{ github.sha }}" >> $GITHUB_OUTPUT
+            echo "checkout_ref=${{ github.ref }}" >> $GITHUB_OUTPUT
+            echo "package_tag=${{ github.ref_name }}" >> $GITHUB_OUTPUT
+          fi
+<% } -%>
+
 <% if (artifactSrc && artifactSrc !== 'repo') { -%>
           WHERE_QUERY=$(jq -rn \
             --arg serviceProject "$SERVICE_PROJECT" \
@@ -93,29 +131,6 @@ jobs:
           echo "build_sha=${BUILD_SHA}" >> $GITHUB_OUTPUT
           echo "checkout_ref=${BUILD_SHA}" >> $GITHUB_OUTPUT
           echo "package_tag=${ARTIFACT_TAG}" >> $GITHUB_OUTPUT
-<% } else { -%>
-          if [[ ${{ github.ref_name != 'main' }} = true ]]; then
-            RESPONSE=$(curl -s "https://api.github.com/repos/<%= gitHubProjectSlug %>/pulls?head=<%= gitHubProjectSlug.split('/')[0] %>:${{ github.ref_name }}&state=open&base=main" \
-              -H "Authorization: token ${{ secrets.GITHUB_TOKEN }}" \
-              -H "Accept: application/vnd.github+json")
-            PR_NUMBER=$(echo "${RESPONSE}" | jq -r '.[0].number')
-            RESPONSE=$(curl -s "https://api.github.com/repos/<%= gitHubProjectSlug %>/pulls/$PR_NUMBER" \
-              -H "Authorization: token ${{ secrets.GITHUB_TOKEN }}" \
-              -H "Accept: application/vnd.github+json")
-            MERGEABLE=$(echo "${RESPONSE}" | jq -r .mergeable)
-            if [[ "$MERGEABLE" != "true" ]]; then
-              echo "::error ::Pull request #$PR_NUMBER is not mergeable… aborted."
-              echo "This error can be fixed by resolving the merge conflict with the main branch."
-              exit 1
-            fi
-            echo "build_sha=$(echo ${RESPONSE} | jq -r .merge_commit_sha)" >> $GITHUB_OUTPUT
-            echo "checkout_ref=refs/pull/${PR_NUMBER}/merge" >> $GITHUB_OUTPUT
-            echo "package_tag=${PR_NUMBER}-merge" >> $GITHUB_OUTPUT
-          else
-            echo "build_sha=${{ github.sha }}" >> $GITHUB_OUTPUT
-            echo "checkout_ref=${{ github.ref }}" >> $GITHUB_OUTPUT
-            echo "package_tag=${{ github.ref_name }}" >> $GITHUB_OUTPUT
-          fi
 <% } -%>
         env:
           BROKER_URL: https://broker.io.nrs.gov.bc.ca
@@ -203,6 +218,7 @@ jobs:
       artifact_name: ${{ steps.set-tag-output.outputs.artifact_name }}
       artifact_sha256: ${{ steps.set-tag-output.outputs.artifact_sha256 }}
       download_url: ${{ steps.set-download-url.outputs.download_url }}
+      checkout_ref: ${{ steps.set-tag-output.outputs.checkout_ref }}
     steps:
       - name: Set tag output
         id: set-tag-output
@@ -391,6 +407,59 @@ jobs:
           BROKER_JWT: ${{ secrets.<%= brokerJwt %> }}
           SERVICE_NAME: ${{ env.SERVICE_NAME }}
           TRIGGER_UUID: ${{ steps.submit-job.outputs.trigger_uuid}}
+      - name: Generate deploy summary
+        if: always()
+        run: |
+          # Determine the status and appropriate message
+          if [[ "${{ steps.check-jenkins-job-status.outcome }}" == "failure" ]]; then
+            if [[ -z "${{ steps.check-jenkins-job-status.outputs.event_url }}" ]]; then
+              STATUS_MSG="❌ **Failed**: Job was not successfully submitted to Jenkins"
+              STATUS_DETAIL="The deployment job could not be triggered. This may indicate a broker connectivity issue."
+            else
+              STATUS_MSG="❌ **Failed**: Deployment job failed"
+              STATUS_DETAIL="The deployment completed but reported a failure status. Check the Jenkins logs for details."
+            fi
+          elif [[ "${{ steps.check-jenkins-job-status.outcome }}" == "success" && -z "${{ steps.check-jenkins-job-status.outputs.event_url }}" ]]; then
+            STATUS_MSG="⚠️ **Timeout**: Job did not complete within 5 minutes"
+            STATUS_DETAIL="> **Action Required**: The deployment job is still running in Jenkins. You must manually verify the job status and completion."
+          elif [[ "${{ steps.check-jenkins-job-status.outputs.status }}" == "success" ]]; then
+            STATUS_MSG="✅ **Success**: Deployment completed successfully"
+            STATUS_DETAIL=""
+          else
+            STATUS_MSG="❌ **Failed**: Deployment did not succeed"
+            STATUS_DETAIL="Final status: \`${{ steps.check-jenkins-job-status.outputs.status }}\`"
+          fi
+
+          cat >> $GITHUB_STEP_SUMMARY << EOF
+          # ${ENVIRONMENT^} Deployment Summary
+
+          | | |
+          | - | - |
+          | **Ref** | \`${DEPLOY_REF}\` |
+          | **Commit** | [${COMMIT_HASH:0:7}](https://github.com/${{ github.repository }}/tree/${COMMIT_HASH}) |
+          | **Version** | ${PROJECT_VERSION} |
+          | **Artifact SHA256** | ${ARTIFACT_SHA256} |
+          | **Deployment Config Tag** | ${DEPLOY_CONFIG_TAG} |
+          $(if [[ -n "${{ steps.check-jenkins-job-status.outputs.event_url }}" ]]; then
+            echo "| **Job Run** | [View Details](${{ steps.check-jenkins-job-status.outputs.event_url }}) |"
+          else
+            echo "| **Job Run** | Not available |"
+          fi)
+
+          ## Status
+
+          ${STATUS_MSG}
+
+          ${STATUS_DETAIL}
+
+          EOF
+        env:
+          ENVIRONMENT: ${{ inputs.environment }}
+          DEPLOY_REF: ${{ needs.deploy-pre-release-build.outputs.deploy_ref || github.ref }}
+          COMMIT_HASH: ${{ needs.deploy-pre-release-build.outputs.checkout_ref || needs.deploy-release-build.outputs.checkout_ref }}
+          PROJECT_VERSION: ${{ needs.deploy-pre-release-build.outputs.project_version || needs.deploy-release-build.outputs.project_version }}
+          ARTIFACT_SHA256: ${{ needs.deploy-pre-release-build.outputs.artifact_sha256 || needs.deploy-release-build.outputs.artifact_sha256 }}
+          DEPLOY_CONFIG_TAG: ${{ inputs.deploy_tag }}
 <% if (postDeployTestsPath) { -%>
   post-deploy-test:
     name: Post-deploy Test
@@ -403,3 +472,4 @@ jobs:
     with:
       environment: ${{ inputs.environment }}
 <% } -%>
+

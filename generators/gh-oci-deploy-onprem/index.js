@@ -26,6 +26,7 @@ import {
   PROMPT_ALT_APP_DIR_NAME,
   PROMPT_ADD_LOG4J2_CONFIG,
   PROMPT_ADD_TOMCAT_CONTEXT,
+  PROMPT_CREATE_DATA_TMP_DIR,
   getPromptToUsage,
 } from '../util/prompts.js';
 import { BACKSTAGE_FILENAME, BACKSTAGE_KIND_COMPONENT } from '../util/yaml.js';
@@ -83,6 +84,7 @@ const questions = [
     ...PROMPT_ADD_TOMCAT_CONTEXT,
     when: (answers) => answers.deployType === 'tomcat',
   },
+  PROMPT_CREATE_DATA_TMP_DIR,
 ];
 
 /**
@@ -187,6 +189,7 @@ export default class extends Generator {
       altAppDirName: this.answers.altAppDirName,
       addLog4j2Config: this.answers.addLog4j2Config,
       addTomcatContext: this.answers.addTomcatContext,
+      createDataTmpDir: this.answers.createDataTmpDir,
     };
     this.composeWith(
       'nr-repository-composer:pd-oci-playbook',

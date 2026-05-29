@@ -25,6 +25,9 @@ context: <%= tomcatContext %>
 alt_app_dir_name: <%= altAppDirName %>
 <% } -%>
 <% } -%>
+<% if (createDataTmpDir) { %>
+pd_configure_create_data_tmp: true
+<% } -%>
 
 # By default, the Tomcat port is set dynamically by using the port_manager role
 # If you need to set a static port, replace the dynamic port assignment value with your static value

@@ -88,6 +88,7 @@ export default class extends Generator {
         javaVersion: this.options.javaVersion,
         tomcatContext: this.options.tomcatContext,
         altAppDirName: this.options.altAppDirName,
+        createDataTmpDir: this.options.createDataTmpDir,
       },
     );
 

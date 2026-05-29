@@ -346,6 +346,12 @@ export const PROMPT_ADD_TOMCAT_CONTEXT = {
   message: 'Add tomcat context:',
   default: true,
 };
+export const PROMPT_CREATE_DATA_TMP_DIR = {
+  type: 'confirm'
+  name: 'createDataTmpDir',
+  message: 'Create data temp dir:',
+  default: false,
+}
 
 export const PROMPT_TO_USAGE = {
   locationName: {
@@ -531,6 +537,9 @@ export const PROMPT_TO_USAGE = {
   },
   addTomcatContext: {
     description: 'Whether to add tomcat context or not',
+  },
+  createDataTmpDir: {
+    description: 'Whether to create data temp directory or not',
   },
 };
 

@@ -25,7 +25,7 @@
     # create a self signed certificate to allow for HTTPS
     # See: https://github.com/bcgov/nr-polaris-collection/tree/main/polaris/deploy/roles/self_signed_cert
     - role: self_signed_cert
-<%if (type === 'tomcat') { %>
+<%if (deployType === 'tomcat') { %>
     # Install & configure the Tomcat container
     # See: https://github.com/bcgov/nr-polaris-collection/tree/main/polaris/deploy/roles/tomcat
     - role: tomcat

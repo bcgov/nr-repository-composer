@@ -398,7 +398,7 @@ export const pathToProps = [
     writeEmpty: false,
     deprecated: (config) => {
       if (config.hasGenerator('gh-maven-build')) {
-        config.addGeneratorToDoc('gh-tomcat-deploy-onprem');
+        config.addGeneratorToDoc('gh-oci-deploy-onprem');
       }
       if (config.hasGenerator('gh-nodejs-build')) {
         config.addGeneratorToDoc('gh-oci-deploy-onprem');

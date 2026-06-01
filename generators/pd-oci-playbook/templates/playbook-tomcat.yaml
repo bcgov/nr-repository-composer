@@ -30,16 +30,6 @@
     # See: https://github.com/bcgov/nr-polaris-collection/tree/main/polaris/deploy/roles/tomcat
     - role: tomcat
 <% } -%>
-<% if (addLog4j2Config) { %>
-    # Add log4j2 config from template
-    # See: https://github.com/bcgov/nr-polaris-collection/tree/main/polaris/deploy/roles/log4j2 
-    - role: log4j2
-<% } -%>
-<% if (addTomcatContext) { %>
-    # Add tomcat context from template
-    # See: https://github.com/bcgov/nr-polaris-collection/tree/main/polaris/deploy/roles/tomcat_context
-    - role: tomcat_context
-<% } -%>
 
     # Install OCI application (webapp)
     # See: https://github.com/bcgov/nr-polaris-collection/tree/main/polaris/deploy/roles/oci_app
@@ -55,6 +45,16 @@
     - role: webade_connection_jar
       become: yes
       become_user: "{{ polaris_install_user }}"
+<% } -%>
+<% if (addLog4j2Config) { %>
+    # Add log4j2 config from template
+    # See: https://github.com/bcgov/nr-polaris-collection/tree/main/polaris/deploy/roles/log4j2 
+    - role: log4j2
+<% } -%>
+<% if (addTomcatContext) { %>
+    # Add tomcat context from template
+    # See: https://github.com/bcgov/nr-polaris-collection/tree/main/polaris/deploy/roles/tomcat_context
+    - role: tomcat_context
 <% } -%>
 
   tasks:

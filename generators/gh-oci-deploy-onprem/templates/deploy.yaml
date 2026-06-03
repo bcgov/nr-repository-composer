@@ -44,7 +44,11 @@ jobs:
       artifact_sha256: ${{ steps.set-build-output.outputs.artifact_sha256 }}
       download_url: ${{ steps.set-download-url.outputs.download_url }}
       checkout_ref: ${{ steps.lookup-pr-merge-ref.outputs.checkout_ref }}
+<% if (artifactSrc && artifactSrc !== 'repo') { -%>
       deploy_ref: ${{ steps.lookup-pr-merge-ref.outputs.deploy_ref }}
+<% } else { -%>
+      build_version: ${{ steps.set-build-output.outputs.build_version }}
+<% } -%>
     steps:
       - name: Lookup PR Merge Ref
         id: lookup-pr-merge-ref
@@ -77,15 +81,16 @@ jobs:
 <% } else { -%>
             echo "build_sha=$(echo ${RESPONSE} | jq -r .merge_commit_sha)" >> $GITHUB_OUTPUT
             echo "checkout_ref=refs/pull/${PULL_REQUEST_NUMBER}/merge" >> $GITHUB_OUTPUT
+<% if (deployType === 'nodejs') { %>
             echo "package_tag=${PULL_REQUEST_NUMBER}-merge" >> $GITHUB_OUTPUT
+<% } -%>
           else
             echo "build_sha=${{ github.sha }}" >> $GITHUB_OUTPUT
             echo "checkout_ref=${{ github.ref }}" >> $GITHUB_OUTPUT
             echo "package_tag=${{ github.ref_name }}" >> $GITHUB_OUTPUT
           fi
 <% } -%>
-
-<% if (artifactSrc && artifactSrc !== 'repo') { -%>
+<% if (artifactSrc && artifactSrc !== 'repo') { %>
           WHERE_QUERY=$(jq -rn \
             --arg serviceProject "$SERVICE_PROJECT" \
             --arg serviceName "$SERVICE_NAME" \
@@ -179,6 +184,9 @@ jobs:
           echo "project_version=$(echo ${RESPONSE} | jq -r '.data[].actions[].package.version')" >> $GITHUB_OUTPUT
           echo "build_guid=$(echo ${RESPONSE} | jq -r '.data[].id')" >> $GITHUB_OUTPUT
           echo "build_number=$(echo ${RESPONSE} | jq -r '.data[].actions[].package.buildNumber')" >> $GITHUB_OUTPUT
+<% if (artifactSrc && artifactSrc === 'repo') { -%>
+          echo "build_version=$(echo ${RESPONSE} | jq -r '.data[].actions[].package.buildVersion')" >> $GITHUB_OUTPUT
+<% } -%>
           echo "artifact_name=$(echo ${RESPONSE} | jq -r '.data[].actions[].artifacts[].name')" >> $GITHUB_OUTPUT
           artifact_checksum=$(echo ${RESPONSE} | jq -r '.data[].actions[].artifacts[].checksum')
           echo "artifact_sha256=${artifact_checksum#sha256:}" >> $GITHUB_OUTPUT
@@ -201,7 +209,7 @@ jobs:
           echo "${DOWNLOAD_URL}"
           echo "download_url=$(echo ${DOWNLOAD_URL})" >> $GITHUB_OUTPUT
         env:
-          PACKAGE_TAG: ${{ steps.lookup-pr-merge-ref.outputs.package_tag}}
+          PACKAGE_TAG: ${{ steps.lookup-pr-merge-ref.outputs.package_tag || steps.set-build-output.outputs.project_version }}
           PACKAGE_REPO: ${{ env.PACKAGE_REPO }}
   deploy-release-build:
     name: Trigger deployment
@@ -455,8 +463,13 @@ jobs:
           EOF
         env:
           ENVIRONMENT: ${{ inputs.environment }}
+<% if (artifactSrc && artifactSrc !== "repo") { -%>
           DEPLOY_REF: ${{ needs.deploy-pre-release-build.outputs.deploy_ref || github.ref }}
           COMMIT_HASH: ${{ needs.deploy-pre-release-build.outputs.checkout_ref || needs.deploy-release-build.outputs.checkout_ref }}
+<% } else { -%>
+          DEPLOY_REF: ${{ needs.deploy-pre-release-build.outputs.checkout_ref || github.ref }}
+          COMMIT_HASH: ${{ needs.deploy-pre-release-build.outputs.build_version || needs.deploy-release-build.outputs.checkout_ref }}
+<% } -%>
           PROJECT_VERSION: ${{ needs.deploy-pre-release-build.outputs.project_version || needs.deploy-release-build.outputs.project_version }}
           ARTIFACT_SHA256: ${{ needs.deploy-pre-release-build.outputs.artifact_sha256 || needs.deploy-release-build.outputs.artifact_sha256 }}
           DEPLOY_CONFIG_TAG: ${{ inputs.deploy_tag }}

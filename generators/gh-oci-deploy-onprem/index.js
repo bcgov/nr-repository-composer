@@ -174,6 +174,7 @@ export default class extends Generator {
         gitHubProjectSlug: this.answers.gitHubProjectSlug,
         postDeployTestsPath: this.answers.postDeployTestsPath,
         deployRoot,
+        deployType: this.answers.deployType,
       },
     );
 

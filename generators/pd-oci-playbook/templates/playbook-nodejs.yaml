@@ -28,7 +28,7 @@
       vars:
         oci_app_runtime_install_dir: "{{ nodejs_install_dir }}"
         oci_app_service_command: "{{ oci_app_runtime_home }}/bin/node"
-        oci_app_service_options: "app/dist/main.js"
+        oci_app_service_options: "dist/main.js"
 
   tasks:
     - ansible.builtin.stat:

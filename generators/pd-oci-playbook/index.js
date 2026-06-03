@@ -35,6 +35,10 @@ export default class extends Generator {
       description: 'Deployment type (nodejs or tomcat)',
       default: 'nodejs',
     });
+    this.option('addWebadeConfig', {
+      type: String,
+      description: 'Add Webade configuration',
+    });
   }
 
   _getStorage() {

@@ -33,6 +33,7 @@ source env.sh local
 # Skip Vault authentication
 source env.sh build --skip-vault
 ```
+<% if (hasMavenBuild) { -%>
 
 #### Setting the Artifact Version
 
@@ -66,6 +67,7 @@ VERSION=1.2.0-SNAPSHOT ./mvnw clean package
 ```
 
 To bump the base development version, update only the `VERSION` file — `.env-build.sh` and the pipeline both derive from it automatically.
+<% } -%>
 <% } else if (isMonorepo) { -%>
 <!-- Monorepo Repository (Location with Components) -->
 

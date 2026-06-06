@@ -98,7 +98,7 @@ jobs:
             '{"actions.action":"package-build","actions.service.project":$serviceProject,"actions.service.name":$serviceName,"actions.package.version":$artifactTag} | @uri')
 
           RESPONSE=$(curl -s -X 'POST' \
-            "${BROKER_URL}/v1/intention/search?where=${WHERE_QUERY}&offset=0&limit=1" \
+            "${BROKER_URL}/v1/intention/search?where=${WHERE_QUERY}&offset=0&limit=20" \
             -H 'accept: application/json' \
             -H 'Authorization: Bearer '"${BROKER_JWT}"'' \
             -d '')
@@ -181,14 +181,49 @@ jobs:
             echo
             exit 1
           fi
-          echo "project_version=$(echo ${RESPONSE} | jq -r '.data[].actions[].package.version')" >> $GITHUB_OUTPUT
-          echo "build_guid=$(echo ${RESPONSE} | jq -r '.data[].id')" >> $GITHUB_OUTPUT
-          echo "build_number=$(echo ${RESPONSE} | jq -r '.data[].actions[].package.buildNumber')" >> $GITHUB_OUTPUT
+          SELECTED_RECORD=$(echo "$RESPONSE" | jq -c --arg packageTag "$PACKAGE_TAG" '
+            .data
+            | map(select((.actions[0].package.version // "") | endswith("-" + $packageTag)))
+            | .[0]
+          ')
+
+          if [[ -z "${SELECTED_RECORD}" || "${SELECTED_RECORD}" == "null" ]]; then
+            echo
+            echo "============================================================"
+            echo "Error: No Broker record matched expected package tag ${PACKAGE_TAG}."
+            echo "------------------------------------------------------------"
+            echo "Build SHA: ${BUILD_SHA}"
+            echo "Why it matters: Deployment must use metadata for the same artifact tag sent to Jenkins."
+            echo "--- Broker candidate summary ---"
+            echo "$RESPONSE" | jq -r '.data[] | { id, packageVersion: (.actions[0].package.version // "") }'
+            echo "============================================================"
+            echo
+            exit 1
+          fi
+
+          echo "project_version=$(echo "$SELECTED_RECORD" | jq -r '.actions[0].package.version')" >> $GITHUB_OUTPUT
+          echo "build_guid=$(echo "$SELECTED_RECORD" | jq -r '.id')" >> $GITHUB_OUTPUT
+          echo "build_number=$(echo "$SELECTED_RECORD" | jq -r '.actions[0].package.buildNumber')" >> $GITHUB_OUTPUT
 <% if (artifactSrc && artifactSrc === 'repo') { -%>
-          echo "build_version=$(echo ${RESPONSE} | jq -r '.data[].actions[].package.buildVersion')" >> $GITHUB_OUTPUT
+          echo "build_version=$(echo "$SELECTED_RECORD" | jq -r '.actions[0].package.buildVersion')" >> $GITHUB_OUTPUT
 <% } -%>
-          echo "artifact_name=$(echo ${RESPONSE} | jq -r '.data[].actions[].artifacts[].name')" >> $GITHUB_OUTPUT
-          artifact_checksum=$(echo ${RESPONSE} | jq -r '.data[].actions[].artifacts[].checksum')
+          echo "artifact_name=$(echo "$SELECTED_RECORD" | jq -r '.actions[0].artifacts[0].name')" >> $GITHUB_OUTPUT
+          artifact_checksum=$(echo "$SELECTED_RECORD" | jq -r '.actions[0].artifacts[0].checksum // empty')
+
+          if [[ -z "${artifact_checksum}" ]]; then
+            echo
+            echo "============================================================"
+            echo "Error: Broker returned an empty artifact checksum."
+            echo "------------------------------------------------------------"
+            echo "Build SHA: ${BUILD_SHA}"
+            echo "Why it matters: Jenkins checksum validation will always fail with an empty expected value."
+            echo "Check if the build workflow successfully patched package.checksum in Broker."
+            echo "--- Broker API response below ---"
+            echo "$RESPONSE"
+            echo "============================================================"
+            echo
+            exit 1
+          fi
           echo "artifact_sha256=${artifact_checksum#sha256:}" >> $GITHUB_OUTPUT
         env:
           BROKER_URL: https://broker.io.nrs.gov.bc.ca
@@ -196,6 +231,7 @@ jobs:
           SERVICE_PROJECT: ${{ env.SERVICE_PROJECT }}
           SERVICE_NAME: ${{ env.SERVICE_NAME }}
           BUILD_SHA: ${{ steps.lookup-pr-merge-ref.outputs.build_sha }}
+          PACKAGE_TAG: ${{ steps.lookup-pr-merge-ref.outputs.package_tag }}
       - name: Checkout repository
         uses: actions/checkout@v6
         with:

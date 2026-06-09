@@ -42,6 +42,26 @@ jobs:
           fi
       - name: Setup ORAS
         uses: oras-project/setup-oras@v2
+      - name: Get deploy config path and type
+        id: catalog-info
+        run: |          
+          # Extract package name from the project slug path
+          project_slug="${{ env.PROJECT_SLUG }}"
+          package_name="${project_slug##*/}"
+
+          # Write directly to outputs
+          echo "package_name=$package_name" >> "$GITHUB_OUTPUT"
+          echo "deploy_type=${{ env.DEPLOY_TYPE }}" >> "$GITHUB_OUTPUT"
+          echo "deploy_config_path=${{ env.DEPLOYMENT_CONFIG_PATHS }}" >> "$GITHUB_OUTPUT"
+
+          # Clean log summary
+          echo "Resolved package_name: $package_name"
+          echo "Resolved deploy_type: ${{ env.DEPLOY_TYPE }}"
+          echo "Resolved deploy_config_path: ${{ env.DEPLOYMENT_CONFIG_PATHS }}"
+        env:
+          DEPLOYMENT_CONFIG_PATHS: <%= deploymentConfigPaths %>
+          DEPLOY_TYPE: <%= deployType %>
+          PROJECT_SLUG: <%= gitHubProjectSlug %>
       - name: Create annotations files
         run: |
           cat <<EOF > annotation.json
@@ -57,6 +77,7 @@ jobs:
         env:
           PROJECT_TAG: ${{ steps.set-version.outputs.tag }}
       - name: Push deployment config to registry
+        id: publish-dc
         run: |
           oras login ghcr.io -u ${{ github.actor }} --password-stdin <<< ${{ secrets.GITHUB_TOKEN }}
           oras push --annotation-file annotation.json --export-manifest manifest.json ghcr.io/${{ github.repository }}/deployment-config:${PROJECT_TAG} <%= deploymentConfigPaths %>
@@ -69,3 +90,40 @@ jobs:
           echo "sha256: $ARTIFACT_SHA256"
         env:
           PROJECT_TAG: ${{ steps.set-version.outputs.tag }}
+      - name: Resolve package link
+        id: package-link
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          PROJECT_TAG: ${{ steps.set-version.outputs.tag }}
+          PACKAGE_NAME: ${{ steps.catalog-info.outputs.package_name }}/deployment-config
+          REPOSITORY_OWNER: ${{ github.repository_owner }}
+        run: |
+          ENCODED_PACKAGE_NAME="${PACKAGE_NAME//\//%2F}"
+          VERSION_ID="$(gh api "orgs/${REPOSITORY_OWNER}/packages/container/${ENCODED_PACKAGE_NAME}/versions" --paginate | jq -r --arg tag "$PROJECT_TAG" '.[] | select((.metadata.container.tags // []) | index($tag)) | .id' | head -n 1)"
+          if [[ -z "$VERSION_ID" ]]; then
+            PACKAGE_URL="https://github.com/${{ github.repository }}/pkgs/container/${ENCODED_PACKAGE_NAME}"
+          else
+            PACKAGE_URL="https://github.com/${{ github.repository }}/pkgs/container/${ENCODED_PACKAGE_NAME}/${VERSION_ID}?tag=${PROJECT_TAG}"
+          fi
+          echo "package_url=$PACKAGE_URL" >> "$GITHUB_OUTPUT"
+      - name: Generate deployment config summary
+        if: always()
+        run: |
+          cat >> $GITHUB_STEP_SUMMARY << EOF
+          # Build Deployment Config Summary
+          | | |
+          | - | - |
+          | **Deployment Config Tag** | \`${{ env.PROJECT_TAG }}\` |
+          | **Package** | [deployment-config](${{ env.PACKAGE_URL }}) |
+          | **Deploy Type** | \`${{ env.DEPLOY_TYPE }}\` |
+          | **Deployment Config Path** | \`${{ env.DEPLOY_CONFIG_PATH }}\` |
+          | **Artifact SHA256** | \`${{ env.ARTIFACT_SHA256 }}\` |
+          | **Artifact Size** | \`${{ env.ARTIFACT_SIZE }}\`
+          EOF
+        env:
+          PROJECT_TAG: ${{ steps.set-version.outputs.tag }}
+          PACKAGE_URL: ${{ steps.package-link.outputs.package_url }}
+          DEPLOY_TYPE: ${{ steps.catalog-info.outputs.deploy_type }}
+          DEPLOY_CONFIG_PATH: ${{ steps.catalog-info.outputs.deploy_config_path }}
+          ARTIFACT_SHA256: ${{ steps.publish-dc.outputs.artifact_sha256 }}
+          ARTIFACT_SIZE: ${{ steps.publish-dc.outputs.artifact_size }}

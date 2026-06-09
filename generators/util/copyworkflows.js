@@ -165,6 +165,7 @@ export function copyCommonDeploymentConfigWorkflow(
       {
         brokerJwt,
         deploymentConfigPaths,
+        deployType: answers.deployType,
         gitHubProjectSlug: answers.gitHubProjectSlug,
       },
     );

@@ -55,7 +55,7 @@
     #   with_items:
     #   - {
     #       src: "configuration.ts.j2",
-    #       dest: "{{ nodejs_app_service_install_app_home }}/dist/src/config/configuration.js"
+    #       dest: "{{ oci_app_service_install_app_home }}/dist/src/config/configuration.js"
     #     }
 
     - name: "<%= serviceName %>: Stop"

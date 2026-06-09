@@ -56,7 +56,7 @@ jobs:
 <% if (artifactSrc && artifactSrc !== 'repo') { -%>
           if [[ "${{ github.ref_type }}" == "tag" ]]; then
             echo "deploy_ref=${{ github.ref }}" >> $GITHUB_OUTPUT
-          elif  [[ ${{ github.ref_name != 'main' }} = true ]]; then
+          elif [[ ${{ github.ref_name != 'main' }} = true ]]; then
 <% } else { -%>
           if [[ ${{ github.ref_name != 'main' }} = true ]]; then
 <% } -%>

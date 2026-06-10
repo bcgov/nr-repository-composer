@@ -300,7 +300,7 @@ jobs:
           echo "${DOWNLOAD_URL}"
           echo "download_url=$(echo ${DOWNLOAD_URL})" >> $GITHUB_OUTPUT
         env:
-          PACKAGE_TAG: ${{ steps.set-tag-output.outputs.project_tag }}
+          PACKAGE_TAG: ${{ steps.set-tag-output.outputs.project_version }}
           PACKAGE_REPO: ${{ env.PACKAGE_REPO }}
   submit-deployment-job:
     name: Submit deployment job

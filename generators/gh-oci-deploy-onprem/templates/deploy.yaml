@@ -223,6 +223,9 @@ jobs:
       artifact_sha256: ${{ steps.set-tag-output.outputs.artifact_sha256 }}
       download_url: ${{ steps.set-download-url.outputs.download_url }}
       checkout_ref: ${{ steps.set-tag-output.outputs.checkout_ref }}
+<% if (artifactSrc && artifactSrc == 'repo') { -%>
+      build_version: ${{ steps.set-tag-output.outputs.build_version }}
+<% } -%>
     steps:
       - name: Set tag output
         id: set-tag-output
@@ -273,6 +276,7 @@ jobs:
           echo "checkout_ref=$(echo ${RESPONSE} | jq -r '.data[].actions[].package.buildVersion' | head -n1)" >> $GITHUB_OUTPUT
 <% } else { -%>
           echo "checkout_ref=${{ github.ref }}" >> $GITHUB_OUTPUT
+          echo "build_version=$(echo ${RESPONSE} | jq -r '.data[].actions[].package.buildVersion')" >> $GITHUB_OUTPUT
 <% } -%>
           echo "build_guid=$(echo ${RESPONSE} | jq -r '.data[].id')" >> $GITHUB_OUTPUT
           echo "build_number=$(echo ${RESPONSE} | jq -r '.data[].actions[].package.buildNumber')" >> $GITHUB_OUTPUT
@@ -464,7 +468,7 @@ jobs:
           COMMIT_HASH: ${{ needs.deploy-pre-release-build.outputs.checkout_ref || needs.deploy-release-build.outputs.checkout_ref }}
 <% } else { -%>
           DEPLOY_REF: ${{ needs.deploy-pre-release-build.outputs.checkout_ref || github.ref }}
-          COMMIT_HASH: ${{ needs.deploy-pre-release-build.outputs.build_version || needs.deploy-release-build.outputs.checkout_ref }}
+          COMMIT_HASH: ${{ needs.deploy-pre-release-build.outputs.build_version || needs.deploy-release-build.outputs.build_version }}
 <% } -%>
           PROJECT_VERSION: ${{ needs.deploy-pre-release-build.outputs.project_version || needs.deploy-release-build.outputs.project_version }}
           ARTIFACT_SHA256: ${{ needs.deploy-pre-release-build.outputs.artifact_sha256 || needs.deploy-release-build.outputs.artifact_sha256 }}

@@ -280,6 +280,33 @@ export const pathToProps = [
     writeEmpty: false,
   },
   {
+    path: [
+      'metadata',
+      'annotations',
+      'playbook.io.nrs.gov.bc.ca/addLog4j2Config',
+    ],
+    prop: 'addLog4j2Config',
+    writeEmpty: false,
+  },
+  {
+    path: [
+      'metadata',
+      'annotations',
+      'playbook.io.nrs.gov.bc.ca/addTomcatContext',
+    ],
+    prop: 'addTomcatContext',
+    writeEmpty: false,
+  },
+  {
+    path: [
+      'metadata',
+      'annotations',
+      'playbook.io.nrs.gov.bc.ca/createDataTmpDir',
+    ],
+    prop: 'createDataTmpDir',
+    writeEmpty: false,
+  },
+  {
     path: ['metadata', 'annotations', 'playbook.io.nrs.gov.bc.ca/clientId'],
     prop: 'clientId',
     writeEmpty: false,
@@ -376,7 +403,7 @@ export const pathToProps = [
     writeEmpty: false,
     deprecated: (config) => {
       if (config.hasGenerator('gh-maven-build')) {
-        config.addGeneratorToDoc('gh-tomcat-deploy-onprem');
+        config.addGeneratorToDoc('gh-oci-deploy-onprem');
       }
       if (config.hasGenerator('gh-nodejs-build')) {
         config.addGeneratorToDoc('gh-oci-deploy-onprem');

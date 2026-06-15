@@ -25,16 +25,18 @@
     # create a self signed certificate to allow for HTTPS
     # See: https://github.com/bcgov/nr-polaris-collection/tree/main/polaris/deploy/roles/self_signed_cert
     - role: self_signed_cert
+<% if (deployType === 'tomcat') { %>
+    # Install & configure the Tomcat container
+    # See: https://github.com/bcgov/nr-polaris-collection/tree/main/polaris/deploy/roles/tomcat
+    - role: tomcat
+<% } -%>
 
     # Install OCI application (webapp)
     # See: https://github.com/bcgov/nr-polaris-collection/tree/main/polaris/deploy/roles/oci_app
     - role: oci_app
       vars:
-        oci_app_runtime_install_dir: "{{ tomcat_install_dir_current }}"
-        oci_app_service_command: "{{ oci_app_runtime_home }}/bin/catalina.sh run"
-        oci_app_service_options: "-jar app.jar"
-        oci_app_env_dict:
-          JAVA_OPTS: "-Xmx512m"
+        oci_app_service_install_app_home: "{{ oci_app_service_install_home }}/webapps/{{ context }}"
+        oci_app_startup_command: "{{ tomcat_install_dir_current }}/bin/catalina.sh run"
 <% if (addWebadeConfig === 'true') { %>
     # create a WebADE connection jar for the container
     # If using the MOF Webade datastore, add the following to vars/custom/all.yaml
@@ -43,6 +45,16 @@
     - role: webade_connection_jar
       become: yes
       become_user: "{{ polaris_install_user }}"
+<% } -%>
+<% if (addLog4j2Config) { %>
+    # Add log4j2 config from template
+    # See: https://github.com/bcgov/nr-polaris-collection/tree/main/polaris/deploy/roles/log4j2 
+    - role: log4j2
+<% } -%>
+<% if (addTomcatContext) { %>
+    # Add tomcat context from template
+    # See: https://github.com/bcgov/nr-polaris-collection/tree/main/polaris/deploy/roles/tomcat_context
+    - role: tomcat_context
 <% } -%>
 
   tasks:
@@ -72,3 +84,23 @@
     #         src: "web.xml.j2",
     #         dest: "{{ polaris_apps_service_install_home }}/webapps/{{ alt_app_dir_name | default(context) }}/WEB-INF/web.xml"
     #       }
+
+    - name: "<%= serviceName %>: Stop"
+      ansible.builtin.include_role:
+        name: service_control
+      vars:
+        service_control_action: 'stop'
+
+    - meta: flush_handlers
+
+    - name: "<%= serviceName %>: {{ polaris_control_handler }} setup"
+      ansible.builtin.include_role:
+        name: service_control
+      vars:
+        service_control_action: 'setup'
+
+    - name: "<%= serviceName %>: Start"
+      ansible.builtin.include_role:
+        name: service_control
+      vars:
+        service_control_action: 'start'

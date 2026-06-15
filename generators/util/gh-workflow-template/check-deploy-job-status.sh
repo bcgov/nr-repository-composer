@@ -53,6 +53,15 @@ for ((i=1; i<=MAX_WAIT; i++)); do
   sleep 10
 done
 
+# Extract and display the event URL
+EVENT_URL=$(echo "$RESPONSE" | jq -r '.data[0].event.url // empty')
+if [[ -n "$EVENT_URL" ]]; then
+  echo "Event URL: $EVENT_URL"
+  echo "event_url=$EVENT_URL" >> $GITHUB_OUTPUT
+else
+  echo "Event URL not found in response."
+fi
+
 # Check the outcome
 STATUS=$(echo "$RESPONSE" | jq -r '.data[0].transaction.outcome // empty')
 echo "status=$STATUS" >> $GITHUB_OUTPUT

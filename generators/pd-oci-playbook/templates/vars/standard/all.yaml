@@ -14,6 +14,20 @@ polaris_apps_service_name: "<%= serviceName %>"
 polaris_apps_project_version: "{{ lookup('ansible.builtin.env', 'PODMAN_PROJECT_VERSION') }}"
 polaris_apps_build_number: "{{ lookup('ansible.builtin.env', 'PODMAN_BUILD_NUMBER') }}"
 polaris_apps_service_install_name: "{{ polaris_apps_project_version }}-{{ polaris_apps_build_number }}"
+<% if (deployType === 'tomcat') { %>
+jdk_major_version: <%= javaVersion %>
+
+# The following properties are custom to each particular service
+<% if (tomcatContext) { -%>
+context: <%= tomcatContext %>
+<% } -%>
+<% if (altAppDirName) { -%>
+alt_app_dir_name: <%= altAppDirName %>
+<% } -%>
+<% } -%>
+<% if (createDataTmpDir) { %>
+pd_configure_create_data_tmp: true
+<% } -%>
 
 # By default, the Tomcat port is set dynamically by using the port_manager role
 # If you need to set a static port, replace the dynamic port assignment value with your static value

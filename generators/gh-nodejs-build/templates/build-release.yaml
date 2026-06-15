@@ -31,6 +31,7 @@ env:
   BROKER_JWT: ${{ secrets.<%= brokerJwt %> }}
   SERVICE_PROJECT: <%= projectName %>
   SERVICE_NAME: <%= serviceName %>
+  DEFAULT_VERSION: ${{ vars.DEFAULT_VERSION || '0.0.0' }}-merge
 
 jobs:
   preflight:
@@ -62,7 +63,7 @@ jobs:
       packages: write
       pull-requests: read
     outputs:
-      project_version: ${{ steps.set-version.outputs.project_version }}
+      project_version: ${{ steps.set-build-output.outputs.project_version }}
       intention_id: ${{ steps.set-intention-id.outputs.intention_id }}
       branch: $${{ steps.set-version.outputs.branch }}
     steps:
@@ -71,6 +72,7 @@ jobs:
         run: |
           if [[ "${{ github.ref_type }}" == "tag" ]]; then
             echo "checkout_ref=${{ github.ref }}" >> $GITHUB_OUTPUT
+            echo "version_modifier=${{ github.ref_name }}" >> $GITHUB_OUTPUT
           elif [[ ${{ github.ref_name != 'main' }} = true ]]; then
             RESPONSE=$(curl -s "https://api.github.com/repos/<%= gitHubProjectSlug %>/pulls?head=<%= gitHubProjectSlug.split('/')[0] %>:${{ github.head_ref || github.ref_name }}&state=open&base=main" \
               -H "Authorization: token ${{ secrets.GITHUB_TOKEN }}" \
@@ -86,8 +88,10 @@ jobs:
               exit 1
             fi
             echo "checkout_ref=refs/pull/$PULL_REQUEST_NUMBER/merge" >> $GITHUB_OUTPUT
+            echo "version_modifier=$PULL_REQUEST_NUMBER" >> $GITHUB_OUTPUT
           else
             echo "checkout_ref=${{ github.ref_name }}" >> $GITHUB_OUTPUT
+            echo "version_modifier=${{ github.ref_name }}" >> $GITHUB_OUTPUT
           fi
       - name: Checkout repository
         uses: actions/checkout@v6
@@ -106,28 +110,20 @@ jobs:
       - name: Set version
         id: set-version
         run: |
-          REF_NAME="${{ github.ref_name }}"
-          SAFE_REF_NAME=$(echo "$REF_NAME" | tr '/' '-')
-
-          if [[ ${{ startsWith(github.ref, 'refs/heads/') }} = true ]]; then
-            version=$(cat package.json | jq -r '.version')
-            echo "project_version=$version-${SAFE_REF_NAME}" >> "$GITHUB_OUTPUT"
-            echo "tag=${SAFE_REF_NAME}" >> "$GITHUB_OUTPUT"
-          fi
-          if [[ ${{ startsWith(github.ref, 'refs/pull/') }} = true ]]; then
-            version=$(cat package.json | jq -r '.version')
-            echo "project_version=$version-${SAFE_REF_NAME}" >> "$GITHUB_OUTPUT"
-            echo "tag=${SAFE_REF_NAME}" >> "$GITHUB_OUTPUT"
-          fi
           if [[ ${{ startsWith(github.ref, 'refs/tags/v') }} = true ]]; then
-            echo "tag=${{ github.ref_name }}" >> "$GITHUB_OUTPUT"
             TAG=${{ github.ref_name }}
-            version="${TAG#v}"
-            echo "project_version=$version" >> $GITHUB_OUTPUT
+            APP_VERSION=${TAG#v}
+          else
+            APP_VERSION=${DEFAULT_VERSION/%-merge/-${{ steps.lookup-pr-merge-ref.outputs.version_modifier }}-merge}
           fi
+          echo "VERSION=${APP_VERSION}" >> $GITHUB_ENV
+        env:
+          DEFAULT_VERSION: ${{ env.DEFAULT_VERSION }}
       - name: Set build output parameters
         id: set-build-output-parameters
         run: |
+          source ./env.sh build ./ --skip-vault
+          echo "project_version=${VERSION}" >> $GITHUB_OUTPUT
           echo "git_commit=$(git rev-parse --verify HEAD)" >> $GITHUB_OUTPUT
           echo "build_guid=uuid::$(uuidgen)" >> $GITHUB_OUTPUT
       - name: Build intention
@@ -140,7 +136,7 @@ jobs:
           PACKAGE_BUILD_NUMBER: ${{ github.run_number }}
           PACKAGE_BUILD_VERSION: ${{ steps.set-build-output-parameters.outputs.git_commit }}
           PACKAGE_TYPE: application/vnd.oci.image.layer.v1.tar+gzip
-          PACKAGE_VERSION: ${{ steps.set-version.outputs.project_version }}
+          PACKAGE_VERSION: ${{ steps.set-build-output-parameters.outputs.project_version }}
       - name: Open intention
         uses: bcgov-nr/action-broker-intention-open@v2
         with:
@@ -173,7 +169,7 @@ jobs:
           <%_ } -%>
         working-directory: ./<%= relativePath %>
         env:
-          PROJECT_TAG: ${{ steps.set-version.outputs.tag }}
+          PROJECT_TAG: ${{ steps.set-build-output-parameters.outputs.project_version }}
 <% } -%>
       - name: Validate dist directory
         run: |
@@ -201,7 +197,7 @@ jobs:
           }
           EOF
         env:
-          PROJECT_TAG: ${{ steps.set-version.outputs.tag }}
+          PROJECT_TAG: ${{ steps.set-build-output-parameters.outputs.project_version }}
         working-directory: ./<%= relativePath %>
       - name: Publish artifact
         id: publish-artifact
@@ -213,7 +209,7 @@ jobs:
           echo "artifact_sha256=$(echo $MANIFEST | jq -r '.layers | map(.digest) | join(",")' | sha256sum | awk '{print $1}')" >> $GITHUB_OUTPUT
           echo "artifact_size=$(echo $MANIFEST | jq -r '.layers | map(.size) | add')" >> $GITHUB_OUTPUT
         env:
-          PROJECT_TAG: ${{ steps.set-version.outputs.tag }}
+          PROJECT_TAG: ${{ steps.set-build-output-parameters.outputs.project_version }}
         working-directory: ./<%= relativePath %>
       - name: Send build info
         run: |
@@ -236,3 +232,26 @@ jobs:
         with:
           intention_token: ${{ env.INTENTION_TOKEN }}
           outcome: failure
+      - name: Generate build summary
+        if: always()
+        run: |
+          cat >> $GITHUB_STEP_SUMMARY << EOF
+          # Build Summary
+
+          | | |
+          | - | - |
+          | **Ref** | \`${{ env.CHECKOUT_REF }}\` |
+          | **Commit** | [${COMMIT_HASH:0:7}](https://github.com/${{ github.repository }}/tree/${COMMIT_HASH}) |
+          | **Version** | ${PROJECT_VERSION} |
+<% if (type !== 'library') { -%>
+          | **Artifact SHA256** | ${ARTIFACT_SHA256} |
+<% } -%>
+
+          EOF
+        env:
+          CHECKOUT_REF: ${{ steps.lookup-pr-merge-ref.outputs.checkout_ref }}
+          COMMIT_HASH: ${{ steps.set-build-output-parameters.outputs.git_commit }}
+          PROJECT_VERSION: ${{ steps.set-build-output-parameters.outputs.project_version }}
+<% if (type !== 'library') { -%>
+          ARTIFACT_SHA256: ${{ steps.publish-artifact.outputs.artifact_sha256 }}
+<% } -%>

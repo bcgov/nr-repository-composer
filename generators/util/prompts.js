@@ -346,6 +346,24 @@ export const PROMPT_ADD_WEBADE_CONFIG = {
   message: 'Add Webade configuration:',
   default: false,
 };
+export const PROMPT_ADD_LOG4J2_CONFIG = {
+  type: 'confirm',
+  name: 'addLog4j2Config',
+  message: 'Add log4j2 configuration:',
+  default: true,
+};
+export const PROMPT_ADD_TOMCAT_CONTEXT = {
+  type: 'confirm',
+  name: 'addTomcatContext',
+  message: 'Add tomcat context:',
+  default: true,
+};
+export const PROMPT_CREATE_DATA_TMP_DIR = {
+  type: 'confirm',
+  name: 'createDataTmpDir',
+  message: 'Create data temp dir:',
+  default: false,
+}
 
 export const PROMPT_TO_USAGE = {
   locationName: {
@@ -528,6 +546,15 @@ export const PROMPT_TO_USAGE = {
   },
   addWebadeConfig: {
     description: 'Whether to add Webade configuration or not',
+  },
+  addLog4j2Config: {
+    description: 'Whether to add log4j2 configuration or not',
+  },
+  addTomcatContext: {
+    description: 'Whether to add tomcat context or not',
+  },
+  createDataTmpDir: {
+    description: 'Whether to create data temp directory or not',
   },
 };
 

@@ -35,6 +35,10 @@ export default class extends Generator {
       description: 'Deployment type (nodejs or tomcat)',
       default: 'nodejs',
     });
+    this.option('addWebadeConfig', {
+      type: String,
+      description: 'Add Webade configuration',
+    });
   }
 
   _getStorage() {
@@ -71,6 +75,9 @@ export default class extends Generator {
         projectName: this.options.projectName,
         serviceName: this.options.serviceName,
         addWebadeConfig: this.options.addWebadeConfig,
+        deployType: deployType,
+        addLog4j2Config: this.options.addLog4j2Config,
+        addTomcatContext: this.options.addTomcatContext,
       },
     );
     this.fs.copyTpl(
@@ -82,6 +89,10 @@ export default class extends Generator {
         projectNameUpperCase: this.options.projectName.toUpperCase(),
         deployType: deployType,
         shutdownScript: this.options.shutdownScript || '',
+        javaVersion: this.options.javaVersion,
+        tomcatContext: this.options.tomcatContext,
+        altAppDirName: this.options.altAppDirName,
+        createDataTmpDir: this.options.createDataTmpDir,
       },
     );
 

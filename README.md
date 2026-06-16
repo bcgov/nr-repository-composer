@@ -22,7 +22,7 @@ The `backstage` generator creates the catalog file and is the first step for mos
 | [gh-common-mono-build](#github-gh-common-mono-build) | Pipeline orchestration | GitHub | GitHub Actions |
 | [gh-docs-deploy](#github-docs-deploy-gh-docs-deploy) | Documentation | GitHub | GitHub Actions, GitHub Pages |
 | [gh-maven-build](#github-maven-build-gh-maven-build) | Pipeline | GitHub | Java, GitHub Actions |
-| [gh-tomcat-deploy-onprem](#github-tomcat-on-prem-deploy-gh-tomcat-deploy-onprem) | Deploy | GitHub | Java, Tomcat, GitHub Actions |
+| [gh-tomcat-deploy-onprem](#github-tomcat-on-prem-deploy-gh-tomcat-deploy-onprem) | Deploy (collection <= v4.2.0) | GitHub | Java, Tomcat, GitHub Actions |
 | [gh-nodejs-build](#github-nodejs-build-gh-nodejs-build) | Pipeline | GitHub | Node.js, GitHub Actions |
 | [gh-oci-deploy-onprem](#github-oci-on-prem-deploy-gh-oci-deploy-onprem) | Deploy | GitHub | OCI artifacts, GitHub Actions |
 | [migrations](#db-migrations-migrations) | Database | All | FlyWay, Liquibase |
@@ -130,18 +130,22 @@ The generated workflow file appears in `.github/workflows/build-release.yaml` an
 
 ### GitHub Maven Build: `gh-maven-build`
 
-This generates the CI workflow and NR Broker intention files for building a Java application using Maven in GitHub. The WAR artifact can then be used in a Tomcat deployment.
+This generates the CI workflow and NR Broker intention files for building a Java application using Maven in GitHub. The WAR artifact is packaged into an [OCI artifact](#build-outputs) which can then be used in a Tomcat deployment.
 
-The build can optionally pull [OCI artifacts as static assets](#static-assets) from other builds (e.g., frontend artifacts for a backend service).
+The build can optionally pull additional [OCI artifacts as static assets](#static-assets) from other builds (e.g., frontend artifacts for a backend service).
 
 The generated files will appear in your `.github/workflows` and `.jenkins` directories.
 
 This generator should be run at the root directory of your component (service) which should contain the `catalog-info.yaml` for it.
 
 **Suggested Next Steps:**
-- [`gh-tomcat-deploy-onprem`](#github-tomcat-on-prem-deploy-gh-tomcat-deploy-onprem) - Set up on-premises Tomcat deployment workflow
+- [`gh-oci-deploy-onprem`](#github-oci-on-prem-deploy-gh-oci-deploy-onprem) - Set up on-premises OCI deployment workflow
 
 ### GitHub Tomcat On-Prem Deploy: `gh-tomcat-deploy-onprem`
+
+:warning: Warning! gh-tomcat-deploy is superseded by [`gh-oci-deploy-onprem`](#github-oci-on-prem-deploy-gh-oci-deploy-onprem).
+
+gh-tomcat-deploy is only compatible w/ versions of the [nr-repository-composer](github.com/bcgov/nr-repository-composer) <= v4.2.0
 
 This generates the deploy workflow and NR Broker intention files for deploying Java/Tomcat applications to on-premises infrastructure via GitHub Actions.
 
@@ -180,7 +184,7 @@ A container registery is used to store and fetch containers by software like Pod
 
 ### Build Outputs
 
-If the build output is an OCI artifact then the build must create a `./dist` folder and include it in the artifact. You may bundle additional support folders and files in the artifact as well.
+If the build output is an OCI artifact then the build must bundle the artifact in the target layout for the deployment. For example, a nodejs application must create a `./dist` folder and include it in the artifact; A Java/Tomcat application must bundle `./META-INF`, `./WEB_INF`, and other required files and directories. You may bundle additional support folders and files in the artifact as well.
 
 The build is expected to set the following annotations in the manifest: (The generator should set this up)
 

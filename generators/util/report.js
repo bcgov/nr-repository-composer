@@ -179,8 +179,8 @@ export const GENERATOR_REPORTS = {
     ],
     nextSteps: [
       {
-        generator: 'gh-tomcat-deploy-onprem',
-        description: 'Set up on-premises Tomcat deployment workflow',
+        generator: 'gh-oci-deploy-onprem',
+        description: 'Set up on-premises OCI deployment workflow',
       },
       {
         generator: null,

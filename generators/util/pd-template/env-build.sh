@@ -24,9 +24,13 @@ export PACKAGE_REPO="<%= artifactRepositoryPath %>"
 # Maven build configuration
 export POM_ROOT="<%= pomRoot %>"
 export MAVEN_ARGS="--file $POM_ROOT"
-<% } -%>
-
+export PUBLISH_DIR="<%= (typeof publishArtifactSuffix !== 'undefined' && publishArtifactSuffix ? publishArtifactSuffix.split(' ')[0] : 'dist') %>"
 export VERSION="${VERSION:-0.0.0-SNAPSHOT}"
+<% } else { -%>
+# Non-Maven build configuration (e.g. Node)
+DEFAULT_VERSION="$(jq -r '.version // empty' "$(dirname "${BASH_SOURCE[0]}")/package.json" 2>/dev/null)"
+export VERSION="${VERSION:-${DEFAULT_VERSION:-0.0.0}}"
+<% } -%>
 <% if (toolsLocalBuildSecrets) { %>
 # Only fetch vault secrets if --skip-vault is not set
 if [[ "$SKIP_VAULT" == false ]]; then

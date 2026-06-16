@@ -135,6 +135,7 @@ export default class extends Generator {
       {
         projectName: this.answers.projectName,
         serviceName: this.answers.serviceName,
+        type: this.answers.type,
         artifactRepositoryType: this.answers.artifactRepositoryType,
         artifactRepositoryPath: this.answers.artifactRepositoryPath,
         brokerJwt,

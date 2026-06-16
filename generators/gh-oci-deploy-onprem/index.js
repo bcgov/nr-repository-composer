@@ -21,6 +21,14 @@ import {
   PROMPT_ARTIFACT_SRC,
   PROMPT_PLAYBOOK_PATH,
   PROMPT_DEPLOY_TYPE,
+  PROMPT_JAVA_VERSION,
+  PROMPT_TOMCAT_CONTEXT,
+  PROMPT_USE_ALT_APP_DIR_NAME,
+  PROMPT_ALT_APP_DIR_NAME,
+  PROMPT_ADD_LOG4J2_CONFIG,
+  PROMPT_ADD_TOMCAT_CONTEXT,
+  PROMPT_CREATE_DATA_TMP_DIR,
+  PROMPT_ADD_WEBADE_CONFIG,
   getPromptToUsage,
 } from '../util/prompts.js';
 import { BACKSTAGE_FILENAME, BACKSTAGE_KIND_COMPONENT } from '../util/yaml.js';
@@ -38,6 +46,35 @@ const questions = [
   PROMPT_TYPE,
   PROMPT_ARTIFACT_SRC,
   PROMPT_DEPLOYMENT_CONFIG_PATHS,
+  {
+    ...PROMPT_JAVA_VERSION,
+    when: (answers) => answers.deployType === 'tomcat',
+  },
+  {
+    ...PROMPT_TOMCAT_CONTEXT,
+    when: (answers) => answers.deployType === 'tomcat',
+  },
+  {
+    ...PROMPT_USE_ALT_APP_DIR_NAME,
+    when: (answers) => answers.deployType === 'tomcat',
+  },
+  {
+    ...PROMPT_ALT_APP_DIR_NAME,
+    when: (answers) => answers.useAltAppDirName,
+  },
+  {
+    ...PROMPT_ADD_LOG4J2_CONFIG,
+    when: (answers) => answers.deployType === 'tomcat',
+  },
+  {
+    ...PROMPT_ADD_TOMCAT_CONTEXT,
+    when: (answers) => answers.deployType === 'tomcat',
+  },
+  PROMPT_CREATE_DATA_TMP_DIR,
+  {
+    ...PROMPT_ADD_WEBADE_CONFIG,
+    when: (answers) => answers.deployType === 'tomcat',
+  },
 ];
 
 /**
@@ -127,6 +164,7 @@ export default class extends Generator {
         gitHubProjectSlug: this.answers.gitHubProjectSlug,
         postDeployTestsPath: this.answers.postDeployTestsPath,
         deployRoot,
+        deployType: this.answers.deployType,
       },
     );
 
@@ -137,6 +175,13 @@ export default class extends Generator {
 
     const playbook_options = {
       deployType: this.answers.deployType,
+      javaVersion: this.answers.javaVersion,
+      tomcatContext: this.answers.tomcatContext,
+      altAppDirName: this.answers.altAppDirName,
+      addLog4j2Config: this.answers.addLog4j2Config,
+      addTomcatContext: this.answers.addTomcatContext,
+      createDataTmpDir: this.answers.createDataTmpDir,
+      addWebadeConfig: this.answers.addWebadeConfig,
     };
     this.composeWith(
       'nr-repository-composer:pd-oci-playbook',

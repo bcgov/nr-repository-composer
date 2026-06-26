@@ -25,7 +25,11 @@ jobs:
             ${{ inputs.url }}/v1/health/token-check \
             -H 'accept: */*' \
             -H 'Authorization: Bearer '"${{ secrets.token }}"'' \
-            )
+            --retry 2 \
+            --max-time 30 \
+            --connect-timeout 10 \
+            --retry-delay 5 \
+          )
 
           if [ "$RESPONSE_CODE" -eq 401 ]; then
             echo "Unauthorized (401)"

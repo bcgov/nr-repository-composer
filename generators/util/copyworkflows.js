@@ -170,6 +170,11 @@ export function copyCommonDeploymentConfigWorkflow(
       },
     );
     generator.fs.copyTpl(
+      generator.templatePath(`${COMMON_GH_TEMPLATE_PATH}/build-dc.sh`),
+      destinationGitPath(`.github/workflows/build-dc.sh`),
+      {},
+    );
+    generator.fs.copyTpl(
       generator.templatePath(`${COMMON_GH_TEMPLATE_PATH}/build-dc.yaml`),
       destinationGitPath(`.github/workflows/build-dc.yaml`),
       {

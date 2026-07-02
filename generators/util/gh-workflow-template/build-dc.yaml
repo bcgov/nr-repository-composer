@@ -40,11 +40,32 @@ jobs:
           if [[ ${{ startsWith(github.ref, 'refs/tags/d') }} = true ]]; then
             echo "tag=${{ github.ref_name }}" >> "$GITHUB_OUTPUT"
           fi
+      - name: Set build output parameters
+        id: set-build-output-parameters
+        run: |
+          echo "git_commit=$(git rev-parse HEAD)" >> $GITHUB_OUTPUT
+          echo "build_guid=uuid::$(uuidgen)" >> $GITHUB_OUTPUT
+      - name: Build intention
+        run: sh ./.github/workflows/build-dc.sh
+        env:
+          EVENT_REASON: Build deployment config ${{ github.ref_name }}
+          GITHUB_REPOSITORY: ${{ github.repository }}
+          GITHUB_RUN_ID: ${{ github.run_id}}
+          PACKAGE_BUILD_GUID: ${{ steps.set-build-output-parameters.outputs.build_guid }}
+          PACKAGE_BUILD_NUMBER: ${{ github.run_number }}
+          PACKAGE_BUILD_VERSION: ${{ steps.set-build-output-parameters.outputs.git_commit }}
+          PACKAGE_VERSION: ${{ steps.set-version.outputs.tag }}
+      - name: Open intention
+        uses: bcgov-nr/action-broker-intention-open@v2
+        with:
+          broker_jwt: ${{ secrets.<%= brokerJwt %> }}
+          intention_path: intention.json
+          quickstart: true
       - name: Setup ORAS
         uses: oras-project/setup-oras@v2
       - name: Get deploy config path and type
         id: catalog-info
-        run: |          
+        run: |
           # Extract package name from the project slug path
           project_slug="${{ env.PROJECT_SLUG }}"
           package_name="${project_slug##*/}"
@@ -90,6 +111,17 @@ jobs:
           echo "sha256: $ARTIFACT_SHA256"
         env:
           PROJECT_TAG: ${{ steps.set-version.outputs.tag }}
+      - name: Close intention
+        if: ${{ success() && env.INTENTION_TOKEN != '' }}
+        uses: bcgov-nr/action-broker-intention-close@v3
+        with:
+          intention_token: ${{ env.INTENTION_TOKEN }}
+      - name: Close intention (Failure)
+        if: ${{ failure() && env.INTENTION_TOKEN != '' }}
+        uses: bcgov-nr/action-broker-intention-close@v3
+        with:
+          intention_token: ${{ env.INTENTION_TOKEN }}
+          outcome: failure
       - name: Resolve package link
         id: package-link
         env:

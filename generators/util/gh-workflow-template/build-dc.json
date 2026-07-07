@@ -4,27 +4,7 @@
     "reason": "Job triggered",
     "url": "JOB_URL"
   },
-  "actions": [
-    {
-      "action": "package-build",
-      "id": "dcbuild",
-      "provision": [],
-      "service": {
-        "project": "<%= projectName %>",
-        "name": "<%= serviceName %>",
-        "environment": "tools"
-      },
-      "package": {
-        "category": "infrastructure",
-        "version": "",
-        "buildVersion": "",
-        "buildNumber": 0,
-        "name": "<%= serviceName %>-dc",
-        "type": "oci-archive",
-        "license": "<%= license %>"
-      }
-    }
-  ],
+  "actions": [],
   "user": {
     "name": "github@internal"
   }

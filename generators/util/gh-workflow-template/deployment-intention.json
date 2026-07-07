@@ -53,11 +53,7 @@
         "version": "",
         "buildGuid": ""
       },
-      "references": [
-        {
-          "action": "package-build#build"
-        }
-      ]
+      "references": []
     }
   ],
   "user": {

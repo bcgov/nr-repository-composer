@@ -12,6 +12,9 @@ on:
         type: string
         default: "catalog-info.yaml"
         required: false
+    outputs:
+      can_rebuild:
+        value: ${{ jobs.check-release-package.outputs.can_rebuild }}
     secrets:
       token:
         description: "The Broker token"
@@ -23,7 +26,8 @@ jobs:
   check-release-package:
     name: Check if Release Package Exists
     runs-on: ubuntu-latest
-
+    outputs:
+      can_rebuild: ${{ steps.check.outputs.can_rebuild }}
     steps:
       - name: Checkout only catalog-info.yaml
         uses: actions/checkout@v6
@@ -101,7 +105,7 @@ jobs:
           if [ "$OUTCOME" = "success" ]; then
             echo "Build is already successful. Stop rebuild!"
             echo "can_rebuild=false" >> $GITHUB_OUTPUT
-            exit 1
+            exit 0
           else
             echo "Build failed or outcome is not success. Will continue to rebuild..."
             echo "can_rebuild=true" >> $GITHUB_OUTPUT

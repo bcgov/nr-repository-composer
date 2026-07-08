@@ -66,6 +66,7 @@ jobs:
       project_version: ${{ steps.set-build-output.outputs.project_version }}
       intention_id: ${{ steps.set-intention-id.outputs.intention_id }}
       branch: $${{ steps.set-version.outputs.branch }}
+    if: ${{ needs.preflight.outputs.can_rebuild == 'true' }}
     steps:
       - name: Lookup PR Merge Ref
         id: lookup-pr-merge-ref

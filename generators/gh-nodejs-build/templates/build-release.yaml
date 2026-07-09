@@ -49,6 +49,8 @@ jobs:
   test:
     name: Test
     uses: <%= unitTestsPath %>
+    permissions:
+      contents: read
 <% } -%>
   build-publish:
     name: Build and publish

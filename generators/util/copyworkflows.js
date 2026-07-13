@@ -140,13 +140,13 @@ export function copyCommonDeploymentConfigWorkflow(
 ) {
   const services = scanRepositoryForComponents();
   const allPaths = new Set(additionalPaths);
+  allPaths.add('catalog-info.yaml'); // Always include root catalog-info.yaml for scanning
   for (const service of services) {
     const configPaths = service.doc.getIn([
       'metadata',
       'annotations',
       'playbook.io.nrs.gov.bc.ca/deploymentConfigPaths',
     ]);
-    allPaths.add('catalog-info.yaml'); // Always include root catalog-info.yaml for scanning
     if (configPaths) {
       const serviceDir = path.dirname(service.path);
       allPaths.add(service.path);
@@ -159,12 +159,34 @@ export function copyCommonDeploymentConfigWorkflow(
   }
   const deploymentConfigPaths = [...allPaths].join(' ');
 
+  // Build service tuples for the build-dc.json template
+  const dcServices = services.map((s, index) => ({
+    index,
+    projectName: s.doc.getIn(['spec', 'system']) || answers.projectName,
+    serviceName: s.doc.getIn(['metadata', 'name']) || s.name,
+    tokenEnvVar: `ACTION_TOKEN_DCBUILD_${index}`,
+  }));
+
   if (deploymentConfigPaths) {
+    generator.fs.copyTpl(
+      generator.templatePath(`${COMMON_GH_TEMPLATE_PATH}/build-dc.json`),
+      destinationGitPath(`.github/workflows/build-dc.json`),
+      {},
+    );
+    generator.fs.copyTpl(
+      generator.templatePath(`${COMMON_GH_TEMPLATE_PATH}/build-dc.sh`),
+      destinationGitPath(`.github/workflows/build-dc.sh`),
+      {
+        services: dcServices,
+        license: answers.license,
+      },
+    );
     generator.fs.copyTpl(
       generator.templatePath(`${COMMON_GH_TEMPLATE_PATH}/build-dc.yaml`),
       destinationGitPath(`.github/workflows/build-dc.yaml`),
       {
         brokerJwt,
+        services: dcServices,
         deploymentConfigPaths,
         deployType: answers.deployType,
         gitHubProjectSlug: answers.gitHubProjectSlug,

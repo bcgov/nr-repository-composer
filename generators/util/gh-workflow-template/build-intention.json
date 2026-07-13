@@ -16,6 +16,7 @@
       },
       "package": {
         "architecture": "<%= packageArchitecture %>",
+        "category": "software",
         "version": "",
         "buildVersion": "",
         "buildNumber": 0,

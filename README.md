@@ -20,7 +20,7 @@ This repository includes guidance files to help staff run agent-assisted OCI/ORA
 - `.github/instructions/oci-rollout.instructions.md`: Machine-readable safety and preflight constraints.
 - `.github/skills/oci-pipeline-rollout/SKILL.md`: Executable workflow for single-repo and multi-repo staff sessions.
 
-Recommended rollout mode is direct-in-target-repository execution. Staff should run one repository at a time, confirm only expected generated OCI/ORAS artifacts changed, and end each run as a pull request, no-op, or documented blocker.
+Recommended rollout mode is direct-in-target-repository execution. Staff should run one repository at a time, confirm only expected generated OCI/ORAS artifacts changed, and end each run as a pull request, no-op, or clear console failure with non-zero exit.
 
 ## Generator Library
 

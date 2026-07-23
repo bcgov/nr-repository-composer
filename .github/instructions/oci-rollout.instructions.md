@@ -18,7 +18,7 @@ Before running generators in a target repository:
 3. Confirm target component has `catalog-info.yaml`.
 4. Confirm git working tree is clean.
 
-If any preflight check fails, stop and record the blocker.
+If any preflight check fails, print the reason to the console and exit.
 
 ## Generator Path Requirements
 
@@ -41,7 +41,7 @@ If any preflight check fails, stop and record the blocker.
 - Never use destructive git commands.
 - Keep commits scoped to generated OCI/ORAS pipeline artifacts.
 - Do not mix unrelated refactors with rollout changes.
-- If prompt/config data is missing, stop and record remediation steps instead of forcing partial updates.
+- If prompt/config data is missing, print the reason to the console and exit instead of forcing partial updates.
 
 ## Required Outcome
 
@@ -49,4 +49,4 @@ Each repo run must end as exactly one of:
 
 1. Pull request opened.
 2. No-op (already up to date).
-3. Blocked with documented next action.
+3. Stopped with clear console output and non-zero exit.

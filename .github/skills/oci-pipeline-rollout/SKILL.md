@@ -30,7 +30,7 @@ Use this skill for staff-supervised updates that apply the latest OCI/ORAS gener
 4. Run deploy generator:
    - `./nr-repository-composer.sh . gh-oci-deploy-onprem --ask-answered`
 5. Review changed files and ensure only expected generated OCI/ORAS pipeline artifacts changed.
-6. Commit and open pull request, or record blocker if update could not complete safely.
+6. Commit and open pull request, or print the failure reason to the console and exit.
 
 ## Path B: Multi-Repo Staff Session
 
@@ -39,7 +39,7 @@ Use this skill for staff-supervised updates that apply the latest OCI/ORAS gener
 3. After each repository, record one outcome:
    - PR opened
    - No changes needed
-   - Blocked (include blocker type and next action)
+   - Stopped with console output and non-zero exit
 
 ## Stop Conditions
 
@@ -49,7 +49,7 @@ Stop the run for a repository if:
 - `catalog-info.yaml` is missing or invalid for generator requirements.
 - Diff includes unrelated churn outside expected generated artifacts.
 
-Do not force completion. Record blocker details and escalate to repo owner.
+Do not force completion. Print the reason to the console and exit.
 
 ## Validation Checklist
 
@@ -59,4 +59,4 @@ For each repository, confirm:
 2. Deploy generator is `gh-oci-deploy-onprem`.
 3. No deprecated deploy generator was used.
 4. Commit scope is limited to intended generated files.
-5. Final state is PR, no-op, or documented blocker.
+5. Final state is PR, no-op, or clear console failure with non-zero exit.

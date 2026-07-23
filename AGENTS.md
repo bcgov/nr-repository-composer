@@ -18,7 +18,7 @@ For each target repository:
    - Java/Maven: `gh-maven-build`
 3. Run `gh-oci-deploy-onprem` for deployment workflow updates.
 4. Review the diff and ensure only expected generated files changed.
-5. Commit and open a pull request, or record a blocker with remediation details.
+5. Commit and open a pull request, or print the failure reason to the console and exit.
 
 ## Generator Selection Rules
 
@@ -54,7 +54,7 @@ Each run must end in one state:
 
 1. PR opened with OCI/ORAS updates.
 2. No changes needed.
-3. Blocked, with blocker cause and next action documented.
+3. Stopped with a clear console message and non-zero exit.
 
 ## Canonical References In This Repository
 

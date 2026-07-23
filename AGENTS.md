@@ -55,9 +55,9 @@ Example with a local wrapper copied into a target repository:
 
 Each run must end in one state:
 
-1. PR opened with OCI/ORAS updates.
+1. PR opened with Polaris Pipeline updates.
 2. No changes needed.
-3. Stopped with a clear console message and non-zero exit.
+3. Stopped with a clear terminal message and an error exit code.
 
 ## Pull Request Flow
 

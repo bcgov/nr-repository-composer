@@ -46,7 +46,7 @@ Use this skill for staff-supervised updates that apply the latest Polaris Pipeli
 3. After each repository, record one outcome:
    - PR opened
    - No changes needed
-   - Stopped with console output and non-zero exit
+   - Stopped with a clear terminal message and an error exit code
 
 ## Stop Conditions
 
@@ -66,4 +66,4 @@ For each repository, confirm:
 2. Deploy generator is `gh-oci-deploy-onprem`.
 3. No deprecated deploy generator was used.
 4. Commit scope is limited to intended generated files.
-5. Final state is PR, no-op, or clear console failure with non-zero exit.
+5. Final state is PR, no-op, or a stop with a clear terminal message and an error exit code.

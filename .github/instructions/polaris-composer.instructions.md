@@ -52,4 +52,4 @@ Each repo run must end as exactly one of:
 
 1. Pull request opened.
 2. No-op (already up to date).
-3. Stopped with clear console output and non-zero exit.
+3. Stopped with a clear terminal message and an error exit code.

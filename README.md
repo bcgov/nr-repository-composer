@@ -20,7 +20,7 @@ This repository includes guidance files to help staff run agent-assisted Polaris
 - `.github/instructions/polaris-composer.instructions.md`: Machine-readable safety and preflight constraints.
 - `.github/skills/polaris-pipeline-composer/SKILL.md`: Executable workflow for single-repo and multi-repo staff sessions.
 
-Recommended composer mode is direct-in-target-repository execution. Staff should run one repository at a time, confirm only expected generated Polaris Pipeline artifacts changed, and end each run as a pull request, no-op, or clear console failure with non-zero exit. GitHub CLI (`gh`) authentication is required so the composer flow can push a branch and create a pull request when changes exist.
+Recommended composer mode is direct-in-target-repository execution. Staff should run one repository at a time, confirm only expected generated Polaris Pipeline artifacts changed, and end each run as a pull request, no-op, or a stop with a clear terminal message and an error exit code. GitHub CLI (`gh`) authentication is required so the composer flow can push a branch and create a pull request when changes exist.
 
 ## Generator Library
 

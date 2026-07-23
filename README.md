@@ -12,6 +12,18 @@ Developers interact with the tool by running generators that prompt for informat
 
 The `backstage` generator creates the catalog file and is the first step for most components. It is run at the root of the component within the repository. If you have multiple components, each should be placed in a directory off the root. Otherwise, the root of a non-monorepo should contain the component catalog file. From this point, the developer runs additional generators as required in the folder for each component.
 
+## Polaris Pipeline Composer (Agent-Assisted)
+
+This repository includes guidance files to help staff run agent-assisted Polaris Pipeline refresh work in target application repositories.
+
+- `AGENTS.md`: Canonical composer runbook and generator selection rules.
+- `.github/instructions/polaris-composer.instructions.md`: Machine-readable safety and preflight constraints.
+- `.github/skills/polaris-pipeline-composer/SKILL.md`: Executable workflow for single-repo and multi-repo staff sessions.
+
+Staff should run the composer against one repository at a time and confirm only expected generated Polaris Pipeline artifacts changed. Each run should end with either a pull request or no changes. If an error occurs, the process should stop with a terminal message and exit code.
+
+Default mode assumes required prompt values are preconfigured and runs with `--headless --force`.
+
 ## Generator Library
 
 | Generator | Usage | Platform | Technologies |
@@ -22,6 +34,7 @@ The `backstage` generator creates the catalog file and is the first step for mos
 | [gh-common-mono-build](#github-gh-common-mono-build) | Pipeline orchestration | GitHub | GitHub Actions |
 | [gh-docs-deploy](#github-docs-deploy-gh-docs-deploy) | Documentation | GitHub | GitHub Actions, GitHub Pages |
 | [gh-maven-build](#github-maven-build-gh-maven-build) | Pipeline | GitHub | Java, GitHub Actions |
+| [gh-polaris-composer-agent](#polaris-pipeline-composer-agent-gh-polaris-composer-agent) | Agent guidance pack | All | Copilot agent files |
 | [gh-tomcat-deploy-onprem](#github-tomcat-on-prem-deploy-gh-tomcat-deploy-onprem) | Deploy (collection <= v4.2.0) | GitHub | Java, Tomcat, GitHub Actions |
 | [gh-nodejs-build](#github-nodejs-build-gh-nodejs-build) | Pipeline | GitHub | Node.js, GitHub Actions |
 | [gh-oci-deploy-onprem](#github-oci-on-prem-deploy-gh-oci-deploy-onprem) | Deploy | GitHub | OCI artifacts, GitHub Actions |
@@ -37,6 +50,22 @@ This generator copies [nr-repository-composer.sh](./nr-repository-composer.sh) t
 - [`backstage`](#backstage-backstage) - Create Backstage component catalog file
 - [`backstage-location`](#backstage-backstage-location) - Create Backstage location catalog for monorepos
 - [`gh-maven-build`](#github-maven-build-gh-maven-build), [`gh-nodejs-build`](#github-nodejs-build-gh-nodejs-build) - Set up build pipeline
+
+### Polaris Pipeline Composer Agent: `gh-polaris-composer-agent`
+
+This optional generator adds a target-repository guidance pack for staff-run Polaris Pipeline composer updates.
+
+It creates the following files:
+
+- `AGENTS.md`
+- `.github/instructions/polaris-composer.instructions.md`
+- `.github/skills/polaris-pipeline-composer/SKILL.md`
+
+Use this generator when you want a repository to be ready for direct-in-repo, headless-first, agent-assisted execution without manually copying guidance files.
+
+**Suggested Next Steps:**
+- [`gh-maven-build`](#github-maven-build-gh-maven-build), [`gh-nodejs-build`](#github-nodejs-build-gh-nodejs-build) - Set up build pipeline
+- [`gh-oci-deploy-onprem`](#github-oci-on-prem-deploy-gh-oci-deploy-onprem) - Set up Polaris deployment workflow
 
 ### Backstage: `backstage`
 

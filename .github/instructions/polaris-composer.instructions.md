@@ -33,9 +33,9 @@ If any preflight check fails, stop with a terminal message and an error exit cod
 ## Execution Rules
 
 1. Run from the target component root.
-2. Prefer `--ask-answered` for staff-supervised runs.
-3. Use `--force` only when overwrite intent is explicit and reviewed.
-4. Use `--headless` only when all required prompt values are already configured.
+2. Assume required prompt values are already configured.
+3. Use `--headless --force` for non-interactive composer runs.
+4. Use `--ask-answered` only when staff intentionally need to review or change prompt values.
 5. If generated changes exist, create a branch, commit scoped files, push, and open a pull request with `gh`.
 6. If no changes exist, exit cleanly.
 

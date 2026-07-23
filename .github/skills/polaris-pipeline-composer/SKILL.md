@@ -25,19 +25,21 @@ Use this skill for staff-supervised updates that apply the latest Polaris Pipeli
    - `command -v podman || command -v docker`
    - `test -f catalog-info.yaml`
    - `git status --porcelain` must be empty
-3. Run matching build generator:
-   - Node.js: `./nr-repository-composer.sh . gh-nodejs-build --ask-answered`
-   - Java/Maven: `./nr-repository-composer.sh . gh-maven-build --ask-answered`
-4. Run deploy generator:
-   - `./nr-repository-composer.sh . gh-oci-deploy-onprem --ask-answered`
-5. Review changed files and ensure only expected generated Polaris Pipeline artifacts changed.
-6. If there are changes, create a composer branch, commit, push, and open a pull request:
+3. Assume required prompt values are already configured.
+4. Run matching build generator in headless mode:
+   - Node.js: `./nr-repository-composer.sh . gh-nodejs-build --headless --force`
+   - Java/Maven: `./nr-repository-composer.sh . gh-maven-build --headless --force`
+5. Run deploy generator:
+   - `./nr-repository-composer.sh . gh-oci-deploy-onprem --headless --force`
+6. If prompt values must be reviewed or changed, rerun with `--ask-answered`.
+7. Review changed files and ensure only expected generated Polaris Pipeline artifacts changed.
+8. If there are changes, create a composer branch, commit, push, and open a pull request:
    - `git checkout -b feat/polaris-composer-<service>`
    - `git add <expected-generated-files>`
    - `git commit -m "chore: refresh Polaris Pipeline files"`
    - `git push -u origin feat/polaris-composer-<service>`
    - `gh pr create --fill`
-7. If there are no changes, exit cleanly.
+9. If there are no changes, exit cleanly.
 
 ## Path B: Multi-Repo Staff Session
 

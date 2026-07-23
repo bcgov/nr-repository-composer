@@ -22,6 +22,8 @@ This repository includes guidance files to help staff run agent-assisted Polaris
 
 Staff should run the composer against one repository at a time and confirm only expected generated Polaris Pipeline artifacts changed. Each run should end with either a pull request or no changes. If an error occurs, the process should stop with a terminal message and exit code.
 
+Default mode assumes required prompt values are preconfigured and runs with `--headless --force`.
+
 ## Generator Library
 
 | Generator | Usage | Platform | Technologies |

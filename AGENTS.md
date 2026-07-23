@@ -32,15 +32,15 @@ For each target repository:
 
 ## Command Guidance
 
-- Preferred interactive refresh: `--ask-answered`
-- Use `--force` only when overwrite is intentional and reviewed.
-- Use `--headless` for scripted scenarios where all required prompt values are already present.
+- Default execution mode assumes required prompt values are already present.
+- Use `--headless --force` for non-interactive composer runs.
+- Use `--ask-answered` only when you intentionally need to review or change stored prompt values.
 
 Example with a local wrapper copied into a target repository:
 
 ```bash
-./nr-repository-composer.sh . gh-nodejs-build --ask-answered
-./nr-repository-composer.sh . gh-oci-deploy-onprem --ask-answered
+./nr-repository-composer.sh . gh-nodejs-build --headless --force
+./nr-repository-composer.sh . gh-oci-deploy-onprem --headless --force
 ```
 
 ## Required Preflight Checks

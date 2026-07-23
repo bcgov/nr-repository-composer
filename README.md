@@ -12,7 +12,7 @@ Developers interact with the tool by running generators that prompt for informat
 
 The `backstage` generator creates the catalog file and is the first step for most components. It is run at the root of the component within the repository. If you have multiple components, each should be placed in a directory off the root. Otherwise, the root of a non-monorepo should contain the component catalog file. From this point, the developer runs additional generators as required in the folder for each component.
 
-## Staff Agent Composer (Polaris Pipeline)
+## Polaris Pipeline Composer (Agent-Assisted)
 
 This repository includes guidance files to help staff run agent-assisted Polaris Pipeline refresh work in target application repositories.
 
@@ -20,7 +20,7 @@ This repository includes guidance files to help staff run agent-assisted Polaris
 - `.github/instructions/polaris-composer.instructions.md`: Machine-readable safety and preflight constraints.
 - `.github/skills/polaris-pipeline-composer/SKILL.md`: Executable workflow for single-repo and multi-repo staff sessions.
 
-Recommended composer mode is direct-in-target-repository execution. Staff should run one repository at a time, confirm only expected generated Polaris Pipeline artifacts changed, and end each run as a pull request, no-op, or a stop with a clear terminal message and an error exit code. GitHub CLI (`gh`) authentication is required so the composer flow can push a branch and create a pull request when changes exist.
+Staff should run the composer against one repository at a time and confirm only expected generated Polaris Pipeline artifacts changed. Each run should end with either a pull request or no changes. If an error occurs, the process should stop with a terminal message and exit code.
 
 ## Generator Library
 

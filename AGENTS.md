@@ -20,7 +20,7 @@ For each target repository:
 4. Review the diff and ensure only expected generated files changed.
 5. If there are changes, create a branch, commit, push, and open a pull request using `gh`.
 6. If there are no changes, exit cleanly.
-7. If composer execution cannot proceed safely, print the failure reason to the console and exit.
+7. If composer execution cannot proceed safely, stop with a terminal message and an error exit code.
 
 ## Generator Selection Rules
 
@@ -57,7 +57,7 @@ Each run must end in one state:
 
 1. PR opened with Polaris Pipeline updates.
 2. No changes needed.
-3. Stopped with a clear terminal message and an error exit code.
+3. Stopped with a terminal message and an error exit code.
 
 ## Pull Request Flow
 

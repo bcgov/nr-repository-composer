@@ -19,7 +19,7 @@ Before running generators in a target repository:
 4. Confirm target component has `catalog-info.yaml`.
 5. Confirm git working tree is clean.
 
-If any preflight check fails, print the reason to the console and exit.
+If any preflight check fails, stop with a terminal message and an error exit code.
 
 ## Generator Path Requirements
 
@@ -44,12 +44,12 @@ If any preflight check fails, print the reason to the console and exit.
 - Never use destructive git commands.
 - Keep commits scoped to generated Polaris Pipeline artifacts.
 - Do not mix unrelated refactors with composer changes.
-- If prompt/config data is missing, print the reason to the console and exit instead of forcing partial updates.
+- If prompt/config data is missing, stop with a terminal message and an error exit code instead of forcing partial updates.
 
 ## Required Outcome
 
 Each repo run must end as exactly one of:
 
 1. Pull request opened.
-2. No-op (already up to date).
-3. Stopped with a clear terminal message and an error exit code.
+2. No changes needed.
+3. Stopped with a terminal message and an error exit code.

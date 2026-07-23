@@ -1,13 +1,13 @@
 ---
-name: oci-pipeline-rollout
-description: "Use when staff need to apply latest OCI/ORAS generator updates to one or more application repositories using direct-in-target-repo execution with consistent preflight checks and outcome tracking."
+name: polaris-pipeline-composer
+description: "Use when staff need to apply latest Polaris Pipeline generator updates to one or more application repositories using direct-in-target-repo execution with consistent preflight checks and outcome tracking."
 ---
 
-# OCI Pipeline Rollout Skill
+# Polaris Pipeline Composer Skill
 
 ## When To Use
 
-Use this skill for staff-supervised updates that apply the latest OCI/ORAS generated build and deploy workflows in application repositories.
+Use this skill for staff-supervised updates that apply the latest Polaris Pipeline generated build and deploy workflows in application repositories.
 
 ## Inputs
 
@@ -20,6 +20,7 @@ Use this skill for staff-supervised updates that apply the latest OCI/ORAS gener
 
 1. Open target repository and move to component root.
 2. Run preflight checks:
+   - `command -v gh`
    - `gh auth status`
    - `command -v podman || command -v docker`
    - `test -f catalog-info.yaml`
@@ -29,8 +30,14 @@ Use this skill for staff-supervised updates that apply the latest OCI/ORAS gener
    - Java/Maven: `./nr-repository-composer.sh . gh-maven-build --ask-answered`
 4. Run deploy generator:
    - `./nr-repository-composer.sh . gh-oci-deploy-onprem --ask-answered`
-5. Review changed files and ensure only expected generated OCI/ORAS pipeline artifacts changed.
-6. Commit and open pull request, or print the failure reason to the console and exit.
+5. Review changed files and ensure only expected generated Polaris Pipeline artifacts changed.
+6. If there are changes, create a composer branch, commit, push, and open a pull request:
+   - `git checkout -b feat/polaris-composer-<service>`
+   - `git add <expected-generated-files>`
+   - `git commit -m "chore: refresh Polaris Pipeline files"`
+   - `git push -u origin feat/polaris-composer-<service>`
+   - `gh pr create --fill`
+7. If there are no changes, exit cleanly.
 
 ## Path B: Multi-Repo Staff Session
 

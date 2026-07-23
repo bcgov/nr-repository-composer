@@ -1,12 +1,12 @@
 # NR Repository Composer Agent Guide
 
-Use this file when planning or executing OCI/ORAS pipeline refresh work across application repositories.
+Use this file when planning or executing Polaris Pipeline refresh work across application repositories.
 
 ## Scope
 
-- This repository is the canonical source for rollout guidance, templates, and generator behavior.
+- This repository is the canonical source for composer guidance, templates, and generator behavior.
 - Staff and agents execute updates inside each target application repository.
-- Keep changes focused on generated OCI/ORAS pipeline artifacts.
+- Keep changes focused on generated Polaris Pipeline artifacts.
 
 ## Direct-In-Target Execution Model
 
@@ -16,13 +16,15 @@ For each target repository:
 2. Run the build generator that matches the service runtime:
    - Node.js: `gh-nodejs-build`
    - Java/Maven: `gh-maven-build`
-3. Run `gh-oci-deploy-onprem` for deployment workflow updates.
+3. Run `gh-oci-deploy-onprem` for Polaris deploy workflow updates (OCI/ORAS under the hood).
 4. Review the diff and ensure only expected generated files changed.
-5. Commit and open a pull request, or print the failure reason to the console and exit.
+5. If there are changes, create a branch, commit, push, and open a pull request using `gh`.
+6. If there are no changes, exit cleanly.
+7. If composer execution cannot proceed safely, print the failure reason to the console and exit.
 
 ## Generator Selection Rules
 
-- Use OCI/ORAS path only:
+- Use Polaris Pipeline path only:
   - Build: `gh-nodejs-build` or `gh-maven-build`
   - Deploy: `gh-oci-deploy-onprem`
 - Do not use deprecated deploy generators.
@@ -43,6 +45,7 @@ Example with a local wrapper copied into a target repository:
 
 ## Required Preflight Checks
 
+- `gh` is installed and available.
 - `gh auth status` is successful.
 - `podman` or `docker` is installed and available.
 - Target repository working tree is clean before generation.
@@ -56,9 +59,18 @@ Each run must end in one state:
 2. No changes needed.
 3. Stopped with a clear console message and non-zero exit.
 
+## Pull Request Flow
+
+When generated changes exist:
+
+1. Create a branch (example: `feat/polaris-composer-<service>`).
+2. Commit only expected generated Polaris Pipeline files.
+3. Push the branch to origin.
+4. Open a pull request with `gh pr create`.
+
 ## Canonical References In This Repository
 
 - `README.md`
 - `.github/copilot-instructions.md`
-- `.github/instructions/oci-rollout.instructions.md`
-- `.github/skills/oci-pipeline-rollout/SKILL.md`
+- `.github/instructions/polaris-composer.instructions.md`
+- `.github/skills/polaris-pipeline-composer/SKILL.md`

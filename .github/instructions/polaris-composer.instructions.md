@@ -1,22 +1,23 @@
 ---
-description: "Use when updating OCI/ORAS pipeline files in target application repositories; enforce preflight checks, generator selection, and safe commit scope for staff-run direct-in-repo execution."
+description: "Use when updating Polaris Pipeline files in target application repositories; enforce preflight checks, generator selection, and safe commit scope for staff-run direct-in-repo execution."
 applyTo: ".github/**"
 ---
 
-# OCI/ORAS Rollout Instructions
+# Polaris Pipeline Composer Instructions
 
 ## Purpose
 
-Apply the latest OCI/ORAS generator updates in application repositories with a consistent, low-risk process.
+Apply the latest Polaris Pipeline generator updates in application repositories with a consistent, low-risk process.
 
 ## Mandatory Preflight
 
 Before running generators in a target repository:
 
-1. Confirm GitHub auth is active: `gh auth status`.
-2. Confirm `podman` or `docker` is available.
-3. Confirm target component has `catalog-info.yaml`.
-4. Confirm git working tree is clean.
+1. Confirm `gh` is installed and available.
+2. Confirm GitHub auth is active: `gh auth status`.
+3. Confirm `podman` or `docker` is available.
+4. Confirm target component has `catalog-info.yaml`.
+5. Confirm git working tree is clean.
 
 If any preflight check fails, print the reason to the console and exit.
 
@@ -35,12 +36,14 @@ If any preflight check fails, print the reason to the console and exit.
 2. Prefer `--ask-answered` for staff-supervised runs.
 3. Use `--force` only when overwrite intent is explicit and reviewed.
 4. Use `--headless` only when all required prompt values are already configured.
+5. If generated changes exist, create a branch, commit scoped files, push, and open a pull request with `gh`.
+6. If no changes exist, exit cleanly.
 
 ## Safety Rules
 
 - Never use destructive git commands.
-- Keep commits scoped to generated OCI/ORAS pipeline artifacts.
-- Do not mix unrelated refactors with rollout changes.
+- Keep commits scoped to generated Polaris Pipeline artifacts.
+- Do not mix unrelated refactors with composer changes.
 - If prompt/config data is missing, print the reason to the console and exit instead of forcing partial updates.
 
 ## Required Outcome

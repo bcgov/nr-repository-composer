@@ -12,6 +12,16 @@ Developers interact with the tool by running generators that prompt for informat
 
 The `backstage` generator creates the catalog file and is the first step for most components. It is run at the root of the component within the repository. If you have multiple components, each should be placed in a directory off the root. Otherwise, the root of a non-monorepo should contain the component catalog file. From this point, the developer runs additional generators as required in the folder for each component.
 
+## Staff Agent Rollout (OCI/ORAS)
+
+This repository includes guidance files to help staff run agent-assisted OCI/ORAS pipeline refresh work in target application repositories.
+
+- `AGENTS.md`: Canonical rollout runbook and generator selection rules.
+- `.github/instructions/oci-rollout.instructions.md`: Machine-readable safety and preflight constraints.
+- `.github/skills/oci-pipeline-rollout/SKILL.md`: Executable workflow for single-repo and multi-repo staff sessions.
+
+Recommended rollout mode is direct-in-target-repository execution. Staff should run one repository at a time, confirm only expected generated OCI/ORAS artifacts changed, and end each run as a pull request, no-op, or documented blocker.
+
 ## Generator Library
 
 | Generator | Usage | Platform | Technologies |

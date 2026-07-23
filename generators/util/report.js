@@ -9,6 +9,7 @@ const README_BASE_URL =
  */
 export const ALL_GENERATORS = [
   'nr-repository-composer',
+  'gh-polaris-composer-agent',
   'backstage',
   'backstage-location',
   'gh-common-mono-build',
@@ -26,6 +27,8 @@ export const ALL_GENERATORS = [
  */
 export const GENERATOR_ANCHORS = {
   'nr-repository-composer': 'nr-repository-composer-nr-repository-composer',
+  'gh-polaris-composer-agent':
+    'polaris-pipeline-composer-agent-gh-polaris-composer-agent',
   backstage: 'backstage-backstage',
   'backstage-location': 'backstage-backstage-location',
   'gh-common-mono-build': 'github-gh-common-mono-build',
@@ -91,6 +94,10 @@ export const GENERATOR_REPORTS = {
     workflows: [],
     nextSteps: [
       {
+        generator: 'gh-polaris-composer-agent',
+        description: 'Add Polaris Pipeline agent guidance files for this repository',
+      },
+      {
         generator: 'backstage',
         description: 'Create Backstage component catalog file',
       },
@@ -105,6 +112,25 @@ export const GENERATOR_REPORTS = {
       {
         generator: 'gh-nodejs-build',
         description: 'Set up Node.js build pipeline',
+      },
+    ],
+  },
+  'gh-polaris-composer-agent': {
+    description: 'Created Polaris Pipeline agent guidance files for this repository',
+    workflows: [
+      'AGENTS.md',
+      '.github/instructions/polaris-composer.instructions.md',
+      '.github/skills/polaris-pipeline-composer/SKILL.md',
+    ],
+    nextSteps: [
+      {
+        generator: 'gh-*-build',
+        description:
+          'Run the build generator that matches the service runtime (Node.js or Maven)',
+      },
+      {
+        generator: 'gh-oci-deploy-onprem',
+        description: 'Set up Polaris deploy workflow updates',
       },
     ],
   },

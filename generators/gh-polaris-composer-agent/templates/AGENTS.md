@@ -21,6 +21,7 @@ Use this file when running Polaris Pipeline composer updates in this repository.
 
 ## Command Guidance
 
+- Use the `/refresh-polaris-pipeline` chat prompt in this repository when you want a chat-driven run.
 - Default mode assumes required prompt values are already present.
 - Use `--headless --force` for non-interactive composer runs.
 - Use `--ask-answered` only when you intentionally need to review or change stored prompt values.

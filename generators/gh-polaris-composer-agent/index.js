@@ -7,7 +7,7 @@ import { BackstageStorage } from '../util/backstage.storage.js';
 import { outputReport } from '../util/report.js';
 
 /**
- * Add Polaris Pipeline Composer agent guidance files to a repository
+ * Add Polaris Pipeline Composer agent guidance files and chat prompt to a repository
  */
 export default class extends Generator {
   constructor(args, opts) {
@@ -57,6 +57,12 @@ export default class extends Generator {
     this.fs.copyTpl(
       this.templatePath('.github/skills/polaris-pipeline-composer/SKILL.md'),
       this.destinationPath('.github/skills/polaris-pipeline-composer/SKILL.md'),
+      {},
+    );
+
+    this.fs.copyTpl(
+      this.templatePath('.github/prompts/refresh-polaris-pipeline.prompt.md'),
+      this.destinationPath('.github/prompts/refresh-polaris-pipeline.prompt.md'),
       {},
     );
   }

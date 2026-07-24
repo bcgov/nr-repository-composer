@@ -34,7 +34,7 @@ Default mode assumes required prompt values are preconfigured and runs with `--h
 | [gh-common-mono-build](#github-gh-common-mono-build) | Pipeline orchestration | GitHub | GitHub Actions |
 | [gh-docs-deploy](#github-docs-deploy-gh-docs-deploy) | Documentation | GitHub | GitHub Actions, GitHub Pages |
 | [gh-maven-build](#github-maven-build-gh-maven-build) | Pipeline | GitHub | Java, GitHub Actions |
-| [gh-polaris-composer-agent](#polaris-pipeline-composer-agent-gh-polaris-composer-agent) | Agent guidance pack | All | Copilot agent files |
+| [gh-polaris-composer-agent](#polaris-pipeline-composer-agent-gh-polaris-composer-agent) | Chat command and agent guidance pack | All | Copilot prompt, agent, and skill files |
 | [gh-tomcat-deploy-onprem](#github-tomcat-on-prem-deploy-gh-tomcat-deploy-onprem) | Deploy (collection <= v4.2.0) | GitHub | Java, Tomcat, GitHub Actions |
 | [gh-nodejs-build](#github-nodejs-build-gh-nodejs-build) | Pipeline | GitHub | Node.js, GitHub Actions |
 | [gh-oci-deploy-onprem](#github-oci-on-prem-deploy-gh-oci-deploy-onprem) | Deploy | GitHub | OCI artifacts, GitHub Actions |
@@ -53,15 +53,16 @@ This generator copies [nr-repository-composer.sh](./nr-repository-composer.sh) t
 
 ### Polaris Pipeline Composer Agent: `gh-polaris-composer-agent`
 
-This optional generator adds a target-repository guidance pack for staff-run Polaris Pipeline composer updates.
+This optional generator adds a target-repository guidance pack and chat command for staff-run Polaris Pipeline composer updates.
 
 It creates the following files:
 
 - `AGENTS.md`
 - `.github/instructions/polaris-composer.instructions.md`
+- `.github/prompts/refresh-polaris-pipeline.prompt.md`
 - `.github/skills/polaris-pipeline-composer/SKILL.md`
 
-Use this generator when you want a repository to be ready for direct-in-repo, headless-first, agent-assisted execution without manually copying guidance files.
+Use `/refresh-polaris-pipeline` in Copilot Chat when you want a chat-driven run. Use this generator when you want a repository to be ready for direct-in-repo, headless-first, agent-assisted execution without manually copying guidance files.
 
 **Suggested Next Steps:**
 - [`gh-maven-build`](#github-maven-build-gh-maven-build), [`gh-nodejs-build`](#github-nodejs-build-gh-nodejs-build) - Set up build pipeline

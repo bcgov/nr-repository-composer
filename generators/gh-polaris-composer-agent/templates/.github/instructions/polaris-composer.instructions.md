@@ -33,11 +33,12 @@ If any preflight check fails, stop with a terminal message and an error exit cod
 ## Execution Rules
 
 1. Run from the target component root.
-2. Assume required prompt values are already configured.
-3. Use `--headless --force` for non-interactive composer runs.
-4. Use `--ask-answered` only when staff intentionally need to review or change prompt values.
-5. If generated changes exist, create a branch, commit scoped files, push, and open a pull request with `gh`.
-6. If no changes exist, exit cleanly.
+2. Use the `/refresh-polaris-pipeline` chat prompt when you want a chat-driven run.
+3. Assume required prompt values are already configured.
+4. Use `--headless --force` for non-interactive composer runs.
+5. Use `--ask-answered` only when staff intentionally need to review or change prompt values.
+6. If generated changes exist, create a branch, commit scoped files, push, and open a pull request with `gh`.
+7. If no changes exist, exit cleanly.
 
 ## Safety Rules
 

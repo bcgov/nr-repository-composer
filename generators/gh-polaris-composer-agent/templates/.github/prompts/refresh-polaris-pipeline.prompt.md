@@ -16,6 +16,10 @@ Use the repo-local guidance files created by this generator:
 Follow the repository guidance to:
 
 1. Run the required preflight checks.
+   GitHub auth preflight passes when either command succeeds:
+   - `gh auth status`
+   - `gh api user --jq .login`
+   Stop if both GitHub auth checks fail.
 2. Determine whether this repository is a Node.js or Maven service.
 3. Run the matching build generator with `--headless --force`.
 4. Run `gh-oci-deploy-onprem` with `--headless --force`.

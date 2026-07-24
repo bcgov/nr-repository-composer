@@ -20,7 +20,7 @@ Use this skill for staff-supervised updates that apply the latest Polaris Pipeli
 1. Open target repository and move to component root.
 2. Run preflight checks:
    - `command -v gh`
-   - `gh auth status`
+   - `gh auth status || gh api user --jq .login`
    - `command -v podman || command -v docker`
    - `test -f catalog-info.yaml`
    - `git status --porcelain` must be empty

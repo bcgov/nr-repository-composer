@@ -46,7 +46,9 @@ Example with a local wrapper copied into a target repository:
 ## Required Preflight Checks
 
 - `gh` is installed and available.
-- `gh auth status` is successful.
+- At least one GitHub auth check is successful:
+  - `gh auth status`
+  - `gh api user --jq .login`
 - `podman` or `docker` is installed and available.
 - Target repository working tree is clean before generation.
 - `catalog-info.yaml` exists for the component being updated.

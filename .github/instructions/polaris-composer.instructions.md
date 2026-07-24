@@ -14,10 +14,13 @@ Apply the latest Polaris Pipeline generator updates in application repositories 
 Before running generators in a target repository:
 
 1. Confirm `gh` is installed and available.
-2. Confirm GitHub auth is active: `gh auth status`.
-3. Confirm `podman` or `docker` is available.
-4. Confirm target component has `catalog-info.yaml`.
-5. Confirm git working tree is clean.
+2. Confirm GitHub auth is active using at least one of:
+  - `gh auth status`
+  - `gh api user --jq .login`
+3. If both GitHub auth checks fail, stop with a terminal message and an error exit code.
+4. Confirm `podman` or `docker` is available.
+5. Confirm target component has `catalog-info.yaml`.
+6. Confirm git working tree is clean.
 
 If any preflight check fails, stop with a terminal message and an error exit code.
 

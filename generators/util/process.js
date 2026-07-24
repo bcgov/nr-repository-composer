@@ -2,7 +2,18 @@ import { generateSetAnswerPropPredicate } from '../util/yaml.js';
 
 function bailOnAnyQuestions(questions, headless) {
   if (questions.length > 0 && headless) {
-    // Bail if any questions exist
+    const questionNames = Array.from(
+      new Set(questions.map((question) => question.name).filter(Boolean)),
+    );
+
+    console.error('Headless mode failed: required prompt values are missing.');
+    if (questionNames.length > 0) {
+      console.error(`Missing prompt values: ${questionNames.join(', ')}`);
+    }
+    console.error(
+      'Run without --headless, or run with --ask-answered to set and persist required values first.',
+    );
+
     process.exit(1);
   }
 }

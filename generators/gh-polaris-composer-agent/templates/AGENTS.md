@@ -36,6 +36,8 @@ Use this file when running Polaris Pipeline composer updates in this repository.
 - Git working tree is clean before generation.
 - `catalog-info.yaml` exists for the component being updated.
 
+When preflight runs, report results in chat as a pass/fail checklist and include a short reason for each failed check.
+
 ## Completion States
 
 Each run must end in one state:

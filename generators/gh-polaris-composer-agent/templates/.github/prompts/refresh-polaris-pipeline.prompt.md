@@ -20,6 +20,8 @@ Follow the repository guidance to:
    - `gh auth status`
    - `gh api user --jq .login`
    Stop if both GitHub auth checks fail.
+   Report preflight results in chat as a checklist that marks each check as pass or fail.
+   Include one short reason for each failed check.
 2. Determine whether this repository is a Node.js or Maven service.
 3. Run the matching build generator with `--headless --force`.
 4. Run `gh-oci-deploy-onprem` with `--headless --force`.
@@ -27,4 +29,4 @@ Follow the repository guidance to:
 6. Create a branch, commit, push, and open a pull request if changes exist.
 7. Stop cleanly if preflight fails, required data is missing, or unrelated churn appears.
 
-End in one of the allowed states: pull request opened, no changes needed, or a deliberate stop with a human-readable summary in chat.
+End in one of the allowed states: pull request opened, no changes needed, or a deliberate stop with a human-readable summary in chat. For deliberate stops, include the preflight pass/fail checklist in the summary.

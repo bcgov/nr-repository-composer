@@ -23,6 +23,7 @@ Before running generators in a target repository:
 6. Confirm git working tree is clean.
 
 If any preflight check fails, stop and provide a human-readable summary in chat.
+When reporting preflight in chat, use a checklist that marks each check as pass or fail and includes a short reason for failed checks.
 
 ## Generator Path Requirements
 

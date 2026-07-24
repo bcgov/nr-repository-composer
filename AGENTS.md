@@ -53,6 +53,8 @@ Example with a local wrapper copied into a target repository:
 - Target repository working tree is clean before generation.
 - `catalog-info.yaml` exists for the component being updated.
 
+When preflight runs, report results in chat as a pass/fail checklist and include a short reason for each failed check.
+
 ## Completion States Per Repo
 
 Each run must end in one state:

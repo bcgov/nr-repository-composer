@@ -37,6 +37,7 @@ Use this file when running Polaris Pipeline composer updates in this repository.
 - `catalog-info.yaml` exists for the component being updated.
 
 When preflight runs, report results in chat as a pass/fail checklist and include a short reason for each failed check.
+Use `✅` for pass items and `❌` for failed items.
 
 ## Completion States
 

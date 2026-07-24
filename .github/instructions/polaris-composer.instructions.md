@@ -24,6 +24,7 @@ Before running generators in a target repository:
 
 If any preflight check fails, stop and provide a human-readable summary in chat.
 When reporting preflight in chat, use a checklist that marks each check as pass or fail and includes a short reason for failed checks.
+Use `✅` for pass items and `❌` for failed items.
 
 ## Generator Path Requirements
 

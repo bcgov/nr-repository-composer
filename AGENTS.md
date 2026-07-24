@@ -54,6 +54,7 @@ Example with a local wrapper copied into a target repository:
 - `catalog-info.yaml` exists for the component being updated.
 
 When preflight runs, report results in chat as a pass/fail checklist and include a short reason for each failed check.
+Use `✅` for pass items and `❌` for failed items.
 
 ## Completion States Per Repo
 

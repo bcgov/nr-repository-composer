@@ -21,6 +21,7 @@ Follow the repository guidance to:
    - `gh api user --jq .login`
    Stop if both GitHub auth checks fail.
    Report preflight results in chat as a checklist that marks each check as pass or fail.
+   Use `✅` for pass items and `❌` for failed items.
    Include one short reason for each failed check.
 2. Determine whether this repository is a Node.js or Maven service.
 3. Run the matching build generator with `--headless --force`.

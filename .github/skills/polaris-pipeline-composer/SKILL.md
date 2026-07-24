@@ -26,6 +26,7 @@ Use this skill for staff-supervised updates that apply the latest Polaris Pipeli
    - `test -f catalog-info.yaml`
    - `git status --porcelain` must be empty
    - Report a chat checklist with pass/fail status for each preflight check
+   - Use `✅` for pass items and `❌` for failed items
 3. Assume required prompt values are already configured.
 4. Run matching build generator in headless mode:
    - Node.js: `./nr-repository-composer.sh . gh-nodejs-build --headless --force`

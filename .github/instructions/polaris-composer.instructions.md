@@ -17,12 +17,12 @@ Before running generators in a target repository:
 2. Confirm GitHub auth is active using at least one of:
   - `gh auth status`
   - `gh api user --jq .login`
-3. If both GitHub auth checks fail, stop with a terminal message and an error exit code.
+3. If both GitHub auth checks fail, stop and provide a human-readable summary in chat.
 4. Confirm `podman` or `docker` is available.
 5. Confirm target component has `catalog-info.yaml`.
 6. Confirm git working tree is clean.
 
-If any preflight check fails, stop with a terminal message and an error exit code.
+If any preflight check fails, stop and provide a human-readable summary in chat.
 
 ## Generator Path Requirements
 
@@ -47,7 +47,7 @@ If any preflight check fails, stop with a terminal message and an error exit cod
 - Never use destructive git commands.
 - Keep commits scoped to generated Polaris Pipeline artifacts.
 - Do not mix unrelated refactors with composer changes.
-- If prompt/config data is missing, stop with a terminal message and an error exit code instead of forcing partial updates.
+- If prompt/config data is missing, stop and provide a human-readable summary in chat instead of forcing partial updates.
 
 ## Required Outcome
 
@@ -55,4 +55,4 @@ Each repo run must end as exactly one of:
 
 1. Pull request opened.
 2. No changes needed.
-3. Stopped with a terminal message and an error exit code.
+3. Stopped with a human-readable summary in chat.

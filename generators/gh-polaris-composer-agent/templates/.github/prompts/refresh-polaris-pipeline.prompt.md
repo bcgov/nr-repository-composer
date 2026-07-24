@@ -27,4 +27,4 @@ Follow the repository guidance to:
 6. Create a branch, commit, push, and open a pull request if changes exist.
 7. Stop cleanly if preflight fails, required data is missing, or unrelated churn appears.
 
-End in one of the allowed states: pull request opened, no changes needed, or a deliberate stop with a terminal error message.
+End in one of the allowed states: pull request opened, no changes needed, or a deliberate stop with a human-readable summary in chat.

@@ -20,7 +20,7 @@ This repository includes guidance files to help staff run agent-assisted Polaris
 - `.github/instructions/polaris-composer.instructions.md`: Machine-readable safety and preflight constraints.
 - `.github/skills/polaris-pipeline-composer/SKILL.md`: Executable workflow for single-repo and multi-repo staff sessions.
 
-Staff should run the composer against one repository at a time and confirm only expected generated Polaris Pipeline artifacts changed. Each run should end with either a pull request or no changes. If an error occurs, the process should stop with a terminal message and exit code.
+Staff should run the composer against one repository at a time and confirm only expected generated Polaris Pipeline artifacts changed. Each run should end with either a pull request or no changes. If an error occurs, the process should stop and provide a human-readable summary in chat.
 
 Default mode assumes required prompt values are preconfigured and runs with `--headless --force`.
 

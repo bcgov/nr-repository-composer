@@ -47,7 +47,7 @@ Use this skill for staff-supervised updates that apply the latest Polaris Pipeli
 3. After each repository, record one outcome:
    - PR opened
    - No changes needed
-   - Stopped with a terminal message and an error exit code
+   - Stopped with a human-readable summary in chat
 
 ## Stop Conditions
 
@@ -57,7 +57,7 @@ Stop the run for a repository if:
 - `catalog-info.yaml` is missing or invalid for generator requirements.
 - Diff includes unrelated churn outside expected generated artifacts.
 
-Do not force completion. Stop with a terminal message and an error exit code.
+Do not force completion. Stop and provide a human-readable summary in chat.
 
 ## Validation Checklist
 
@@ -67,4 +67,4 @@ For each repository, confirm:
 2. Deploy generator is `gh-oci-deploy-onprem`.
 3. No deprecated deploy generator was used.
 4. Commit scope is limited to intended generated files.
-5. Final state is PR, no-op, or a stop with a terminal message and an error exit code.
+5. Final state is PR, no-op, or a stop with a human-readable summary in chat.

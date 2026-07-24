@@ -17,7 +17,7 @@ Use this file when running Polaris Pipeline composer updates in this repository.
 4. Review diff and confirm only expected generated Polaris Pipeline files changed.
 5. If changes exist, create a branch, commit, push, and open a pull request with `gh`.
 6. If there are no changes, exit cleanly.
-7. If execution cannot proceed safely, stop with a terminal message and an error exit code.
+7. If execution cannot proceed safely, stop and provide a human-readable summary in chat.
 
 ## Command Guidance
 
@@ -42,7 +42,7 @@ Each run must end in one state:
 
 1. Pull request opened with Polaris Pipeline updates.
 2. No changes needed.
-3. Stopped with a terminal message and an error exit code.
+3. Stopped with a human-readable summary in chat.
 
 ## Pull Request Flow
 

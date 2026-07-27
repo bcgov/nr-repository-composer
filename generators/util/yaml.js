@@ -438,7 +438,7 @@ export function extractFromYaml(doc, pathToProps) {
   if (doc) {
     for (const pathToProp of pathToProps) {
       const path = pathToProp.path;
-      if (doc.hasIn(path) && !!pathToProp.deprecated) {
+      if (doc.hasIn(path)) {
         answers[pathToProp.prop] = doc.getIn(path);
       }
     }

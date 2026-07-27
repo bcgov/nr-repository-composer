@@ -22,6 +22,8 @@ This repository includes guidance files to help staff run agent-assisted Polaris
 
 Staff should run the composer against one repository at a time and confirm only expected generated Polaris Pipeline artifacts changed. Each run should end with either a pull request or no changes. If a headless run fails on missing prompt values, inspect `catalog-info.yaml`, infer only well-supported values, summarize any additions in chat, and ask the user only for unresolved values.
 
+Before running generators, sync the branch using `git pull --ff-only`. If pull fails or unresolved merge conflicts exist, stop and let a developer resolve branch state first.
+
 Default mode assumes required prompt values are preconfigured and runs with `--headless --force`.
 
 ## Generator Library

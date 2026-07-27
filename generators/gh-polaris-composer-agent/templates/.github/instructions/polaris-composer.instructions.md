@@ -21,10 +21,13 @@ Before running generators:
 4. Confirm `podman` or `docker` is available.
 5. Confirm `catalog-info.yaml` exists in the target component.
 6. Confirm git working tree is clean.
+7. Sync branch with remote using `git pull --ff-only`.
+8. Confirm there are no unresolved merge conflicts (`git diff --name-only --diff-filter=U` must be empty).
 
 If any preflight check fails, stop and provide a human-readable summary in chat.
 When reporting preflight in chat, use a checklist that marks each check as pass or fail and includes a short reason for failed checks.
 Use `✅` for pass items and `❌` for failed items.
+If `git pull --ff-only` fails or unresolved conflicts are present, do not run generators until a developer resolves the branch state.
 
 ## Generator Path Requirements
 
@@ -54,6 +57,7 @@ Use `✅` for pass items and `❌` for failed items.
 - Do not mix unrelated refactors with composer changes.
 - If prompt/config data is missing, stop and provide a human-readable summary in chat instead of forcing partial updates.
 - When recovering from missing prompt values, only add values you can support from the catalog file or nearby repository context. Ask the user instead of guessing.
+- If merge conflicts are detected at any point, stop immediately and provide a human-readable summary in chat for developer follow-up.
 
 ## Required Outcome
 

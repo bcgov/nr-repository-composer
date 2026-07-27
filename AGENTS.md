@@ -54,9 +54,12 @@ Example with a local wrapper copied into a target repository:
 - `podman` or `docker` is installed and available.
 - Target repository working tree is clean before generation.
 - `catalog-info.yaml` exists for the component being updated.
+- Target branch is updated with remote using `git pull --ff-only`.
+- No unresolved merge conflicts are present (`git diff --name-only --diff-filter=U` is empty).
 
 When preflight runs, report results in chat as a pass/fail checklist and include a short reason for each failed check.
 Use `✅` for pass items and `❌` for failed items.
+If pull or conflict checks fail, stop and let a developer resolve branch state before running generators.
 
 ## Completion States Per Repo
 

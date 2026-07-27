@@ -41,9 +41,11 @@ Use `✅` for pass items and `❌` for failed items.
 2. Use the `/refresh-polaris-pipeline` chat prompt when you want a chat-driven run.
 3. Assume required prompt values are already configured.
 4. Use `--headless --force` for non-interactive composer runs.
-5. Use `--ask-answered` only when staff intentionally need to review or change prompt values.
-6. If generated changes exist, create a branch, commit scoped files, push, and open a pull request with `gh`.
-7. If no changes exist, exit cleanly.
+5. If a headless run fails because prompt values are missing, inspect `catalog-info.yaml` and existing repo context, deduce any missing values you can justify confidently, and summarize any values you add.
+6. If any missing value cannot be deduced confidently, ask the user for that value before continuing.
+7. Use `--ask-answered` only when staff intentionally need to review or change prompt values.
+8. If generated changes exist, create a branch, commit scoped files, push, and open a pull request with `gh`.
+9. If no changes exist, exit cleanly.
 
 ## Safety Rules
 
@@ -51,6 +53,7 @@ Use `✅` for pass items and `❌` for failed items.
 - Keep commits scoped to generated Polaris Pipeline artifacts.
 - Do not mix unrelated refactors with composer changes.
 - If prompt/config data is missing, stop and provide a human-readable summary in chat instead of forcing partial updates.
+- When recovering from missing prompt values, only add values you can support from the catalog file or nearby repository context. Ask the user instead of guessing.
 
 ## Required Outcome
 

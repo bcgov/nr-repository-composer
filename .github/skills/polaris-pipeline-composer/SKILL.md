@@ -31,17 +31,24 @@ Use this skill for staff-supervised updates that apply the latest Polaris Pipeli
 4. Run matching build generator in headless mode:
    - Node.js: `./nr-repository-composer.sh . gh-nodejs-build --headless --force`
    - Java/Maven: `./nr-repository-composer.sh . gh-maven-build --headless --force`
-5. Run deploy generator:
+5. If a headless run fails on missing prompt values:
+   - Inspect `catalog-info.yaml` and nearby generated config to infer any missing values you can justify confidently.
+   - Summarize any values you add before rerunning.
+   - Ask the user for any remaining value you cannot deduce confidently.
+6. Run deploy generator:
    - `./nr-repository-composer.sh . gh-oci-deploy-onprem --headless --force`
-6. If prompt values must be reviewed or changed, rerun with `--ask-answered`.
-7. Review changed files and ensure only expected generated Polaris Pipeline artifacts changed.
-8. If there are changes, create a composer branch, commit, push, and open a pull request:
+7. If a headless run fails on missing prompt values:
+   - Inspect `catalog-info.yaml` and nearby generated config to infer any missing values you can justify confidently.
+   - Summarize any values you add before rerunning.
+   - Ask the user for any remaining value you cannot deduce confidently.
+8. Review changed files and ensure only expected generated Polaris Pipeline artifacts changed.
+9. If there are changes, create a composer branch, commit, push, and open a pull request:
    - `git checkout -b feat/polaris-composer-<service>`
    - `git add <expected-generated-files>`
    - `git commit -m "chore: refresh Polaris Pipeline files"`
    - `git push -u origin feat/polaris-composer-<service>`
    - `gh pr create --fill`
-9. If there are no changes, exit cleanly.
+10. If there are no changes, exit cleanly.
 
 ## Path B: Multi-Repo Staff Session
 
@@ -62,6 +69,7 @@ Stop the run for a repository if:
 
 Do not force completion. Stop and provide a human-readable summary in chat.
 Include the preflight pass/fail checklist and short failure reasons in the stop summary.
+If missing prompt values remain after inspecting the catalog file and nearby repo context, ask the user only for those unresolved values.
 
 ## Validation Checklist
 

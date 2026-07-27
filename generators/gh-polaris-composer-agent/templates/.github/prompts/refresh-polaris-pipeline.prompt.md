@@ -25,9 +25,11 @@ Follow the repository guidance to:
    Include one short reason for each failed check.
 2. Determine whether this repository is a Node.js or Maven service.
 3. Run the matching build generator with `--headless --force`.
-4. Run `gh-oci-deploy-onprem` with `--headless --force`.
-5. Review the diff and keep changes limited to expected generated Polaris Pipeline artifacts.
-6. Create a branch, commit, push, and open a pull request if changes exist.
-7. Stop cleanly if preflight fails, required data is missing, or unrelated churn appears.
+4. If headless mode reports missing prompt values, inspect `catalog-info.yaml` and nearby repository context, add only values you can justify confidently, and summarize any added values in chat.
+5. If any missing value cannot be deduced confidently, ask the user for that value before continuing.
+6. Run `gh-oci-deploy-onprem` with `--headless --force`.
+7. Review the diff and keep changes limited to expected generated Polaris Pipeline artifacts.
+8. Create a branch, commit, push, and open a pull request if changes exist.
+9. Stop cleanly if preflight fails, required data is missing, or unrelated churn appears.
 
 End in one of the allowed states: pull request opened, no changes needed, or a deliberate stop with a human-readable summary in chat. For deliberate stops, include the preflight pass/fail checklist in the summary.

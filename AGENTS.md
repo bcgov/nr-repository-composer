@@ -34,6 +34,8 @@ For each target repository:
 
 - Default execution mode assumes required prompt values are already present.
 - Use `--headless --force` for non-interactive composer runs.
+- If headless mode fails on missing prompt values, inspect `catalog-info.yaml` first, add only values you can justify confidently, and summarize those additions in chat.
+- Ask the user for any remaining value you cannot deduce confidently.
 - Use `--ask-answered` only when you intentionally need to review or change stored prompt values.
 
 Example with a local wrapper copied into a target repository:

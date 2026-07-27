@@ -23,6 +23,8 @@ Follow the repository guidance to:
    Report preflight results in chat as a checklist that marks each check as pass or fail.
    Use `✅` for pass items and `❌` for failed items.
    Include one short reason for each failed check.
+   Pull latest changes with `git pull --ff-only` before running generators.
+   Stop immediately if pull fails or merge conflicts are present (`git diff --name-only --diff-filter=U` is not empty).
 2. Determine whether this repository is a Node.js or Maven service.
 3. Run the matching build generator with `--headless --force`.
 4. If headless mode reports missing prompt values, inspect `catalog-info.yaml` and nearby repository context, add only values you can justify confidently, and summarize any added values in chat.

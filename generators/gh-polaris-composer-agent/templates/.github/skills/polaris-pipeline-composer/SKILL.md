@@ -24,8 +24,11 @@ Use this skill for staff-supervised updates that apply the latest Polaris Pipeli
    - `command -v podman || command -v docker`
    - `test -f catalog-info.yaml`
    - `git status --porcelain` must be empty
+   - `git pull --ff-only`
+   - `git diff --name-only --diff-filter=U` must be empty
    - Report a chat checklist with pass/fail status for each preflight check
    - Use `✅` for pass items and `❌` for failed items
+   - If `git pull --ff-only` fails or merge conflicts are present, stop and hand off to a developer before running generators
 3. Assume required prompt values are already configured.
 4. Run matching build generator in headless mode:
    - Node.js: `./nr-repository-composer.sh . gh-nodejs-build --headless --force`
@@ -67,6 +70,7 @@ Stop the run for a repository if:
 - Required prompts cannot be resolved safely.
 - `catalog-info.yaml` is missing or invalid for generator requirements.
 - Diff includes unrelated churn outside expected generated artifacts.
+- `git pull --ff-only` fails or unresolved merge conflicts are detected.
 
 Do not force completion. Stop and provide a human-readable summary in chat.
 Include the preflight pass/fail checklist and short failure reasons in the stop summary.

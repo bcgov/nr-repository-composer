@@ -21,15 +21,31 @@ jobs:
       - name: Check token expiration
         shell: bash
         run: |
-          RESPONSE_CODE=$(curl -o /dev/null -s -w "%{http_code}" -X 'GET' \
-            ${{ inputs.url }}/v1/health/token-check \
+          CURL_ERR_FILE="/tmp/curl_token_check.err"
+          RESPONSE_CODE=$(curl -o /dev/null -sS -w "%{http_code}" -X 'GET' \
+            "${{ inputs.url }}/v1/health/token-check" \
             -H 'accept: */*' \
             -H 'Authorization: Bearer '"${{ secrets.token }}"'' \
             --retry 2 \
+            --retry-all-errors \
             --max-time 30 \
             --connect-timeout 10 \
             --retry-delay 5 \
+            2>"${CURL_ERR_FILE}" \
           )
+          CURL_EXIT_CODE=$?
+
+          if [ "$CURL_EXIT_CODE" -eq 28 ]; then
+            echo "Error: Timed out while checking Broker token (curl exit code 28)."
+            echo "Timeout settings: connect-timeout=10s, max-time=30s, retry=2"
+            exit 1
+          elif [ "$CURL_EXIT_CODE" -ne 0 ]; then
+            echo "Error: Broker token check request failed (curl exit code ${CURL_EXIT_CODE})."
+            if [ -f "${CURL_ERR_FILE}" ]; then
+              cat "${CURL_ERR_FILE}"
+            fi
+            exit 1
+          fi
 
           if [ "$RESPONSE_CODE" -eq 401 ]; then
             echo "Unauthorized (401)"

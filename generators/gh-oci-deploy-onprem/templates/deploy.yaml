@@ -379,7 +379,15 @@ jobs:
           TRIGGER_UUID=$(uuidgen)
           echo "trigger_uuid=$TRIGGER_UUID" >> $GITHUB_OUTPUT
 
-          curl \
+          SUBMIT_START_EPOCH=$(date +%s)
+          HTTP_CODE=$(curl -sS \
+          --output "/tmp/jenkins_submit_response.json" \
+          --write-out "%{http_code}" \
+          --retry 2 \
+          --retry-delay 2 \
+          --retry-all-errors \
+          --connect-timeout 10 \
+          --max-time 30 \
           --data-urlencode "token=${{ secrets.JENKINS_TOKEN }}" \
           --data-urlencode "githubRunId=${TRIGGER_UUID}" \
           --data-urlencode "githubToken=${{ secrets.GITHUB_TOKEN }}" \
@@ -395,7 +403,21 @@ jobs:
           --data-urlencode "deploymentApprover=${DEPLOYMENT_APPROVER}" \
           --data-urlencode "intentionId=${BUILD_GUID}" \
           -H "Connection: close" \
-          ${{ env.URL }}/${{ env.JOB }}
+          ${{ env.URL }}/${{ env.JOB }})
+          CURL_EXIT_CODE=$?
+          SUBMIT_END_EPOCH=$(date +%s)
+          
+          echo "submit_http_code=${HTTP_CODE}" >> $GITHUB_OUTPUT
+          echo "submit_curl_exit_code=${CURL_EXIT_CODE}" >> $GITHUB_OUTPUT
+          echo "submit_duration_seconds=$((SUBMIT_END_EPOCH - SUBMIT_START_EPOCH))" >> $GITHUB_OUTPUT
+          
+          if [ "$CURL_EXIT_CODE" -eq 28 ]; then
+            echo "Warning: Jenkins deployment submission timed out (curl exit code 28)."
+            echo "Timeout settings: connect-timeout=10s, max-time=30s, retry=2"
+          elif [ "$CURL_EXIT_CODE" -ne 0 ]; then
+            echo "Error: Jenkins deployment submission failed (curl exit code ${CURL_EXIT_CODE})."
+            exit 1
+          fi
         env:
           PROJECT_VERSION: ${{ needs.deploy-pre-release-build.outputs.project_version || needs.deploy-release-build.outputs.project_version }}
           BUILD_GUID: ${{ needs.deploy-pre-release-build.outputs.build_guid || needs.deploy-release-build.outputs.build_guid }}
@@ -419,7 +441,13 @@ jobs:
         if: always()
         run: |
           # Determine the status and appropriate message
-          if [[ "${{ steps.check-jenkins-job-status.outcome }}" == "failure" ]]; then
+          if [[ "${{ steps.submit-job.outputs.submit_curl_exit_code }}" == "28" ]]; then
+            STATUS_MSG="⚠️ **Timeout**: Jenkins deployment submission timed out"
+            STATUS_DETAIL="> **Details**: The submission request exceeded 30 seconds (curl exit code 28). This may indicate a Jenkins connectivity issue. The job may still be processing."
+          elif [[ "${{ steps.submit-job.outputs.submit_curl_exit_code }}" != "0" ]]; then
+            STATUS_MSG="❌ **Failed**: Jenkins deployment submission failed"
+            STATUS_DETAIL="> **Details**: curl exit code ${{ steps.submit-job.outputs.submit_curl_exit_code }} - HTTP status ${{ steps.submit-job.outputs.submit_http_code }}. Check Jenkins logs for details."
+          elif [[ "${{ steps.check-jenkins-job-status.outcome }}" == "failure" ]]; then
             if [[ -z "${{ steps.check-jenkins-job-status.outputs.event_url }}" ]]; then
               STATUS_MSG="❌ **Failed**: Job was not successfully submitted to Jenkins"
               STATUS_DETAIL="The deployment job could not be triggered. This may indicate a broker connectivity issue."
@@ -429,7 +457,7 @@ jobs:
             fi
           elif [[ "${{ steps.check-jenkins-job-status.outcome }}" == "success" && -z "${{ steps.check-jenkins-job-status.outputs.event_url }}" ]]; then
             STATUS_MSG="⚠️ **Timeout**: Job did not complete within 5 minutes"
-            STATUS_DETAIL="> **Action Required**: The deployment job is still running in Jenkins. You must manually verify the job status and completion."
+            STATUS_DETAIL="> **Details**: Broker polling timed out after 5 minutes (30 × 10 second intervals). The deployment job is still running in Jenkins. You must manually verify the job status and completion."
           elif [[ "${{ steps.check-jenkins-job-status.outputs.status }}" == "success" ]]; then
             STATUS_MSG="✅ **Success**: Deployment completed successfully"
             STATUS_DETAIL=""
@@ -448,6 +476,7 @@ jobs:
           | **Version** | ${PROJECT_VERSION} |
           | **Artifact SHA256** | ${ARTIFACT_SHA256} |
           | **Deployment Config Tag** | ${DEPLOY_CONFIG_TAG} |
+          | **Submit Duration** | ${{ steps.submit-job.outputs.submit_duration_seconds || 'N/A' }} seconds |
           $(if [[ -n "${{ steps.check-jenkins-job-status.outputs.event_url }}" ]]; then
             echo "| **Job Run** | [View Details](${{ steps.check-jenkins-job-status.outputs.event_url }}) |"
           else

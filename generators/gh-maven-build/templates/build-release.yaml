@@ -208,7 +208,7 @@ jobs:
           PACKAGE_DIR="${PUBLISH_DIR:-<%= publishArtifactSuffix %>}"
           PACKAGE_DIR="${PACKAGE_DIR%% *}"
           ./mvnw <%= mavenBuildCommand %> -Dpublish.dir="$PACKAGE_DIR"
-          ARTIFACT_FILE="target/${ARTIFACT_ID}-${PROJECT_VERSION}.${PACKAGE_TYPE}"
+          ARTIFACT_FILE="<%= pomRoot %>target/${ARTIFACT_ID}-${PROJECT_VERSION}.${PACKAGE_TYPE}"
           if [ ! -f "$ARTIFACT_FILE" ]; then
             echo "::error ::Expected Maven output not found: $ARTIFACT_FILE"
             exit 1

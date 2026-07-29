@@ -97,7 +97,12 @@ jobs:
             "${BROKER_URL}/v1/intention/search?where=${WHERE_QUERY}&offset=0&limit=1" \
             -H 'accept: application/json' \
             -H 'Authorization: Bearer '"${BROKER_JWT}"'' \
-            -d '')
+            -d '' \
+            --retry 2 \
+            --max-time 30 \
+            --connect-timeout 10 \
+            --retry-delay 5 \
+          )
 
           if echo "$RESPONSE" | jq -e '.statusCode == 401' > /dev/null; then
             echo "Status code is 401. This indicates an authorization error."
@@ -154,7 +159,12 @@ jobs:
             "${BROKER_URL}/v1/intention/search?where=${WHERE_QUERY}&offset=0&limit=1" \
             -H 'accept: application/json' \
             -H 'Authorization: Bearer '"${BROKER_JWT}"'' \
-            -d '')
+            -d '' \
+            --retry 2 \
+            --max-time 30 \
+            --connect-timeout 10 \
+            --retry-delay 5 \
+          )
           if echo "$RESPONSE" | jq -e '.statusCode == 401' > /dev/null; then
             echo "Status code is 401. This indicates an authorization error."
             echo "Please check if your Broker Token is valid. Teams can generate a new one in Broker if needed."
@@ -247,7 +257,12 @@ jobs:
             "${BROKER_URL}/v1/intention/search?where=${WHERE_QUERY}&offset=0&limit=1" \
             -H 'accept: application/json' \
             -H 'Authorization: Bearer '"${BROKER_JWT}"'' \
-            -d '')
+            -d '' \
+            --retry 2 \
+            --max-time 30 \
+            --connect-timeout 10 \
+            --retry-delay 5 \
+          )
           if echo "$RESPONSE" | jq -e '.statusCode == 401' > /dev/null; then
             echo "Status code is 401. This indicates an authorization error."
             echo "Please check if your Broker Token is valid. Teams can generate a new one in Broker if needed."

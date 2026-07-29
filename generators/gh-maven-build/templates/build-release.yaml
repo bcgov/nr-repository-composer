@@ -79,11 +79,19 @@ jobs:
           elif [[ ${{ github.ref_name != 'main' }} = true ]]; then
             RESPONSE=$(curl -s "https://api.github.com/repos/<%= gitHubProjectSlug %>/pulls?head=<%= gitHubProjectSlug.split('/')[0] %>:${{ github.head_ref || github.ref_name }}&state=open&base=main" \
               -H "Authorization: token ${{ secrets.GITHUB_TOKEN }}" \
-              -H "Accept: application/vnd.github+json")
+              -H "Accept: application/vnd.github+json" \
+              --retry 2 \
+              --max-time 30 \
+              --connect-timeout 10 \
+              --retry-delay 5)
             PULL_REQUEST_NUMBER=$(echo "${RESPONSE}" | jq -r .[0].number)
             RESPONSE=$(curl -s "https://api.github.com/repos/<%= gitHubProjectSlug %>/pulls/$PULL_REQUEST_NUMBER" \
               -H "Authorization: token ${{ secrets.GITHUB_TOKEN }}" \
-              -H "Accept: application/vnd.github+json")
+              -H "Accept: application/vnd.github+json" \
+              --retry 2 \
+              --max-time 30 \
+              --connect-timeout 10 \
+              --retry-delay 5)
             MERGEABLE=$(echo "${RESPONSE}" | jq -r .mergeable)
             if [[ "$MERGEABLE" != "true" ]]; then
               echo "::error ::Pull request #$PULL_REQUEST_NUMBER is not mergeable… aborted."
@@ -249,6 +257,10 @@ jobs:
           curl -s POST ${{ env.BROKER_URL }}/v1/intention/action/patch \
               -H 'Content-Type: application/json' \
               -H 'X-Broker-Token: '"${BUILD_TOKEN}"'' \
+              --retry 2 \
+              --max-time 30 \
+              --connect-timeout 10 \
+              --retry-delay 5 \
               -d '{"package":{"checksum": "sha256:'${ARTIFACT_SHA256}'", "size": '${ARTIFACT_SIZE}'}}'
         env:
           ARTIFACT_SHA256: ${{ steps.publish-artifact.outputs.artifact_sha256 }}

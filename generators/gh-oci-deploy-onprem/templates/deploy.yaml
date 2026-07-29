@@ -379,7 +379,17 @@ jobs:
           TRIGGER_UUID=$(uuidgen)
           echo "trigger_uuid=$TRIGGER_UUID" >> $GITHUB_OUTPUT
 
-          curl \
+          SUBMIT_START_EPOCH=$(date +%s)
+          JENKINS_RESPONSE_FILE=$(mktemp)
+          set +e
+          HTTP_CODE=$(curl -sS \
+          --output "${JENKINS_RESPONSE_FILE}" \
+          --write-out "%{http_code}" \
+          --retry 2 \
+          --retry-delay 2 \
+          --retry-all-errors \
+          --connect-timeout 10 \
+          --max-time 30 \
           --data-urlencode "token=${{ secrets.JENKINS_TOKEN }}" \
           --data-urlencode "githubRunId=${TRIGGER_UUID}" \
           --data-urlencode "githubToken=${{ secrets.GITHUB_TOKEN }}" \
@@ -395,7 +405,38 @@ jobs:
           --data-urlencode "deploymentApprover=${DEPLOYMENT_APPROVER}" \
           --data-urlencode "intentionId=${BUILD_GUID}" \
           -H "Connection: close" \
-          ${{ env.URL }}/${{ env.JOB }}
+          ${{ env.URL }}/${{ env.JOB }})
+          CURL_EXIT_CODE=$?
+          set -e
+          SUBMIT_END_EPOCH=$(date +%s)
+
+          echo "submit_http_code=${HTTP_CODE}" >> $GITHUB_OUTPUT
+          echo "submit_curl_exit_code=${CURL_EXIT_CODE}" >> $GITHUB_OUTPUT
+          echo "submit_duration_seconds=$((SUBMIT_END_EPOCH - SUBMIT_START_EPOCH))" >> $GITHUB_OUTPUT
+
+          if [[ "${CURL_EXIT_CODE}" -ne 0 ]]; then
+            echo "::error::Failed to submit deployment job to Jenkins (curl exit code ${CURL_EXIT_CODE})."
+            if [[ -s "${JENKINS_RESPONSE_FILE}" ]]; then
+              echo "Jenkins response body (truncated):"
+              head -c 500 "${JENKINS_RESPONSE_FILE}"
+              echo
+            fi
+            rm -f "${JENKINS_RESPONSE_FILE}"
+            exit 1
+          fi
+
+          if [[ ! "${HTTP_CODE}" =~ ^(2|3)[0-9][0-9]$ ]]; then
+            echo "::error::Jenkins deployment submit returned non-success HTTP status ${HTTP_CODE}."
+            if [[ -s "${JENKINS_RESPONSE_FILE}" ]]; then
+              echo "Jenkins response body (truncated):"
+              head -c 500 "${JENKINS_RESPONSE_FILE}"
+              echo
+            fi
+            rm -f "${JENKINS_RESPONSE_FILE}"
+            exit 1
+          fi
+
+          rm -f "${JENKINS_RESPONSE_FILE}"
         env:
           PROJECT_VERSION: ${{ needs.deploy-pre-release-build.outputs.project_version || needs.deploy-release-build.outputs.project_version }}
           BUILD_GUID: ${{ needs.deploy-pre-release-build.outputs.build_guid || needs.deploy-release-build.outputs.build_guid }}
@@ -420,22 +461,93 @@ jobs:
         run: |
           # Determine the status and appropriate message
           if [[ "${{ steps.check-jenkins-job-status.outcome }}" == "failure" ]]; then
-            if [[ -z "${{ steps.check-jenkins-job-status.outputs.event_url }}" ]]; then
+            if [[ "${{ steps.check-jenkins-job-status.outputs.failure_reason }}" == "not_triggered_timeout" ]]; then
+              STATUS_MSG="⚠️ **Timeout**: Deployment job was not triggered within 5 minutes"
+              STATUS_DETAIL="> **Action Required**: Validate Broker connectivity and Jenkins trigger availability, then retry deployment."
+            elif [[ "${{ steps.check-jenkins-job-status.outputs.failure_reason }}" == "not_completed_timeout" ]]; then
+              STATUS_MSG="⚠️ **Timeout**: Job did not complete within 5 minutes"
+              STATUS_DETAIL="> **Action Required**: The deployment job is still running or delayed. Verify the Jenkins job status manually."
+            elif [[ -z "${{ steps.check-jenkins-job-status.outputs.event_url }}" ]]; then
               STATUS_MSG="❌ **Failed**: Job was not successfully submitted to Jenkins"
               STATUS_DETAIL="The deployment job could not be triggered. This may indicate a broker connectivity issue."
             else
               STATUS_MSG="❌ **Failed**: Deployment job failed"
               STATUS_DETAIL="The deployment completed but reported a failure status. Check the Jenkins logs for details."
             fi
-          elif [[ "${{ steps.check-jenkins-job-status.outcome }}" == "success" && -z "${{ steps.check-jenkins-job-status.outputs.event_url }}" ]]; then
-            STATUS_MSG="⚠️ **Timeout**: Job did not complete within 5 minutes"
-            STATUS_DETAIL="> **Action Required**: The deployment job is still running in Jenkins. You must manually verify the job status and completion."
           elif [[ "${{ steps.check-jenkins-job-status.outputs.status }}" == "success" ]]; then
             STATUS_MSG="✅ **Success**: Deployment completed successfully"
             STATUS_DETAIL=""
           else
             STATUS_MSG="❌ **Failed**: Deployment did not succeed"
             STATUS_DETAIL="Final status: \`${{ steps.check-jenkins-job-status.outputs.status }}\`"
+          fi
+
+          SUBMIT_HTTP="${{ steps.submit-job.outputs.submit_http_code || '' }}"
+          SUBMIT_CURL_EXIT="${{ steps.submit-job.outputs.submit_curl_exit_code || '' }}"
+          SUBMIT_DURATION="${{ steps.submit-job.outputs.submit_duration_seconds || '' }}"
+          if [[ -z "${SUBMIT_HTTP}" && -z "${SUBMIT_CURL_EXIT}" ]]; then
+            SUBMIT_SUMMARY="n/a"
+          elif [[ "${SUBMIT_CURL_EXIT}" == "28" ]]; then
+            SUBMIT_SUMMARY="timeout (curl exit 28)"
+          elif [[ "${SUBMIT_CURL_EXIT}" != "0" ]]; then
+            SUBMIT_SUMMARY="failed (curl exit ${SUBMIT_CURL_EXIT})"
+          elif [[ ! "${SUBMIT_HTTP}" =~ ^(2|3)[0-9][0-9]$ ]]; then
+            SUBMIT_SUMMARY="failed (HTTP ${SUBMIT_HTTP})"
+          else
+            if [[ "${SUBMIT_DURATION}" =~ ^[0-9]+$ ]]; then
+              SUBMIT_SUMMARY="ok (HTTP ${SUBMIT_HTTP}, ${SUBMIT_DURATION}s)"
+            else
+              SUBMIT_SUMMARY="ok (HTTP ${SUBMIT_HTTP})"
+            fi
+          fi
+
+          BROKER_FAILURE_REASON="${{ steps.check-jenkins-job-status.outputs.failure_reason || '' }}"
+          BROKER_STATUS="${{ steps.check-jenkins-job-status.outputs.status || '' }}"
+          BROKER_LAST_CURL_EXIT="${{ steps.check-jenkins-job-status.outputs.last_curl_exit || '' }}"
+          if [[ -n "${BROKER_FAILURE_REASON}" ]]; then
+            if [[ "${BROKER_LAST_CURL_EXIT}" == "28" ]]; then
+              BROKER_SUMMARY="timeout (curl exit 28)"
+            elif [[ "${BROKER_FAILURE_REASON}" == "broker_query_error_trigger" ]]; then
+              BROKER_SUMMARY="failed (trigger lookup request error)"
+            elif [[ "${BROKER_FAILURE_REASON}" == "broker_http_error_trigger" ]]; then
+              BROKER_SUMMARY="failed (trigger lookup HTTP error)"
+            elif [[ "${BROKER_FAILURE_REASON}" == "not_triggered_timeout" ]]; then
+              BROKER_SUMMARY="failed (trigger not found before timeout)"
+            elif [[ "${BROKER_FAILURE_REASON}" == "broker_query_error_completion" ]]; then
+              BROKER_SUMMARY="failed (completion polling request error)"
+            elif [[ "${BROKER_FAILURE_REASON}" == "broker_http_error_completion" ]]; then
+              BROKER_SUMMARY="failed (completion polling HTTP error)"
+            elif [[ "${BROKER_FAILURE_REASON}" == "not_completed_timeout" ]]; then
+              BROKER_SUMMARY="failed (deployment did not complete before timeout)"
+            elif [[ "${BROKER_FAILURE_REASON}" == "deployment_outcome_not_success" ]]; then
+              BROKER_SUMMARY="failed (deployment outcome was not success)"
+            else
+              BROKER_SUMMARY="failed"
+            fi
+          elif [[ "${BROKER_STATUS}" == "success" ]]; then
+            BROKER_SUMMARY="ok"
+          elif [[ -n "${BROKER_STATUS}" ]]; then
+            BROKER_SUMMARY="${BROKER_STATUS}"
+          else
+            BROKER_SUMMARY="n/a"
+          fi
+
+          if [[ "${SUBMIT_CURL_EXIT}" == "28" ]]; then
+            TIMEOUT_SIGNAL="yes (Jenkins submit)"
+            STATUS_MSG="⚠️ **Timeout**: Jenkins submit request timed out"
+            STATUS_DETAIL="> **Action Required**: Retry deployment. If this persists, check Jenkins/network availability."
+          elif [[ "${BROKER_LAST_CURL_EXIT}" == "28" ]]; then
+            TIMEOUT_SIGNAL="yes (Broker polling)"
+          else
+            TIMEOUT_SIGNAL="no"
+          fi
+
+          TRIGGER_WAIT="${{ steps.check-jenkins-job-status.outputs.trigger_wait_seconds || '' }}"
+          COMPLETION_WAIT="${{ steps.check-jenkins-job-status.outputs.completion_wait_seconds || '' }}"
+          if [[ "${TRIGGER_WAIT}" =~ ^[0-9]+$ && "${COMPLETION_WAIT}" =~ ^[0-9]+$ ]]; then
+            TOTAL_BROKER_WAIT="$((TRIGGER_WAIT + COMPLETION_WAIT))s"
+          else
+            TOTAL_BROKER_WAIT="n/a"
           fi
 
           cat >> $GITHUB_STEP_SUMMARY << EOF
@@ -448,6 +560,10 @@ jobs:
           | **Version** | ${PROJECT_VERSION} |
           | **Artifact SHA256** | ${ARTIFACT_SHA256} |
           | **Deployment Config Tag** | ${DEPLOY_CONFIG_TAG} |
+          | **Jenkins Submit** | ${SUBMIT_SUMMARY} |
+          | **Broker Polling** | ${BROKER_SUMMARY} |
+          | **Broker Wait** | ${TOTAL_BROKER_WAIT} |
+          | **Timeout Detected** | ${TIMEOUT_SIGNAL} |
           $(if [[ -n "${{ steps.check-jenkins-job-status.outputs.event_url }}" ]]; then
             echo "| **Job Run** | [View Details](${{ steps.check-jenkins-job-status.outputs.event_url }}) |"
           else

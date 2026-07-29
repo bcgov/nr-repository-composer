@@ -39,6 +39,8 @@ export default class extends Generator {
         ),
       );
     }
+
+    this.answers = {};
   }
 
   writing() {

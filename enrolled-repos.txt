@@ -1,0 +1,8 @@
+# Enrolled repositories for Polaris Pipeline Composer dispatch
+# One org/repo per line. Lines starting with # are comments.
+# These repositories will receive a repository_dispatch event (type: polaris-composer-update)
+# when a new nr-repository-composer image is published.
+#
+# Example:
+# bcgov/nr-nodejs-sample
+# bcgov/java-maven-pipeline-example

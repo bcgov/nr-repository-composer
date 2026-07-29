@@ -1,0 +1,108 @@
+name: Polaris Pipeline Composer Refresh
+
+on:
+<% if (enrolled) { -%>
+  repository_dispatch:
+    types:
+      - polaris-composer-update
+<% } -%>
+  workflow_dispatch:
+
+concurrency:
+  group: polaris-composer-refresh
+  cancel-in-progress: false
+
+permissions: {}
+
+jobs:
+  refresh:
+    name: Refresh Polaris Pipeline files
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v6
+        with:
+          fetch-depth: 0
+
+      - name: Detect service runtime
+        id: detect-runtime
+        run: |
+          if [ ! -f catalog-info.yaml ]; then
+            echo "Error: catalog-info.yaml not found at repository root."
+            exit 1
+          fi
+          DEPLOY_TYPE=$(grep 'deployType' catalog-info.yaml | head -1 | sed 's/.*deployType: *//' | tr -d '"' | tr -d "'")
+          if [[ "${DEPLOY_TYPE}" == "tomcat" || "${DEPLOY_TYPE}" == "maven" ]]; then
+            echo "build_generator=gh-maven-build" >> $GITHUB_OUTPUT
+            echo "runtime=maven" >> $GITHUB_OUTPUT
+          else
+            echo "build_generator=gh-nodejs-build" >> $GITHUB_OUTPUT
+            echo "runtime=nodejs" >> $GITHUB_OUTPUT
+          fi
+          echo "Detected runtime: ${DEPLOY_TYPE:-nodejs (default)}"
+
+      - name: Download nr-repository-composer.sh
+        run: |
+          curl -fsSL https://raw.githubusercontent.com/bcgov/nr-repository-composer/main/nr-repository-composer.sh \
+            -o nr-repository-composer.sh
+          chmod +x nr-repository-composer.sh
+
+      - name: Run build generator
+        run: |
+          ./nr-repository-composer.sh . ${{ steps.detect-runtime.outputs.build_generator }} --headless --force
+
+      - name: Run deploy generator
+        run: |
+          ./nr-repository-composer.sh . gh-oci-deploy-onprem --headless --force
+
+      - name: Clean up composer script
+        run: rm -f nr-repository-composer.sh
+
+      - name: Check for changes
+        id: check-changes
+        run: |
+          git diff --quiet && git diff --staged --quiet && echo "changed=false" >> $GITHUB_OUTPUT || echo "changed=true" >> $GITHUB_OUTPUT
+
+      - name: Generate app token
+        id: app-token
+        uses: actions/create-github-app-token@v2
+        with:
+          app-id: ${{ secrets.POLARIS_COMPOSER_APP_ID }}
+          private-key: ${{ secrets.POLARIS_COMPOSER_APP_PRIVATE_KEY }}
+
+      - name: Create pull request
+        if: steps.check-changes.outputs.changed == 'true'
+        env:
+          GH_TOKEN: ${{ steps.app-token.outputs.token }}
+        run: |
+          BRANCH="chore/polaris-composer-refresh"
+          git config user.name "polaris-composer-refresh[bot]"
+          git config user.email "polaris-composer-refresh[bot]@users.noreply.github.com"
+          git remote set-url origin "https://x-access-token:${GH_TOKEN}@github.com/${{ github.repository }}.git"
+          git config --unset-all http.https://github.com/.extraheader || true
+
+          EXISTING_PR=$(gh pr list --head "${BRANCH}" --state open --json number --jq '.[0].number' 2>/dev/null || echo "")
+
+          git add .github/workflows/ AGENTS.md 2>/dev/null || true
+          git commit -m "chore: refresh Polaris Pipeline files"
+
+          if git ls-remote --exit-code origin "${BRANCH}" > /dev/null 2>&1; then
+            git push origin HEAD:"${BRANCH}" --force
+          else
+            git checkout -b "${BRANCH}"
+            git push -u origin "${BRANCH}"
+          fi
+
+          if [ -z "${EXISTING_PR}" ]; then
+            gh pr create \
+              --title "chore: refresh Polaris Pipeline files" \
+              --body "Automated refresh of Polaris Pipeline generated files from the latest nr-repository-composer image. Do not push commits directly to this branch — it may be force-pushed by the next automated refresh." \
+              --base main \
+              --head "${BRANCH}"
+          else
+            echo "PR #${EXISTING_PR} already open. Branch updated via force-push."
+          fi
+
+      - name: No changes
+        if: steps.check-changes.outputs.changed == 'false'
+        run: echo "No changes detected. Repository is up to date."

@@ -39,6 +39,8 @@ jobs:
     permissions:
       contents: read
       packages: write
+    outputs:
+      image: ${{ steps.meta.outputs.tags }}
     steps:
       - name: Checkout repository
         uses: actions/checkout@v6
@@ -70,3 +72,134 @@ jobs:
           cache-from: type=gha
           build-args: |
             REPO_LOCATION=
+
+  refresh-enrolled:
+    name: Refresh Enrolled Repositories
+    needs: build-image
+    if: github.ref == 'refs/heads/main'
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+      packages: read
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v6
+
+      - name: Generate app token
+        id: app-token
+        uses: actions/create-github-app-token@v2
+        with:
+          app-id: ${{ secrets.POLARIS_COMPOSER_APP_ID }}
+          private-key: ${{ secrets.POLARIS_COMPOSER_APP_PRIVATE_KEY }}
+          owner: ${{ github.repository_owner }}
+
+      - name: Log in to container registry
+        uses: docker/login-action@v3
+        with:
+          registry: ghcr.io
+          username: ${{ github.actor }}
+          password: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Refresh enrolled repositories
+        continue-on-error: true
+        env:
+          GH_TOKEN: ${{ steps.app-token.outputs.token }}
+          COMPOSER_IMAGE: ghcr.io/${{ github.repository }}:main
+        run: |
+          if [ ! -f enrolled-repos.txt ]; then
+            echo "No enrolled-repos.txt found."
+            cat >> $GITHUB_STEP_SUMMARY << 'EOF'
+          ## Polaris Composer Refresh
+
+          No enrolled-repos.txt found. Skipping refresh.
+          EOF
+            exit 0
+          fi
+          ENROLLED=$(grep -v '^\s*#' enrolled-repos.txt | grep -v '^\s*$' || true)
+          if [ -z "${ENROLLED}" ]; then
+            echo "No enrolled repositories."
+            cat >> $GITHUB_STEP_SUMMARY << 'EOF'
+          ## Polaris Composer Refresh
+
+          No enrolled repositories. Add entries to `enrolled-repos.txt` to enable automatic refresh.
+          EOF
+            exit 0
+          fi
+
+          SUMMARY_ROWS=""
+          while IFS= read -r repo || [[ -n "$repo" ]]; do
+            [[ "$repo" =~ ^#.*$ || -z "$repo" ]] && continue
+            echo "Processing ${repo}..."
+
+            WORK_DIR=$(mktemp -d)
+            git clone "https://x-access-token:${GH_TOKEN}@github.com/${repo}.git" "${WORK_DIR}" 2>/dev/null || {
+              echo "  ✗ ${repo}: clone failed"
+              SUMMARY_ROWS="${SUMMARY_ROWS}| \`${repo}\` | ❌ Clone failed |\n"
+              continue
+            }
+
+            DEPLOY_TYPE=$(grep 'deployType' "${WORK_DIR}/catalog-info.yaml" 2>/dev/null | head -1 | sed 's/.*deployType: *//' | tr -d '"' | tr -d "'")
+            if [[ "${DEPLOY_TYPE}" == "tomcat" || "${DEPLOY_TYPE}" == "maven" ]]; then
+              BUILD_GENERATOR="gh-maven-build"
+            else
+              BUILD_GENERATOR="gh-nodejs-build"
+            fi
+
+            docker run --rm -v "${WORK_DIR}:/src" -w /src "${COMPOSER_IMAGE}" \
+              nr-repository-composer:${BUILD_GENERATOR} --headless --force
+            docker run --rm -v "${WORK_DIR}:/src" -w /src "${COMPOSER_IMAGE}" \
+              nr-repository-composer:gh-oci-deploy-onprem --headless --force
+            docker run --rm -v "${WORK_DIR}:/src" -w /src "${COMPOSER_IMAGE}" \
+              nr-repository-composer:gh-polaris-composer-agent --headless --force
+
+            cd "${WORK_DIR}"
+            if git diff --quiet && git diff --staged --quiet; then
+              echo "  No changes for ${repo}"
+              SUMMARY_ROWS="${SUMMARY_ROWS}| \`${repo}\` | ✅ No changes |\n"
+              cd - > /dev/null
+              rm -rf "${WORK_DIR}"
+              continue
+            fi
+
+            git config user.name "polaris-composer-refresh[bot]"
+            git config user.email "polaris-composer-refresh[bot]@users.noreply.github.com"
+            git remote set-url origin "https://x-access-token:${GH_TOKEN}@github.com/${repo}.git"
+            git config --unset-all http.https://github.com/.extraheader || true
+
+            BRANCH="chore/polaris-composer-refresh"
+            EXISTING_PR=$(gh pr list --repo "${repo}" --head "${BRANCH}" --state open --json number --jq '.[0].number' 2>/dev/null || echo "")
+
+            git add .
+            git commit -m "chore: refresh Polaris Pipeline files"
+
+            if git ls-remote --exit-code origin "${BRANCH}" > /dev/null 2>&1; then
+              git push origin HEAD:"${BRANCH}" --force
+            else
+              git checkout -b "${BRANCH}"
+              git push -u origin "${BRANCH}"
+            fi
+
+            if [ -z "${EXISTING_PR}" ]; then
+              gh pr create \
+                --repo "${repo}" \
+                --title "chore: refresh Polaris Pipeline files" \
+                --body "Automated refresh of Polaris Pipeline generated files from the latest nr-repository-composer image." \
+                --base main \
+                --head "${BRANCH}"
+              SUMMARY_ROWS="${SUMMARY_ROWS}| \`${repo}\` | 🔄 PR opened |\n"
+            else
+              SUMMARY_ROWS="${SUMMARY_ROWS}| \`${repo}\` | 🔄 PR #${EXISTING_PR} updated |\n"
+            fi
+
+            cd - > /dev/null
+            rm -rf "${WORK_DIR}"
+
+          done < enrolled-repos.txt
+
+          cat >> $GITHUB_STEP_SUMMARY << EOF
+          ## Polaris Composer Refresh
+
+          | Repository | Result |
+          | - | - |
+          $(printf "${SUMMARY_ROWS}")
+          EOF

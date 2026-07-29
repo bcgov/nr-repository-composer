@@ -99,6 +99,23 @@ jobs:
           SUMMARY_ROWS=""
           while IFS= read -r repo || [[ -n "$repo" ]]; do
             [[ "$repo" =~ ^#.*$ || -z "$repo" ]] && continue
+            echo "Checking ${repo}..."
+
+            WORKFLOW_CONTENT=$(gh api repos/${repo}/contents/.github/workflows/polaris-composer-refresh.yaml \
+              --jq '.content' 2>/dev/null | base64 -d 2>/dev/null || echo "")
+
+            if [ -z "${WORKFLOW_CONTENT}" ]; then
+              echo "  ⚠ ${repo}: workflow file not found, skipping dispatch"
+              SUMMARY_ROWS="${SUMMARY_ROWS}| \`${repo}\` | ⚠️ Skipped (workflow not found) |\n"
+              continue
+            fi
+
+            if ! echo "${WORKFLOW_CONTENT}" | grep -q 'repository_dispatch'; then
+              echo "  ⚠ ${repo}: repository_dispatch not enabled, skipping dispatch"
+              SUMMARY_ROWS="${SUMMARY_ROWS}| \`${repo}\` | ⚠️ Skipped (repository_dispatch not enabled in workflow) |\n"
+              continue
+            fi
+
             echo "Dispatching to ${repo}..."
             if gh api repos/${repo}/dispatches \
               --method POST \

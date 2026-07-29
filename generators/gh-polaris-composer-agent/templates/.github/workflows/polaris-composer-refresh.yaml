@@ -70,18 +70,31 @@ jobs:
         env:
           GH_TOKEN: ${{ github.token }}
         run: |
-          BRANCH="chore/polaris-composer-refresh-$(date +%Y%m%d%H%M%S)"
+          BRANCH="chore/polaris-composer-refresh"
           git config user.name "polaris-composer-refresh[bot]"
           git config user.email "polaris-composer-refresh[bot]@users.noreply.github.com"
-          git checkout -b "${BRANCH}"
+
+          EXISTING_PR=$(gh pr list --head "${BRANCH}" --state open --json number --jq '.[0].number' 2>/dev/null || echo "")
+
           git add .github/workflows/ AGENTS.md 2>/dev/null || true
           git commit -m "chore: refresh Polaris Pipeline files"
-          git push -u origin "${BRANCH}"
-          gh pr create \
-            --title "chore: refresh Polaris Pipeline files" \
-            --body "Automated refresh of Polaris Pipeline generated files from the latest nr-repository-composer image." \
-            --base main \
-            --head "${BRANCH}"
+
+          if git ls-remote --exit-code origin "${BRANCH}" > /dev/null 2>&1; then
+            git push origin HEAD:"${BRANCH}" --force
+          else
+            git checkout -b "${BRANCH}"
+            git push -u origin "${BRANCH}"
+          fi
+
+          if [ -z "${EXISTING_PR}" ]; then
+            gh pr create \
+              --title "chore: refresh Polaris Pipeline files" \
+              --body "Automated refresh of Polaris Pipeline generated files from the latest nr-repository-composer image. Do not push commits directly to this branch — it may be force-pushed by the next automated refresh." \
+              --base main \
+              --head "${BRANCH}"
+          else
+            echo "PR #${EXISTING_PR} already open. Branch updated via force-push."
+          fi
 
       - name: No changes
         if: steps.check-changes.outputs.changed == 'false'

@@ -1,9 +1,11 @@
 name: Polaris Pipeline Composer Refresh
 
 on:
+<% if (enrolled) { -%>
   repository_dispatch:
     types:
       - polaris-composer-update
+<% } -%>
   workflow_dispatch:
 
 concurrency:

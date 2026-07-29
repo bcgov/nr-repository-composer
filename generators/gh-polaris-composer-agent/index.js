@@ -2,9 +2,11 @@
 import Generator from 'yeoman-generator';
 import { nrsay } from '../util/nrsay.js';
 import { OPTION_HEADLESS } from '../util/options.js';
+import { PROMPT_POLARIS_COMPOSER_DISPATCH_ENROLLED } from '../util/prompts.js';
 import { BACKSTAGE_FILENAME, BACKSTAGE_KIND_COMPONENT } from '../util/yaml.js';
 import { BackstageStorage } from '../util/backstage.storage.js';
 import { outputReport } from '../util/report.js';
+import { YEOMAN_CONFIG_NAMESPACE } from '../util/constants.js';
 
 /**
  * Add Polaris Pipeline Composer agent guidance files and chat prompt to a repository
@@ -39,6 +41,8 @@ export default class extends Generator {
         ),
       );
     }
+
+    this.answers = await this.prompt([PROMPT_POLARIS_COMPOSER_DISPATCH_ENROLLED], YEOMAN_CONFIG_NAMESPACE);
   }
 
   writing() {
@@ -69,7 +73,7 @@ export default class extends Generator {
     this.fs.copyTpl(
       this.templatePath('.github/workflows/polaris-composer-refresh.yaml'),
       this.destinationPath('.github/workflows/polaris-composer-refresh.yaml'),
-      {},
+      { enrolled: this.answers.polarisComposerDispatchEnrolled ?? false },
     );
   }
 

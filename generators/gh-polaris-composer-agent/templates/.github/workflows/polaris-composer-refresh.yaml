@@ -43,11 +43,6 @@ jobs:
           fi
           echo "Detected runtime: ${DEPLOY_TYPE:-nodejs (default)}"
 
-      - name: Install Podman
-        run: |
-          sudo apt-get update -qq
-          sudo apt-get install -qq -y podman
-
       - name: Download nr-repository-composer.sh
         run: |
           curl -fsSL https://raw.githubusercontent.com/bcgov/nr-repository-composer/main/nr-repository-composer.sh \

@@ -70,3 +70,52 @@ jobs:
           cache-from: type=gha
           build-args: |
             REPO_LOCATION=
+
+      - name: Dispatch to enrolled repositories
+        continue-on-error: true
+        env:
+          GH_TOKEN: ${{ secrets.POLARIS_COMPOSER_DISPATCH_TOKEN }}
+        run: |
+          if [ ! -f enrolled-repos.txt ]; then
+            echo "No enrolled-repos.txt found, skipping dispatch."
+            cat >> $GITHUB_STEP_SUMMARY << 'EOF'
+          ## Polaris Composer Dispatch
+
+          No enrolled-repos.txt found. Skipping dispatch.
+          EOF
+            exit 0
+          fi
+          ENROLLED=$(grep -v '^\s*#' enrolled-repos.txt | grep -v '^\s*$' || true)
+          if [ -z "${ENROLLED}" ]; then
+            echo "No enrolled repositories. Skipping dispatch."
+            cat >> $GITHUB_STEP_SUMMARY << 'EOF'
+          ## Polaris Composer Dispatch
+
+          No enrolled repositories. Add entries to `enrolled-repos.txt` to enable automatic refresh.
+          EOF
+            exit 0
+          fi
+
+          SUMMARY_ROWS=""
+          while IFS= read -r repo || [[ -n "$repo" ]]; do
+            [[ "$repo" =~ ^#.*$ || -z "$repo" ]] && continue
+            echo "Dispatching to ${repo}..."
+            if gh api repos/${repo}/dispatches \
+              --method POST \
+              --field event_type=polaris-composer-update \
+              --field "client_payload[composer_ref]=${{ github.sha }}" 2>/dev/null; then
+              echo "  ✓ ${repo}"
+              SUMMARY_ROWS="${SUMMARY_ROWS}| \`${repo}\` | ✅ Dispatched |\n"
+            else
+              echo "  ✗ ${repo} (dispatch failed)"
+              SUMMARY_ROWS="${SUMMARY_ROWS}| \`${repo}\` | ❌ Failed |\n"
+            fi
+          done < enrolled-repos.txt
+
+          cat >> $GITHUB_STEP_SUMMARY << EOF
+          ## Polaris Composer Dispatch
+
+          | Repository | Result |
+          | - | - |
+          $(printf "${SUMMARY_ROWS}")
+          EOF

@@ -65,6 +65,12 @@ export default class extends Generator {
       this.destinationPath('.github/prompts/refresh-polaris-pipeline.prompt.md'),
       {},
     );
+
+    this.fs.copyTpl(
+      this.templatePath('.github/workflows/polaris-composer-refresh.yaml'),
+      this.destinationPath('.github/workflows/polaris-composer-refresh.yaml'),
+      {},
+    );
   }
 
   writingBackstage() {

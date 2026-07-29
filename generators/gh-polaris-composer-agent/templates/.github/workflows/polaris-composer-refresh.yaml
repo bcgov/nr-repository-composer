@@ -71,8 +71,8 @@ jobs:
           GH_TOKEN: ${{ github.token }}
         run: |
           BRANCH="chore/polaris-composer-refresh-$(date +%Y%m%d%H%M%S)"
-          git config user.name "github-actions[bot]"
-          git config user.email "github-actions[bot]@users.noreply.github.com"
+          git config user.name "polaris-composer-refresh[bot]"
+          git config user.email "polaris-composer-refresh[bot]@users.noreply.github.com"
           git checkout -b "${BRANCH}"
           git add .github/workflows/ AGENTS.md 2>/dev/null || true
           git commit -m "chore: refresh Polaris Pipeline files"

@@ -87,6 +87,7 @@ export default class extends Generator {
         projectName: this.options.projectName,
         serviceName: this.options.serviceName,
         projectNameUpperCase: this.options.projectName.toUpperCase(),
+        addWebadeConfig: this.options.addWebadeConfig,
         deployType: deployType,
         shutdownScript: this.options.shutdownScript || '',
         javaVersion: this.options.javaVersion,

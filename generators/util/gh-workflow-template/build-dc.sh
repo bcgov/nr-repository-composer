@@ -22,7 +22,7 @@ jq "\
       },
       \"package\": {
         \"category\": \"infrastructure\",
-        \"version\": \"${PACKAGE_VERSION}\",
+        \"version\": \"${PACKAGE_VERSION#d}\",
         \"buildGuid\": \"${PACKAGE_BUILD_GUID}\",
         \"buildVersion\": \"${PACKAGE_BUILD_VERSION}\",
         \"buildNumber\": ${PACKAGE_BUILD_NUMBER},

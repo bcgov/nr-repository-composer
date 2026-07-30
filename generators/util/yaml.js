@@ -307,15 +307,6 @@ export const pathToProps = [
     writeEmpty: false,
   },
   {
-    path: [
-      'metadata',
-      'annotations',
-      'composer.io.nrs.gov.bc.ca/polarisComposerDispatchEnrolled',
-    ],
-    prop: 'polarisComposerDispatchEnrolled',
-    writeEmpty: false,
-  },
-  {
     path: ['metadata', 'annotations', 'playbook.io.nrs.gov.bc.ca/clientId'],
     prop: 'clientId',
     writeEmpty: false,

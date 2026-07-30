@@ -365,13 +365,6 @@ export const PROMPT_CREATE_DATA_TMP_DIR = {
   default: false,
 }
 
-export const PROMPT_POLARIS_COMPOSER_DISPATCH_ENROLLED = {
-  type: 'confirm',
-  name: 'polarisComposerDispatchEnrolled',
-  message: 'Enrolled in Polaris Composer automated dispatch:',
-  default: false,
-};
-
 export const PROMPT_TO_USAGE = {
   locationName: {
     description:
@@ -562,9 +555,6 @@ export const PROMPT_TO_USAGE = {
   },
   createDataTmpDir: {
     description: 'Whether to create data temp directory or not',
-  },
-  polarisComposerDispatchEnrolled: {
-    description: 'Whether this repository is enrolled in the Polaris Composer automated dispatch mechanism',
   },
 };
 

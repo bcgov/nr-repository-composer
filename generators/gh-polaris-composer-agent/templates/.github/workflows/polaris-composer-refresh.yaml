@@ -12,9 +12,7 @@ concurrency:
   group: polaris-composer-refresh
   cancel-in-progress: false
 
-permissions:
-  contents: write
-  pull-requests: write
+permissions: {}
 
 jobs:
   refresh:
@@ -65,14 +63,23 @@ jobs:
         run: |
           git diff --quiet && git diff --staged --quiet && echo "changed=false" >> $GITHUB_OUTPUT || echo "changed=true" >> $GITHUB_OUTPUT
 
+      - name: Generate app token
+        id: app-token
+        uses: actions/create-github-app-token@v2
+        with:
+          app-id: ${{ secrets.POLARIS_COMPOSER_APP_ID }}
+          private-key: ${{ secrets.POLARIS_COMPOSER_APP_PRIVATE_KEY }}
+
       - name: Create pull request
         if: steps.check-changes.outputs.changed == 'true'
         env:
-          GH_TOKEN: ${{ github.token }}
+          GH_TOKEN: ${{ steps.app-token.outputs.token }}
         run: |
           BRANCH="chore/polaris-composer-refresh"
           git config user.name "polaris-composer-refresh[bot]"
           git config user.email "polaris-composer-refresh[bot]@users.noreply.github.com"
+          git remote set-url origin "https://x-access-token:${GH_TOKEN}@github.com/${{ github.repository }}.git"
+          git config --unset-all http.https://github.com/.extraheader || true
 
           EXISTING_PR=$(gh pr list --head "${BRANCH}" --state open --json number --jq '.[0].number' 2>/dev/null || echo "")
 

@@ -60,7 +60,17 @@ Use this skill for staff-supervised updates that apply the latest Polaris Pipeli
     - `git add <expected-generated-files>`
     - `git commit -m "chore: refresh Polaris Pipeline files"`
     - `git push -u origin feat/polaris-composer-<service>`
-    - `gh pr create --fill`
+      - For multiline PR content, write the PR body to a temporary Markdown file and use `--body-file`.
+      - Example:
+         - `cat > /tmp/pr-body.md <<'EOF'`
+         - `## Summary`
+         - `- Describe generated changes.`
+         - ``
+         - `## Validation`
+         - `- List checks performed.`
+         - `EOF`
+         - `gh pr create --base main --head feat/polaris-composer-<service> --title "chore: refresh Polaris Pipeline files" --body-file /tmp/pr-body.md`
+      - Do not pass escaped newline sequences like `\n` to `--body`; GitHub will render them as literal text.
 11. If there are no changes, exit cleanly.
 
 ## Path B: Multi-Repo Staff Session

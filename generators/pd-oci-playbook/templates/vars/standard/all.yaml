@@ -25,7 +25,7 @@ context: <%= tomcatContext %>
 alt_app_dir_name: <%= altAppDirName %>
 <% } -%>
 <% } -%>
-<% if (createDataTmpDir) { %>
+<% if (createDataTmpDir === true || createDataTmpDir === 'true') { %>
 pd_configure_create_data_tmp: true
 <% } -%>
 
@@ -33,7 +33,7 @@ pd_configure_create_data_tmp: true
 # If you need to set a static port, replace the dynamic port assignment value with your static value
 tomcat_https_port: "{{ portmanager_assignments[ansible_host] }}"
 
-<% if (addWebadeConfig === 'true') { -%>
+<% if (addWebadeConfig === true || addWebadeConfig === 'true') { -%>
 webade_jdbc_url: "{{ lookup('ansible.builtin.env', 'PODMAN_webade_jdbc_url') }}"
 webade_db_user: "{{ lookup('ansible.builtin.env', 'PODMAN_webade_username') }}"
 webade_db_pass: "{{ lookup('ansible.builtin.env', 'PODMAN_webade_password') }}"

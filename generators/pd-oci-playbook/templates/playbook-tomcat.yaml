@@ -37,7 +37,7 @@
       vars:
         oci_app_service_install_app_home: "{{ oci_app_service_install_home }}/webapps/{{ alt_app_dir_name | default(context) }}"
         oci_app_startup_command: "{{ tomcat_install_dir_current }}/bin/catalina.sh run"
-<% if (addWebadeConfig === 'true') { %>
+<% if (addWebadeConfig === true || addWebadeConfig === 'true') { %>
     # create a WebADE connection jar for the container
     # If using the MOF Webade datastore, add the following to vars/custom/all.yaml
     # webade_datastore: "ca.bc.gov.webade.mof.MOFOrganizationDatastore"
@@ -46,12 +46,12 @@
       become: yes
       become_user: "{{ polaris_install_user }}"
 <% } -%>
-<% if (addLog4j2Config) { %>
+<% if (addLog4j2Config === true || addLog4j2Config === 'true') { %>
     # Add log4j2 config from template
     # See: https://github.com/bcgov/nr-polaris-collection/tree/main/polaris/deploy/roles/log4j2 
     - role: log4j2
 <% } -%>
-<% if (addTomcatContext) { %>
+<% if (addTomcatContext === true || addTomcatContext === 'true') { %>
     # Add tomcat context from template
     # See: https://github.com/bcgov/nr-polaris-collection/tree/main/polaris/deploy/roles/tomcat_context
     - role: tomcat_context

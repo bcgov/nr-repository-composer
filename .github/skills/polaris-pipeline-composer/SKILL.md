@@ -50,30 +50,39 @@ If the repository is already onboarded, skip directly to Path A.
    - Use `✅` for pass items and `❌` for failed items
    - If `git pull --ff-only` fails or merge conflicts are present, stop and hand off to a developer before running generators
 3. Assume required prompt values are already configured.
-4. Run matching build generator in headless mode:
+4. For Java/Maven apps, check POM prerequisites before running generators:
+   - `<version>${revision}</version>` — dynamic versioning used by the pipeline
+   - `version-from-env` profile — activates `${revision}` from `VERSION` env var
+   - `flatten-maven-plugin` — resolves `${revision}` in the published POM
+   - `nr-artifactory` repository entry — access to NR Artifactory dependencies
+   - Check each pattern with `grep` against `pom.xml`. For each missing pattern:
+     - Apply the change to `pom.xml` using `bcgov/java-maven-pipeline-example` as a reference: `gh api repos/bcgov/java-maven-pipeline-example/contents/pom.xml --jq '.content' | base64 -d`
+     - Summarize changes in chat before continuing.
+     - If the POM structure is unusual and the change cannot be applied safely, stop and ask the developer to make the change manually.
+5. Run matching build generator in headless mode:
    - Node.js: `./nr-repository-composer.sh . gh-nodejs-build --headless --force`
    - Java/Maven: `./nr-repository-composer.sh . gh-maven-build --headless --force`
-5. If a headless run fails on missing prompt values:
+6. If a headless run fails on missing prompt values:
    - Inspect `catalog-info.yaml` and nearby generated config to infer any missing values you can justify confidently.
    - For values you cannot infer from the repo itself, consult the matching reference repo's `catalog-info.yaml` as a fallback:
      - Java/Maven: `gh api repos/bcgov/java-maven-pipeline-example/contents/catalog-info.yaml --jq '.content' | base64 -d`
      - Node.js: `gh api repos/bcgov/nodejs-sample/contents/catalog-info.yaml --jq '.content' | base64 -d`
    - Summarize any values you add before rerunning.
    - Ask the user for any remaining value you cannot deduce confidently from the repo or the reference.
-6. Run deploy generator:
+7. Run deploy generator:
    - `./nr-repository-composer.sh . gh-oci-deploy-onprem --headless --force`
-7. If a headless run fails on missing prompt values:
+8. If a headless run fails on missing prompt values:
    - Inspect `catalog-info.yaml` and nearby generated config to infer any missing values you can justify confidently.
    - For values you cannot infer from the repo itself, consult the matching reference repo's `catalog-info.yaml` as a fallback:
      - Java/Maven: `gh api repos/bcgov/java-maven-pipeline-example/contents/catalog-info.yaml --jq '.content' | base64 -d`
      - Node.js: `gh api repos/bcgov/nodejs-sample/contents/catalog-info.yaml --jq '.content' | base64 -d`
    - Summarize any values you add before rerunning.
    - Ask the user for any remaining value you cannot deduce confidently from the repo or the reference.
-8. After generator runs, verify execute permissions on generated scripts:
+9. After generator runs, verify execute permissions on generated scripts:
    - `test -x nr-repository-composer.sh || chmod +x nr-repository-composer.sh`
    - For Java/Maven apps: `test -x mvnw || chmod +x mvnw`
-9. Review changed files and ensure only expected generated Polaris Pipeline artifacts changed.
-10. If there are changes, create a composer branch, commit, push, and open a pull request:
+10. Review changed files and ensure only expected generated Polaris Pipeline artifacts changed.
+11. If there are changes, create a composer branch, commit, push, and open a pull request:
    - `git checkout -b feat/polaris-composer-<service>`
    - `git add <expected-generated-files>`
    - `git commit -m "chore: refresh Polaris Pipeline files"`
@@ -89,7 +98,7 @@ If the repository is already onboarded, skip directly to Path A.
      - `EOF`
      - `gh pr create --base main --head feat/polaris-composer-<service> --title "chore: refresh Polaris Pipeline files" --body-file /tmp/pr-body.md`
    - Do not pass escaped newline sequences like `\n` to `--body`; GitHub will render them as literal text.
-11. If there are no changes, exit cleanly.
+12. If there are no changes, exit cleanly.
 
 ## Path B: Multi-Repo Staff Session
 

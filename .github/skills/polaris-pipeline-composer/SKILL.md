@@ -16,6 +16,25 @@ Use this skill for staff-supervised updates that apply the latest Polaris Pipeli
 - Service runtime (`nodejs` or `maven`).
 - Whether run is single-repo or repeated across a list.
 
+## Onboarding Check
+
+Before running generators, check whether the target repository is already onboarded for the Polaris composer agent.
+
+A repository is onboarded if all of the following are true:
+- `catalog-info.yaml` exists and includes `gh-polaris-composer-agent` in the `composer.io.nrs.gov.bc.ca/generators` annotation.
+- `nr-repository-composer.sh` exists and is executable.
+- `.github/skills/polaris-pipeline-composer/SKILL.md` exists.
+
+If any check fails, onboard the repository first:
+1. Run: `./nr-repository-composer.sh <target-repo> gh-polaris-composer-agent --headless --force`
+2. Run: `./nr-repository-composer.sh <target-repo> nr-repository-composer --headless --force`
+3. Verify execute permission: `test -x <target-repo>/nr-repository-composer.sh || chmod +x <target-repo>/nr-repository-composer.sh`
+4. Commit the onboarding changes as a separate commit with message `chore: onboard repo for polaris composer agent`.
+5. Push and open a PR for onboarding changes before proceeding to the refresh generators.
+6. Once onboarding is merged (or confirmed acceptable to proceed on the same branch), continue with Path A.
+
+If the repository is already onboarded, skip directly to Path A.
+
 ## Path A: Single Repository Run
 
 1. Open target repository and move to component root.
@@ -36,14 +55,20 @@ Use this skill for staff-supervised updates that apply the latest Polaris Pipeli
    - Java/Maven: `./nr-repository-composer.sh . gh-maven-build --headless --force`
 5. If a headless run fails on missing prompt values:
    - Inspect `catalog-info.yaml` and nearby generated config to infer any missing values you can justify confidently.
+   - For values you cannot infer from the repo itself, consult the matching reference repo's `catalog-info.yaml` as a fallback:
+     - Java/Maven: `gh api repos/bcgov/java-maven-pipeline-example/contents/catalog-info.yaml --jq '.content' | base64 -d`
+     - Node.js: `gh api repos/bcgov/nodejs-sample/contents/catalog-info.yaml --jq '.content' | base64 -d`
    - Summarize any values you add before rerunning.
-   - Ask the user for any remaining value you cannot deduce confidently.
+   - Ask the user for any remaining value you cannot deduce confidently from the repo or the reference.
 6. Run deploy generator:
    - `./nr-repository-composer.sh . gh-oci-deploy-onprem --headless --force`
 7. If a headless run fails on missing prompt values:
    - Inspect `catalog-info.yaml` and nearby generated config to infer any missing values you can justify confidently.
+   - For values you cannot infer from the repo itself, consult the matching reference repo's `catalog-info.yaml` as a fallback:
+     - Java/Maven: `gh api repos/bcgov/java-maven-pipeline-example/contents/catalog-info.yaml --jq '.content' | base64 -d`
+     - Node.js: `gh api repos/bcgov/nodejs-sample/contents/catalog-info.yaml --jq '.content' | base64 -d`
    - Summarize any values you add before rerunning.
-   - Ask the user for any remaining value you cannot deduce confidently.
+   - Ask the user for any remaining value you cannot deduce confidently from the repo or the reference.
 8. After generator runs, verify execute permissions on generated scripts:
    - `test -x nr-repository-composer.sh || chmod +x nr-repository-composer.sh`
    - For Java/Maven apps: `test -x mvnw || chmod +x mvnw`

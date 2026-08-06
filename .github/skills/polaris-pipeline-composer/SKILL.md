@@ -44,8 +44,11 @@ Use this skill for staff-supervised updates that apply the latest Polaris Pipeli
    - Inspect `catalog-info.yaml` and nearby generated config to infer any missing values you can justify confidently.
    - Summarize any values you add before rerunning.
    - Ask the user for any remaining value you cannot deduce confidently.
-8. Review changed files and ensure only expected generated Polaris Pipeline artifacts changed.
-9. If there are changes, create a composer branch, commit, push, and open a pull request:
+8. After generator runs, verify execute permissions on generated scripts:
+   - `test -x nr-repository-composer.sh || chmod +x nr-repository-composer.sh`
+   - For Java/Maven apps: `test -x mvnw || chmod +x mvnw`
+9. Review changed files and ensure only expected generated Polaris Pipeline artifacts changed.
+10. If there are changes, create a composer branch, commit, push, and open a pull request:
    - `git checkout -b feat/polaris-composer-<service>`
    - `git add <expected-generated-files>`
    - `git commit -m "chore: refresh Polaris Pipeline files"`
@@ -61,7 +64,7 @@ Use this skill for staff-supervised updates that apply the latest Polaris Pipeli
      - `EOF`
      - `gh pr create --base main --head feat/polaris-composer-<service> --title "chore: refresh Polaris Pipeline files" --body-file /tmp/pr-body.md`
    - Do not pass escaped newline sequences like `\n` to `--body`; GitHub will render them as literal text.
-10. If there are no changes, exit cleanly.
+11. If there are no changes, exit cleanly.
 
 ## Path B: Multi-Repo Staff Session
 

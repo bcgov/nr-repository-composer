@@ -70,6 +70,10 @@ export function copyCommonBuildWorkflows(generator, answers) {
     generator.templatePath(`${COMMON_GH_TEMPLATE_PATH}/check-token.yaml`),
     destinationGitPath('.github/workflows/check-token.yaml'),
   );
+  generator.fs.copyTpl(
+    generator.templatePath(`${COMMON_GH_TEMPLATE_PATH}/setup-build.yaml`),
+    destinationGitPath('.github/workflows/setup-build.yaml'),
+  );
 
   generator.fs.copyTpl(
     generator.templatePath(`${COMMON_PD_TEMPLATE_PATH}/env.sh`),

@@ -34,17 +34,16 @@ env:
   DEFAULT_VERSION: ${{ vars.DEFAULT_VERSION || '0.0.0' }}-merge
 
 jobs:
-  preflight:
-    name: Preflight
-    uses: ./.github/workflows/preflight.yaml
-    permissions:
-      contents: read
-      actions: read
+  setup-build:
+    name: Setup Build
+    uses: ./.github/workflows/setup-build.yaml
     with:
-      preflight_context: build
-      catalog_info: <%= relativePath %><%= relativePath ? '/' : '' %>catalog-info.yaml
-    secrets:
-      token: ${{ secrets.<%= brokerJwt %> }}
+      service_name: <%= serviceName %>
+      project_name: <%= projectName %>
+      default_version: ${{ vars.DEFAULT_VERSION || '0.0.0' }}-merge
+      relative_path: '<%= relativePath %>'
+      git_hub_project_slug: '<%= gitHubProjectSlug %>'
+      broker_jwt_secret: '<%= brokerJwt %>'
 <% if (unitTestsPath) { -%>
   test:
     name: Test
@@ -54,104 +53,41 @@ jobs:
     name: Build and publish
     runs-on: ubuntu-latest
 <% if (unitTestsPath) { -%>
-    needs: [preflight, test]
+    needs: [setup-build, test]
 <% } else { -%>
-    needs: preflight
+    needs: setup-build
 <% } -%>
     permissions:
       contents: read
       packages: write
-      pull-requests: read
     outputs:
-      project_version: ${{ steps.set-build-output.outputs.project_version }}
+      project_version: ${{ steps.set-build-output-parameters.outputs.project_version }}
       intention_id: ${{ steps.set-intention-id.outputs.intention_id }}
-      branch: $${{ steps.set-version.outputs.branch }}
     steps:
-      - name: Lookup PR Merge Ref
-        id: lookup-pr-merge-ref
+      - name: Use setup outputs
         run: |
-          if [[ "${{ github.ref_type }}" == "tag" ]]; then
-            echo "checkout_ref=${{ github.ref }}" >> $GITHUB_OUTPUT
-            echo "version_modifier=${{ github.ref_name }}" >> $GITHUB_OUTPUT
-          elif [[ ${{ github.ref_name != 'main' }} = true ]]; then
-            RESPONSE=$(curl -s "https://api.github.com/repos/<%= gitHubProjectSlug %>/pulls?head=<%= gitHubProjectSlug.split('/')[0] %>:${{ github.head_ref || github.ref_name }}&state=open&base=main" \
-              -H "Authorization: token ${{ secrets.GITHUB_TOKEN }}" \
-              -H "Accept: application/vnd.github+json")
-            PULL_REQUEST_NUMBER=$(echo "${RESPONSE}" | jq -r .[0].number)
-            RESPONSE=$(curl -s "https://api.github.com/repos/<%= gitHubProjectSlug %>/pulls/$PULL_REQUEST_NUMBER" \
-              -H "Authorization: token ${{ secrets.GITHUB_TOKEN }}" \
-              -H "Accept: application/vnd.github+json")
-            MERGEABLE=$(echo "${RESPONSE}" | jq -r .mergeable)
-            if [[ "$MERGEABLE" != "true" ]]; then
-              echo "::error ::Pull request #$PULL_REQUEST_NUMBER is not mergeable… aborted."
-              echo "This can be resolved by resolving the merge conflict with the main branch."
-              exit 1
-            fi
-            echo "checkout_ref=refs/pull/$PULL_REQUEST_NUMBER/merge" >> $GITHUB_OUTPUT
-            echo "version_modifier=$PULL_REQUEST_NUMBER" >> $GITHUB_OUTPUT
-          else
-            echo "checkout_ref=${{ github.ref_name }}" >> $GITHUB_OUTPUT
-            echo "version_modifier=${{ github.ref_name }}" >> $GITHUB_OUTPUT
-          fi
-      - name: Checkout repository
-        uses: actions/checkout@v6
-        with:
-            fetch-depth: 0
-            fetch-tags: true
-            ref: ${{ steps.lookup-pr-merge-ref.outputs.checkout_ref }}
-      - name: Setup ORAS
-        uses: oras-project/setup-oras@v2
+          echo "Checkout ref: ${{ needs.setup-build.outputs.checkout_ref }}"
+          echo "Version modifier: ${{ needs.setup-build.outputs.version_modifier }}"
+          echo "Version: ${{ needs.setup-build.outputs.version }}"
+          echo "Git commit: ${{ needs.setup-build.outputs.git_commit }}"
+
       - name: Set up Node
         uses: actions/setup-node@v6
         with:
           cache-dependency-path: ./<%= relativePath %>
           node-version: <%= nodeVersion %>
           cache: 'npm'
-      - name: Set version
-        id: set-version
-        run: |
-          if [[ ${{ startsWith(github.ref, 'refs/tags/v') }} = true ]]; then
-            TAG=${{ github.ref_name }}
-            APP_VERSION=${TAG#v}
-          else
-            APP_VERSION=${DEFAULT_VERSION/%-merge/-${{ steps.lookup-pr-merge-ref.outputs.version_modifier }}-merge}
-          fi
-          echo "VERSION=${APP_VERSION}" >> $GITHUB_ENV
-        env:
-          DEFAULT_VERSION: ${{ env.DEFAULT_VERSION }}
+
       - name: Set build output parameters
         id: set-build-output-parameters
         run: |
-          source ./env.sh build ./ --skip-vault
+          source ./env.sh build ./<%= relativePath %> --skip-vault
           echo "project_version=${VERSION}" >> $GITHUB_OUTPUT
-          echo "git_commit=$(git rev-parse --verify HEAD)" >> $GITHUB_OUTPUT
-          echo "build_guid=uuid::$(uuidgen)" >> $GITHUB_OUTPUT
-      - name: Build intention
-        run: sh ./.github/workflows/build-intention-<%= serviceName %>.sh
-        env:
-          EVENT_REASON: Build ${{ github.ref_name }}
-          GITHUB_REPOSITORY: ${{ github.repository}}
-          GITHUB_RUN_ID: ${{ github.run_id}}
-          PACKAGE_BUILD_GUID:  ${{ steps.set-build-output-parameters.outputs.build_guid }}
-          PACKAGE_BUILD_NUMBER: ${{ github.run_number }}
-          PACKAGE_BUILD_VERSION: ${{ steps.set-build-output-parameters.outputs.git_commit }}
-          PACKAGE_TYPE: application/vnd.oci.image.layer.v1.tar+gzip
-          PACKAGE_VERSION: ${{ steps.set-build-output-parameters.outputs.project_version }}
-      - name: Open intention
-        uses: bcgov-nr/action-broker-intention-open@v2
-        with:
-          broker_jwt: ${{ secrets.<%= brokerJwt %> }}
-          intention_path: intention.json
-          quickstart: true
-      - name: Echo intention ID for deploy job
-        id: set-intention-id
-        run: |
-          echo "intention_id=${INTENTION_ID}" >> $GITHUB_OUTPUT
-        env:
-          INTENTION_ID: ${{ env.INTENTION_ID }}
+
       - name: npm ci
         run: npm ci
         working-directory: ./<%= relativePath %>
+
       - name: Build artifact
         run: |
           source ./env.sh build ./<%= relativePath %> --skip-vault
@@ -169,7 +105,7 @@ jobs:
           <%_ } -%>
         working-directory: ./<%= relativePath %>
         env:
-          PROJECT_TAG: ${{ steps.set-build-output-parameters.outputs.project_version }}
+          PROJECT_TAG: ${{ needs.setup-build.outputs.version }}
 <% } -%>
       - name: Validate dist directory
         run: |
@@ -183,6 +119,7 @@ jobs:
           fi
           echo "dist directory exists and contains files"
         working-directory: ./<%= relativePath %>
+
       - name: Create annotations files
         run: |
           cat <<EOF > annotation.json
@@ -197,8 +134,9 @@ jobs:
           }
           EOF
         env:
-          PROJECT_TAG: ${{ steps.set-build-output-parameters.outputs.project_version }}
+          PROJECT_TAG: ${{ needs.setup-build.outputs.version }}
         working-directory: ./<%= relativePath %>
+
       - name: Publish artifact
         id: publish-artifact
         run: |
@@ -209,8 +147,9 @@ jobs:
           echo "artifact_sha256=$(echo $MANIFEST | jq -r '.layers | map(.digest) | join(",")' | sha256sum | awk '{print $1}')" >> $GITHUB_OUTPUT
           echo "artifact_size=$(echo $MANIFEST | jq -r '.layers | map(.size) | add')" >> $GITHUB_OUTPUT
         env:
-          PROJECT_TAG: ${{ steps.set-build-output-parameters.outputs.project_version }}
+          PROJECT_TAG: ${{ needs.setup-build.outputs.version }}
         working-directory: ./<%= relativePath %>
+
       - name: Send build info
         run: |
           curl -s POST ${{ env.BROKER_URL }}/v1/intention/action/patch \
@@ -221,17 +160,20 @@ jobs:
           ARTIFACT_SHA256: ${{ steps.publish-artifact.outputs.artifact_sha256 }}
           ARTIFACT_SIZE: ${{ steps.publish-artifact.outputs.artifact_size }}
           BUILD_TOKEN: ${{ env.ACTION_TOKEN_BUILD }}
+
       - name: Close intention
-        if: ${{ success() && env.INTENTION_TOKEN != '' }}
+        if: ${{ success() && needs.setup-build.outputs.intention_token != '' }}
         uses: bcgov-nr/action-broker-intention-close@v3
         with:
-          intention_token: ${{ env.INTENTION_TOKEN }}
+          intention_token: ${{ needs.setup-build.outputs.intention_token }}
+
       - name: Close intention (Failure)
-        if: ${{ failure() && env.INTENTION_TOKEN != '' }}
+        if: ${{ failure() && needs.setup-build.outputs.intention_token != '' }}
         uses: bcgov-nr/action-broker-intention-close@v3
         with:
-          intention_token: ${{ env.INTENTION_TOKEN }}
+          intention_token: ${{ needs.setup-build.outputs.intention_token }}
           outcome: failure
+
       - name: Generate build summary
         if: always()
         run: |
@@ -240,18 +182,13 @@ jobs:
 
           | | |
           | - | - |
-          | **Ref** | \`${{ env.CHECKOUT_REF }}\` |
+          | **Ref** | \`${{ needs.setup-build.outputs.checkout_ref }}\` |
           | **Commit** | [${COMMIT_HASH:0:7}](https://github.com/${{ github.repository }}/tree/${COMMIT_HASH}) |
           | **Version** | ${PROJECT_VERSION} |
-<% if (type !== 'library') { -%>
           | **Artifact SHA256** | ${ARTIFACT_SHA256} |
-<% } -%>
 
           EOF
         env:
-          CHECKOUT_REF: ${{ steps.lookup-pr-merge-ref.outputs.checkout_ref }}
-          COMMIT_HASH: ${{ steps.set-build-output-parameters.outputs.git_commit }}
-          PROJECT_VERSION: ${{ steps.set-build-output-parameters.outputs.project_version }}
-<% if (type !== 'library') { -%>
+          COMMIT_HASH: ${{ needs.setup-build.outputs.git_commit }}
+          PROJECT_VERSION: ${{ needs.setup-build.outputs.version }}
           ARTIFACT_SHA256: ${{ steps.publish-artifact.outputs.artifact_sha256 }}
-<% } -%>

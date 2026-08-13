@@ -8,5 +8,7 @@
 **/lib*
 **/node_modules/
 /test*
+# generators/ is entirely build output — compiled by npm run build
+/generators/
 
 .DS_Store

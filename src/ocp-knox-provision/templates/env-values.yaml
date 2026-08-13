@@ -1,0 +1,7 @@
+intention:
+  service:
+    name: "<%= projectName %>"
+    project: "<%= serviceName %>"
+    environment: "<%= environment %>"
+  user:
+    name: "<%= intentionUser %>"

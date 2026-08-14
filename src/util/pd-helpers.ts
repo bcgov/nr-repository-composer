@@ -2,17 +2,20 @@
 import path from 'path';
 import { fileURLToPath } from 'url';
 import * as fs from 'node:fs';
+import Generator from 'yeoman-generator';
+// Generator<any> accepts any subclass passed as `this`
+type AnyGenerator = Generator<any, any, any>;
 import { destinationGitPath } from './git.js';
 import { updateReadmeWithPipelineGuide, rmIfExists } from './copyworkflows.js';
 
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
 
 // Resolve a template path within the co-located pd-*-templates directories
-function pdTemplatePath(genName, ...parts) {
+function pdTemplatePath(genName: string, ...parts: string[]) {
   return path.join(__dirname, `${genName}-templates`, ...parts);
 }
 
-export function writeJavaMavenFiles(generator) {
+export function writeJavaMavenFiles(generator: AnyGenerator) {
   generator.fs.copyTpl(
     pdTemplatePath('pd-java-maven', 'mvn_maven.config'),
     destinationGitPath('.mvn/maven.config'),
@@ -35,7 +38,7 @@ export function writeJavaMavenFiles(generator) {
     pdTemplatePath('pd-java-maven', 'mvnw'),
     destinationGitPath('mvnw'),
     {},
-    { mode: 0o755 },
+    { mode: 0o755 } as any,
   );
 
   updateReadmeWithPipelineGuide(generator);
@@ -46,7 +49,7 @@ export function writeJavaMavenFiles(generator) {
 }
 
 export function writeJavaPlaybookFiles(
-  generator: any,
+  generator: AnyGenerator,
   options: Record<string, any> = {},
 ) {
   const playbookPath = options.playbookPath || 'playbooks';
@@ -90,7 +93,7 @@ export function writeJavaPlaybookFiles(
 }
 
 export function writeOciPlaybookFiles(
-  generator: any,
+  generator: AnyGenerator,
   options: Record<string, any> = {},
 ) {
   const playbookPath = options.playbookPath || 'playbooks';
@@ -144,7 +147,7 @@ export function writeOciPlaybookFiles(
 }
 
 export function writeJasperReportsFiles(
-  generator: any,
+  generator: AnyGenerator,
   options: Record<string, any> = {},
 ) {
   const playbookPath = options.playbookPath || 'playbooks';

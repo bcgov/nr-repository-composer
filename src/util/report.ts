@@ -46,7 +46,7 @@ export const GENERATOR_ANCHORS = {
  * @param {string} generatorName - The generator name
  * @returns {string} - Full URL to the README section
  */
-function getGeneratorUrl(generatorName) {
+function getGeneratorUrl(generatorName: string): string {
   const anchor = GENERATOR_ANCHORS[generatorName];
   if (anchor) {
     return `${README_BASE_URL}#${anchor}`;
@@ -60,7 +60,7 @@ function getGeneratorUrl(generatorName) {
  * @param {string} pattern - Pattern like 'gh-*-build'
  * @returns {RegExp}
  */
-export function patternToRegex(pattern) {
+export function patternToRegex(pattern: string): RegExp {
   const escaped = pattern.replace(/[.+^${}()|[\]\\]/g, '\\$&');
   const regexStr = escaped.replace(/\*/g, '.*');
   return new RegExp(`^${regexStr}$`);
@@ -71,7 +71,7 @@ export function patternToRegex(pattern) {
  * @param {string} pattern - Pattern like 'gh-*-build' or exact name like 'backstage'
  * @returns {string[]} - Array of matching generator names
  */
-export function expandGeneratorPattern(pattern) {
+export function expandGeneratorPattern(pattern: string): string[] {
   if (!pattern.includes('*')) {
     return [pattern];
   }
@@ -282,7 +282,7 @@ export const GENERATOR_REPORTS = {
  * @param {string} url - The URL to link to
  * @returns {string} - The formatted hyperlink string
  */
-function hyperlink(text, url) {
+function hyperlink(text: string, url: string): string {
   return `\u001B]8;;${url}\u0007${text}\u001B]8;;\u0007`;
 }
 
@@ -292,7 +292,11 @@ function hyperlink(text, url) {
  * @param {string} generatorName - Name of the generator (e.g., 'backstage', 'gh-maven-build')
  * @param {object} answers - The answers/configuration from the generator prompts
  */
-export function outputReport(generator, generatorName, answers = {}) {
+export function outputReport(
+  generator: any,
+  generatorName: string,
+  answers: Record<string, unknown> = {},
+) {
   const report = GENERATOR_REPORTS[generatorName];
   if (!report) {
     return;

@@ -2,6 +2,7 @@
 import { BaseGenerator } from '../util/base-generator.js';
 import { BACKSTAGE_KIND_COMPONENT } from '../util/yaml.js';
 import { destinationGitPath } from '../util/git.js';
+import type { BaseOptions } from 'yeoman-generator';
 import {
   PROMPT_PROJECT,
   PROMPT_SERVICE,
@@ -14,7 +15,7 @@ const questions = [PROMPT_PROJECT, PROMPT_SERVICE, PROMPT_INTENTION_USER];
  * Generate the CI workflow and NR Broker intention files needed for OCP Knox Provision
  */
 export default class extends BaseGenerator {
-  constructor(args, opts) {
+  constructor(args: string | string[], opts: BaseOptions) {
     super(args, opts);
     this._nrsayConfig = {
       title: 'NR OCP Knox Provision Generator',

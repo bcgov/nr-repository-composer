@@ -1,5 +1,10 @@
 'use strict';
 import Generator from 'yeoman-generator';
+import type {
+  BaseOptions,
+  PromptAnswers,
+  PromptQuestion,
+} from 'yeoman-generator';
 import chalk from 'chalk';
 import { nrsay } from './nrsay.js';
 import {
@@ -32,13 +37,13 @@ export class BaseGenerator extends Generator {
   protected _nrsayConfig: {
     title: string;
     subtitle: string;
-    links: any[];
+    links: [string, string][];
   } | null;
-  protected _questions: any[];
-  protected answers: any;
+  protected _questions: PromptQuestion[];
+  protected answers: PromptAnswers;
   protected showGeneratorDeprecationWarning = false;
 
-  constructor(args: string | string[], opts: any) {
+  constructor(args: string | string[], opts: BaseOptions) {
     super(args as string[], opts);
     this.option(OPTION_HEADLESS);
     this.option(OPTION_HELP_PROMPTS);

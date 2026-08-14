@@ -1,6 +1,7 @@
 import { generateSetAnswerPropPredicate } from '../util/yaml.js';
+import type { PromptAnswers, PromptQuestion } from 'yeoman-generator';
 
-function bailOnAnyQuestions(questions, headless) {
+function bailOnAnyQuestions(questions: PromptQuestion[], headless: boolean) {
   if (questions.length > 0 && headless) {
     const questionNames = Array.from(
       new Set(questions.map((question) => question.name).filter(Boolean)),
@@ -19,10 +20,10 @@ function bailOnAnyQuestions(questions, headless) {
 }
 
 export function bailOnUnansweredQuestions(
-  questions,
-  answers,
-  headless,
-  askAnswered,
+  questions: PromptQuestion[],
+  answers: PromptAnswers,
+  headless: boolean,
+  askAnswered: boolean,
 ) {
   /**
    * Whether prompts that have already been answered should be preserved.

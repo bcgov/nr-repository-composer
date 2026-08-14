@@ -46,11 +46,11 @@ export class BackstageStorage {
     return extractFromYaml(this.backstageDoc, pathToProps);
   }
 
-  addGeneratorToDoc(generator) {
+  addGeneratorToDoc(generator: string) {
     addGeneratorToDoc(this.backstageDoc, generator);
   }
 
-  hasGenerator(generator) {
+  hasGenerator(generator: string): boolean {
     return hasGeneratorInDoc(this.backstageDoc, generator);
   }
 
@@ -59,7 +59,7 @@ export class BackstageStorage {
     fs.writeFileSync(this.path, this.backstageDoc.toString());
   }
 
-  getPath(path, option = '') {
+  getPath(path: string | string[], option = ''): unknown {
     const docPath = Array.isArray(path) ? path : propRecord[path]?.path;
     if (!docPath) {
       throw new Error(`Mapping from "${path}" to YAML document path not found`);
@@ -75,7 +75,7 @@ export class BackstageStorage {
       : val;
   }
 
-  get(key) {
+  get(key: string): unknown {
     if (key === 'promptValues') {
       return this.getAnswers();
     }
@@ -89,7 +89,7 @@ export class BackstageStorage {
     return this.backstageDoc.toJSON();
   }
 
-  set(key, value) {
+  set(key: string, value: string) {
     console.log(`Setting key "${key}" to`, value);
     this.backstageDoc.setIn(
       propRecord[key].path,
@@ -97,34 +97,33 @@ export class BackstageStorage {
     );
   }
 
-  setPath(path, value) {
+  setPath(path: string | string[], value: string | null) {
     if (value === null) {
       // Do not set null values
       return;
     }
-    const csv = propRecord[path]?.csv;
-    path = Array.isArray(path) ? path : propRecord[path].path;
-    // console.log(`Setting path "${path}" to`, value);
-    this.backstageDoc.setIn(path, csv ? value.split(',') : value);
+    const csv = propRecord[path as string]?.csv;
+    const resolvedPath = Array.isArray(path) ? path : propRecord[path].path;
+    this.backstageDoc.setIn(resolvedPath, csv ? value.split(',') : value);
   }
 
-  delete(key) {
+  delete(key: string | string[]) {
     const path = Array.isArray(key) ? key : propRecord[key].path;
     this.backstageDoc.deleteIn(path);
   }
 
-  defaults(defaults) {
+  defaults(defaults: Record<string, unknown>) {
     console.log(`Setting defaults`, defaults);
     throw new Error('defaults not implemented');
   }
 
-  merge(source) {
+  merge(source: Record<string, unknown>) {
     console.log(`Merging source`, source);
     throw new Error('merge not implemented');
   }
 
   // eslint-disable-next-line no-unused-vars
-  createStorage(path) {
+  createStorage(path: string) {
     // Ignore
     // console.log(`createStorage called with path: ${path}`);
     // throw new Error('createStorage not implemented');
@@ -135,7 +134,7 @@ export class BackstageStorage {
   }
 
   processDeprecated() {
-    const removedProps = [];
+    const removedProps: string[] = [];
     for (const pathToProp of pathToProps) {
       const path = pathToProp.path;
       if (this.backstageDoc.hasIn(path) && pathToProp.deprecated) {

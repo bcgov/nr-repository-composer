@@ -1,6 +1,6 @@
 import { destinationGitPath } from './git.js';
 import { TOOLS_DEFAULT_PROPERTIES } from './constants.js';
-import { parseDocument } from 'yaml';
+import { Document, parseDocument } from 'yaml';
 import * as fs from 'node:fs';
 import path from 'path';
 
@@ -15,7 +15,18 @@ export const BACKSTAGE_GENERATOR_PATH = [
   'composer.io.nrs.gov.bc.ca/generators',
 ];
 
-export const pathToProps = [
+interface PathToProp {
+  path: string[];
+  prop: string;
+  writeEmpty: boolean;
+  csv?: boolean;
+  // eslint-disable-next-line no-unused-vars
+  transform?: (val: any) => any;
+  // eslint-disable-next-line no-unused-vars
+  deprecated?: (config: any, value?: any) => void;
+}
+
+export const pathToProps: PathToProp[] = [
   { path: ['spec', 'system'], prop: 'projectName', writeEmpty: false },
   { path: ['metadata', 'name'], prop: 'serviceName', writeEmpty: false },
   { path: ['metadata', 'name'], prop: 'locationName', writeEmpty: false },
@@ -441,7 +452,10 @@ export const propRecord = pathToProps.reduce((acc, pathToProp) => {
   return acc;
 }, {});
 
-export function extractFromYaml(doc, pathToProps) {
+export function extractFromYaml(
+  doc: Document,
+  pathToProps: PathToProp[],
+): Record<string, unknown> {
   const answers = {};
 
   if (doc) {
@@ -456,9 +470,11 @@ export function extractFromYaml(doc, pathToProps) {
   return answers;
 }
 
-export function addGeneratorToDoc(doc, generator) {
+export function addGeneratorToDoc(doc: Document, generator: string) {
   if (doc.hasIn(BACKSTAGE_GENERATOR_PATH)) {
-    const generators = doc.getIn(BACKSTAGE_GENERATOR_PATH).split(',');
+    const generators = (doc.getIn(BACKSTAGE_GENERATOR_PATH) as string).split(
+      ',',
+    );
     // console.log(generators);
     // console.log(generators.indexOf(generator));
     if (generators.indexOf(generator) === -1) {
@@ -470,9 +486,11 @@ export function addGeneratorToDoc(doc, generator) {
   }
 }
 
-export function hasGeneratorInDoc(doc, generator) {
+export function hasGeneratorInDoc(doc: Document, generator: string): boolean {
   if (doc.hasIn(BACKSTAGE_GENERATOR_PATH)) {
-    const generators = doc.getIn(BACKSTAGE_GENERATOR_PATH).split(',');
+    const generators = (doc.getIn(BACKSTAGE_GENERATOR_PATH) as string).split(
+      ',',
+    );
     return generators.indexOf(generator) !== -1;
   }
   return false;
@@ -488,9 +506,11 @@ export function hasGeneratorInDoc(doc, generator) {
  *
  * @param {Object} answers - Map/object of existing answers (keys are answer names).
  * @param {boolean} keepAnswered - If true, do not filter out values whose names already exist in `answers`.
- * @returns {(val: { name: string }) => boolean} Predicate that returns whether the provided value should be kept.
  */
-export function generateSetAnswerPropPredicate(answers, keepAnswered) {
+export function generateSetAnswerPropPredicate(
+  answers: Record<string, unknown>,
+  keepAnswered: boolean,
+) {
   return (val) => {
     return !(val.name in answers) || keepAnswered;
   };
@@ -501,7 +521,7 @@ export function scanRepositoryForComponents(
 ) {
   const initCatalogPath = destinationGitPath(rootCatalogPath);
   const gitRoot = destinationGitPath('.');
-  const components = [];
+  const components: { doc: Document; path: string; name: string }[] = [];
 
   const loadCatalog = (catalogPath) => {
     let doc;
@@ -534,7 +554,11 @@ export function scanRepositoryForComponents(
         }
       }
     } catch (err) {
-      console.error(`Error loading catalog at ${catalogPath}: ${err.message}`);
+      console.error(
+        `Error loading catalog at ${catalogPath}: ${
+          err instanceof Error ? err.message : String(err)
+        }`,
+      );
     }
   };
 

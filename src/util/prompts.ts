@@ -2,162 +2,163 @@ import chalk from 'chalk';
 import { extractGitHubSlug, getGitRepoOriginUrl } from '../util/git.js';
 import { alphaDashValidate } from '../util/github.js';
 import { TOOLS_DEFAULT_PROPERTIES } from './constants.js';
+import { PromptQuestion } from 'yeoman-generator';
 
-export const PROMPT_LOCATION_NAME = {
+export const PROMPT_LOCATION_NAME: PromptQuestion = {
   type: 'input',
   name: 'locationName',
   message: 'Name:',
   default: 'components',
 };
 
-export const PROMPT_LOCATION_TARGETS = {
+export const PROMPT_LOCATION_TARGETS: PromptQuestion = {
   type: 'input',
   name: 'locationTargets',
   message: 'Targets (comma-separated list of paths):',
   default: '',
 };
 
-export const PROMPT_PROJECT = {
+export const PROMPT_PROJECT: PromptQuestion = {
   type: 'input',
   name: 'projectName',
   message: 'Project:',
   validate: alphaDashValidate,
 };
 
-export const PROMPT_SERVICE = {
+export const PROMPT_SERVICE: PromptQuestion = {
   type: 'input',
   name: 'serviceName',
   message: 'Service:',
   validate: alphaDashValidate,
 };
 
-export const PROMPT_DESCRIPTION = {
+export const PROMPT_DESCRIPTION: PromptQuestion = {
   type: 'input',
   name: 'description',
   message: 'Description:',
 };
 
-export const PROMPT_TITLE = {
+export const PROMPT_TITLE: PromptQuestion = {
   type: 'input',
   name: 'title',
   message: 'Title:',
 };
 
-export const PROMPT_TYPE = {
+export const PROMPT_TYPE: PromptQuestion = {
   type: 'input',
   name: 'type',
   message: 'Type (service, website, library):',
 };
 
-export const PROMPT_LIFECYCLE = {
+export const PROMPT_LIFECYCLE: PromptQuestion = {
   type: 'input',
   name: 'lifecycle',
   message: 'Lifecycle (experimental, production, deprecated):',
   default: 'production',
 };
 
-export const PROMPT_LICENSE = {
+export const PROMPT_LICENSE: PromptQuestion = {
   type: 'input',
   name: 'license',
   default: 'Apache-2.0',
   message: 'License (SPDX):',
 };
-export const PROMPT_OWNER = {
+export const PROMPT_OWNER: PromptQuestion = {
   type: 'input',
   name: 'owner',
   message: 'Owner:',
 };
 
-export const PROMPT_TAGS = {
+export const PROMPT_TAGS: PromptQuestion = {
   type: 'input',
   name: 'tags',
   message: 'Tags (comma-separated, e.g., java, api, frontend):',
   default: '',
 };
 
-export const PROMPT_GITHUB_PROJECT_SLUG = {
+export const PROMPT_GITHUB_PROJECT_SLUG: PromptQuestion = {
   type: 'input',
   name: 'gitHubProjectSlug',
   message: 'GitHub Slug (<organization or owner>/<repository>):',
   default: extractGitHubSlug(getGitRepoOriginUrl()) ?? '',
 };
 
-export const PROMPT_CLIENT_ID = {
+export const PROMPT_CLIENT_ID: PromptQuestion = {
   type: 'input',
   name: 'clientId',
   message: 'Client ID:',
   default: '',
 };
 
-export const PROMPT_UNIT_TESTS_PATH = {
+export const PROMPT_UNIT_TESTS_PATH: PromptQuestion = {
   type: 'input',
   name: 'unitTestsPath',
   message: 'Path to unit tests (./.github/workflows/test.yaml):',
   default: '',
 };
 
-export const PROMPT_POST_DEPLOY_TESTS_PATH = {
+export const PROMPT_POST_DEPLOY_TESTS_PATH: PromptQuestion = {
   type: 'input',
   name: 'postDeployTestsPath',
   message: 'Path to post deploy tests (./.github/workflows/postDeploy.yaml):',
   default: '',
 };
 
-export const PROMPT_PUBLISH_ARTIFACT_SUFFIX = {
+export const PROMPT_PUBLISH_ARTIFACT_SUFFIX: PromptQuestion = {
   type: 'input',
   name: 'publishArtifactSuffix',
   message: 'Published files/folders:',
   default: 'dist',
 };
 
-export const PROMPT_DEPLOY_ON_PREM = {
+export const PROMPT_DEPLOY_ON_PREM: PromptQuestion = {
   type: 'confirm',
   name: 'deployOnPrem',
   message: 'Deploy on-prem (deprecated):',
   default: false,
 };
 
-export const PROMPT_SCHEMA_NAME = {
+export const PROMPT_SCHEMA_NAME: PromptQuestion = {
   type: 'input',
   name: 'schemaName',
   message: 'Schema(s):',
 };
 
-export const PROMPT_SCHEMA_MIGRATION_TOOL = {
+export const PROMPT_SCHEMA_MIGRATION_TOOL: PromptQuestion = {
   type: 'input',
   name: 'schemaMigrationTool',
   default: 'flyway',
   message: 'Tool (manual, flyway, liquibase):',
 };
 
-export const PROMPT_SCHEMA_MIGRATION_TYPE = {
+export const PROMPT_SCHEMA_MIGRATION_TYPE: PromptQuestion = {
   type: 'input',
   name: 'schemaMigrationType',
   default: '',
   message: 'Type (oracle, mongodb, postgressql, etc.):',
 };
 
-export const PROMPT_SCHEMA_MIGRATION_BASE_PATH = {
+export const PROMPT_SCHEMA_MIGRATION_BASE_PATH: PromptQuestion = {
   type: 'input',
   name: 'schemaMigrationBasePath',
   default: '',
   message: 'Base path:',
 };
 
-export const PROMPT_DEPLOYMENT_CONFIG_PATHS = {
+export const PROMPT_DEPLOYMENT_CONFIG_PATHS: PromptQuestion = {
   type: 'input',
   name: 'deploymentConfigPaths',
   message: 'Deployment config paths (comma-separated):',
   default: 'playbooks',
 };
 
-export const PROMPT_PLAYBOOK_PATH = {
+export const PROMPT_PLAYBOOK_PATH: PromptQuestion = {
   type: 'input',
   name: 'playbookPath',
   message: 'Playbook path:',
   default: 'playbooks',
 };
-export const PROMPT_ARTIFACT_SRC = {
+export const PROMPT_ARTIFACT_SRC: PromptQuestion = {
   type: 'select',
   name: 'artifactSrc',
   message: 'Artifact source:',
@@ -168,7 +169,7 @@ export const PROMPT_ARTIFACT_SRC = {
   ],
   default: 'repo',
 };
-export const PROMPT_OCI_ARTIFACTS = {
+export const PROMPT_OCI_ARTIFACTS: PromptQuestion = {
   type: 'input',
   name: 'ociArtifacts',
   message:
@@ -198,48 +199,48 @@ export const PROMPT_OCI_ARTIFACTS = {
     }
   },
 };
-export const PROMPT_POM_ROOT = {
+export const PROMPT_POM_ROOT: PromptQuestion = {
   type: 'input',
   name: 'pomRoot',
   message: 'Path to pom.xml (relative to service catalog root):',
   default: './',
 };
-export const PROMPT_NODE_PATTERN = {
+export const PROMPT_NODE_PATTERN: PromptQuestion = {
   type: 'select',
   name: 'nodePattern',
   message: 'Node pattern:',
   choices: ['NPM', 'unknown'],
   default: 'NPM',
 };
-export const PROMPT_NODE_VERSION = {
+export const PROMPT_NODE_VERSION: PromptQuestion = {
   type: 'select',
   name: 'nodeVersion',
   message: 'Node.js version:',
   choices: ['22', '24'],
   default: '24',
 };
-export const PROMPT_JAVA_PATTERN = {
+export const PROMPT_JAVA_PATTERN: PromptQuestion = {
   type: 'select',
   name: 'javaPattern',
   message: 'Java pattern:',
   choices: ['SpringBoot', 'Tomcat', 'unknown'],
   default: 'SpringBoot',
 };
-export const PROMPT_JAVA_VERSION = {
+export const PROMPT_JAVA_VERSION: PromptQuestion = {
   type: 'select',
   name: 'javaVersion',
   message: 'Java version:',
   choices: ['8', '11', '17', '21'],
   default: '8',
 };
-export const PROMPT_ARTIFACT_REPOSITORY_TYPE = {
+export const PROMPT_ARTIFACT_REPOSITORY_TYPE: PromptQuestion = {
   type: 'select',
   name: 'artifactRepositoryType',
   message: 'Artifact destination repository type:',
   choices: ['GitHubPackages', 'JFrogArtifactory'],
   default: 'GitHubPackages',
 };
-export const PROMPT_ARTIFACT_REPOSITORY_PATH = {
+export const PROMPT_ARTIFACT_REPOSITORY_PATH: PromptQuestion = {
   type: 'input',
   name: 'artifactRepositoryPath',
   message: 'Artifact destination repository path:',
@@ -254,7 +255,7 @@ export const PROMPT_ARTIFACT_REPOSITORY_PATH = {
     }
   },
 };
-export const PROMPT_DEPLOY_TYPE = {
+export const PROMPT_DEPLOY_TYPE: PromptQuestion = {
   type: 'list',
   name: 'deployType',
   message: 'Deployment type',
@@ -266,81 +267,81 @@ export const PROMPT_DEPLOY_TYPE = {
   default: 'nodejs',
   store: true,
 };
-export const PROMPT_TOOLS_BUILD_SECRETS = {
+export const PROMPT_TOOLS_BUILD_SECRETS: PromptQuestion = {
   type: 'input',
   name: 'toolsBuildSecrets',
   message: 'Tools secrets used with builds (comma-separated):',
   default: TOOLS_DEFAULT_PROPERTIES,
 };
-export const PROMPT_TOOLS_LOCAL_BUILD_SECRETS = {
+export const PROMPT_TOOLS_LOCAL_BUILD_SECRETS: PromptQuestion = {
   type: 'input',
   name: 'toolsLocalBuildSecrets',
   message: 'Local tools secrets used with builds (comma-separated):',
   default: (answers) => answers.toolsBuildSecrets ?? '',
 };
-export const PROMPT_MAVEN_BUILD_COMMAND = {
+export const PROMPT_MAVEN_BUILD_COMMAND: PromptQuestion = {
   type: 'input',
   name: 'mavenBuildCommand',
   message: 'Maven build arguments:',
 };
-export const PROMPT_DEPLOY_JASPER_REPORTS = {
+export const PROMPT_DEPLOY_JASPER_REPORTS: PromptQuestion = {
   type: 'confirm',
   name: 'deployJasperReports',
   message: 'Deploy Jasper Reports:',
   default: false,
 };
-export const PROMPT_JASPER_PROJECT_NAME = {
+export const PROMPT_JASPER_PROJECT_NAME: PromptQuestion = {
   type: 'input',
   name: 'jasperProjectName',
   message: 'Jasper Project Name:',
 };
-export const PROMPT_JASPER_SERVICE_NAME = {
+export const PROMPT_JASPER_SERVICE_NAME: PromptQuestion = {
   type: 'input',
   name: 'jasperServiceName',
   message: 'Jasper Service Name:',
 };
-export const PROMPT_JASPER_SOURCE_PATH = {
+export const PROMPT_JASPER_SOURCE_PATH: PromptQuestion = {
   type: 'input',
   name: 'jasperSourcePath',
   message: 'Jasper source path:',
   default: '{{ playbook_dir }}/../src',
 };
-export const PROMPT_JASPER_SERVER_INSTANCE = {
+export const PROMPT_JASPER_SERVER_INSTANCE: PromptQuestion = {
   type: 'input',
   name: 'jasperServerInstance',
   message: 'Jasper Reports server instance:',
   default: 'JCRS',
 };
-export const PROMPT_JASPER_ADDITIONAL_DATA_SOURCES = {
+export const PROMPT_JASPER_ADDITIONAL_DATA_SOURCES: PromptQuestion = {
   type: 'input',
   name: 'jasperAdditionalDataSources',
   message: 'Additional Jasper Reports data sources:',
   default: '',
 };
-export const PROMPT_JASPER_PAUSE_SECONDS = {
+export const PROMPT_JASPER_PAUSE_SECONDS: PromptQuestion = {
   type: 'input',
   name: 'jasperPauseSeconds',
   message: 'Pause seconds for Jasper Reports deployment:',
   default: 30,
 };
-export const PROMPT_TOMCAT_CONTEXT = {
+export const PROMPT_TOMCAT_CONTEXT: PromptQuestion = {
   type: 'input',
   name: 'tomcatContext',
   message: 'Tomcat Context (e.g. ext#results):',
 };
-export const PROMPT_USE_ALT_APP_DIR_NAME = {
+export const PROMPT_USE_ALT_APP_DIR_NAME: PromptQuestion = {
   type: 'confirm',
   name: 'useAltAppDirName',
   message: 'Use alternative webapp directory:',
   default: false,
 };
-export const PROMPT_ALT_APP_DIR_NAME = {
+export const PROMPT_ALT_APP_DIR_NAME: PromptQuestion = {
   type: 'input',
   name: 'altAppDirName',
   message: 'Alternative webapp directory name:',
   default: '',
 };
-export const PROMPT_ADD_WEBADE_CONFIG = {
+export const PROMPT_ADD_WEBADE_CONFIG: PromptQuestion = {
   type: 'confirm',
   name: 'addWebadeConfig',
   message: 'Add Webade configuration:',
@@ -352,27 +353,30 @@ export const PROMPT_ADD_LOG4J2_CONFIG = {
   message: 'Add log4j2 configuration:',
   default: true,
 };
-export const PROMPT_ADD_TOMCAT_CONTEXT = {
+export const PROMPT_ADD_TOMCAT_CONTEXT: PromptQuestion = {
   type: 'confirm',
   name: 'addTomcatContext',
   message: 'Add tomcat context:',
   default: true,
 };
-export const PROMPT_CREATE_DATA_TMP_DIR = {
+export const PROMPT_CREATE_DATA_TMP_DIR: PromptQuestion = {
   type: 'confirm',
   name: 'createDataTmpDir',
   message: 'Create data temp dir:',
   default: false,
 };
 
-export const PROMPT_INTENTION_USER = {
+export const PROMPT_INTENTION_USER: PromptQuestion = {
   type: 'input',
   name: 'intentionUser',
   message: 'Intention user:',
   default: '',
 };
 
-export const PROMPT_TO_USAGE = {
+export const PROMPT_TO_USAGE: Record<
+  string,
+  { description: string; example?: string }
+> = {
   locationName: {
     description:
       'The name of the location file. This is used to group services together in the Backstage catalog.',
@@ -569,7 +573,7 @@ export const PROMPT_TO_USAGE = {
   },
 };
 
-export function getPromptToUsage(question) {
+export function getPromptToUsage(question: PromptQuestion): string {
   const usage = PROMPT_TO_USAGE[question.name];
   return (
     `${chalk.bold(question.message)} (key: ${question.name})

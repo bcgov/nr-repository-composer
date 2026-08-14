@@ -2,12 +2,13 @@
 import { BaseGenerator } from '../util/base-generator.js';
 import { BACKSTAGE_KIND_COMPONENT } from '../util/yaml.js';
 import { OPTION_HEADLESS } from '../util/options.js';
+import type { BaseOptions } from 'yeoman-generator';
 
 /**
  * Copy nr-repository-composer tool to the repository
  */
 export default class extends BaseGenerator {
-  constructor(args, opts) {
+  constructor(args: string | string[], opts: BaseOptions) {
     super(args, opts);
     this._nrsayConfig = {
       title: 'NR Repository Composer',

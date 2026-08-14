@@ -1,5 +1,6 @@
 'use strict';
 import { BaseGenerator } from '../util/base-generator.js';
+import type { BaseOptions } from 'yeoman-generator';
 import {
   PROMPT_SCHEMA_NAME,
   PROMPT_SCHEMA_MIGRATION_TOOL,
@@ -18,7 +19,7 @@ const questions = [
  * Generate a database directory
  */
 export default class extends BaseGenerator {
-  constructor(args, opts) {
+  constructor(args: string | string[], opts: BaseOptions) {
     super(args, opts);
     this._nrsayConfig = {
       title: 'NR Database Generator',

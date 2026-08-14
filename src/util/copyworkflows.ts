@@ -136,7 +136,7 @@ export function copyCommonDeploymentConfigWorkflow(
   brokerJwt,
   generator,
   answers,
-  additionalPaths = [],
+  additionalPaths: string[] = [],
 ) {
   const services = scanRepositoryForComponents();
   const allPaths = new Set(additionalPaths);
@@ -150,7 +150,7 @@ export function copyCommonDeploymentConfigWorkflow(
     if (configPaths) {
       const serviceDir = path.dirname(service.path);
       allPaths.add(service.path);
-      configPaths
+      String(configPaths)
         .split(',')
         .map((p) => path.join(serviceDir, p.trim()))
         .filter(Boolean)

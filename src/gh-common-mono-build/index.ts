@@ -1,5 +1,6 @@
 'use strict';
 import Generator from 'yeoman-generator';
+import type { BaseOptions } from 'yeoman-generator';
 import {
   BACKSTAGE_FILENAME,
   BACKSTAGE_KIND_COMPONENT,
@@ -12,7 +13,7 @@ import { OPTION_HEADLESS } from '../util/options.js';
 import { outputReport } from '../util/report.js';
 
 export default class extends Generator {
-  constructor(args: string | string[], opts: any) {
+  constructor(args: string | string[], opts: BaseOptions) {
     super(args as string[], opts);
     this.option(OPTION_HEADLESS);
   }
@@ -40,7 +41,7 @@ export default class extends Generator {
 
     const serviceNeeds = {};
     const services = docs.map((doc) => {
-      const name = doc.getPath(['metadata', 'name']);
+      const name = doc.getPath(['metadata', 'name']) as string;
       return {
         name,
         workflow: makeWorkflowBuildPublishPath(name),
@@ -48,7 +49,7 @@ export default class extends Generator {
     });
 
     for (const doc of docs) {
-      const serviceName = doc.getPath(['metadata', 'name']);
+      const serviceName = doc.getPath(['metadata', 'name']) as string;
       const subcomponents = doc.getPath(
         ['spec', 'subcomponentOf'],
         'json',

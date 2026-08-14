@@ -1,12 +1,16 @@
 import chalk from 'chalk';
 
-export function nrsay(title, subtitle, ...args) {
+export function nrsay(
+  title: string,
+  subtitle: string,
+  links: [string, string][] = [],
+) {
   return `
 ${chalk.bold.underline(title)}
 
 ${subtitle}
 
-${args.map((arg) => `${arg[0]}: ${arg[1]}`).join('\n')}
+${links.map(([label, url]) => `${label}: ${url}`).join('\n')}
 ${chalk.bold.underline('                                       ')}
 `;
 }

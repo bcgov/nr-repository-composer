@@ -5,12 +5,13 @@
     "moduleResolution": "NodeNext",
     "rootDir": "src",
     "outDir": "generators",
-    "strict": false,
+    "strict": true,
     "noImplicitAny": false,
     "esModuleInterop": true,
     "skipLibCheck": true,
-    "declaration": false
+    "declaration": false,
+    "forceConsistentCasingInFileNames": true
   },
   "include": ["src/**/*.ts"],
-  "exclude": ["node_modules"]
+  "exclude": ["node_modules", "generators"]
 }

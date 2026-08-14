@@ -49,9 +49,9 @@ export function destinationGitPath(...dest) {
   let filepath = path.join.apply(path, dest);
 
   if (!path.isAbsolute(filepath)) {
-    filepath = path.join(findGitRepoOrigin(), '..', '..', filepath);
+    const origin = findGitRepoOrigin();
+    filepath = origin ? path.join(origin, '..', '..', filepath) : filepath;
   }
-
   return filepath;
 }
 
@@ -102,7 +102,9 @@ export function getGitRepoOriginUrl() {
     // If there's a match, return the origin URL, else return null
     return match ? match[1].trim() : null;
   } catch (error) {
-    console.error('Error:', error.message);
-    return null;
+    console.error(
+      'Error:',
+      error instanceof Error ? error.message : String(error),
+    );
   }
 }

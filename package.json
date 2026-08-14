@@ -25,7 +25,6 @@
   },
   "devDependencies": {
     "@eslint/js": "^10.0.1",
-    "@types/yeoman-generator": "^5.2.14",
     "@typescript-eslint/parser": "^8.67.0",
     "eslint": "^10.6.0",
     "eslint-config-prettier": "^10.1.8",
@@ -38,5 +37,9 @@
     "yeoman-test": "^11.6.0"
   },
   "type": "module",
-  "license": "Apache-2.0"
+  "license": "Apache-2.0",
+  "allowScripts": {
+    "fsevents@2.3.3": true,
+    "unrs-resolver@1.12.2": true
+  }
 }

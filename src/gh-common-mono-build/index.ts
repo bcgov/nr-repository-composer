@@ -1,4 +1,3 @@
-'use strict';
 import Generator from 'yeoman-generator';
 import type { BaseOptions } from 'yeoman-generator';
 import {

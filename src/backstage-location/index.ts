@@ -1,4 +1,3 @@
-'use strict';
 import { BaseGenerator } from '../util/base-generator.js';
 import { BACKSTAGE_KIND_LOCATION } from '../util/yaml.js';
 import {

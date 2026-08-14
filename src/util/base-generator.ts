@@ -1,4 +1,3 @@
-'use strict';
 import Generator from 'yeoman-generator';
 import type {
   BaseOptions,
@@ -85,11 +84,16 @@ export class BaseGenerator extends Generator {
 
   /**
    * Returns the generator name (without namespace prefix) for reporting.
+   *
+   * The actual generator name comes from the invocation namespace
+   * (e.g. `nr-repository-composer:backstage`), not from
+   * `rootGeneratorName()`, which returns the shared package name
+   * (`generator-nr-repository-composer`) for every generator.
    * @returns {string}
    */
   _getGeneratorName() {
-    const name = this.rootGeneratorName();
-    return name.replace('nr-repository-composer:', '');
+    const namespace = this._namespace;
+    return namespace.replace('nr-repository-composer:', '');
   }
 
   async prompting() {

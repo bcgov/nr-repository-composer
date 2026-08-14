@@ -1,4 +1,3 @@
-'use strict';
 import { BaseGenerator } from '../util/base-generator.js';
 import { BACKSTAGE_KIND_COMPONENT } from '../util/yaml.js';
 

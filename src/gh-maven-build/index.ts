@@ -1,4 +1,3 @@
-'use strict';
 import chalk from 'chalk';
 import { BaseGenerator } from '../util/base-generator.js';
 import {

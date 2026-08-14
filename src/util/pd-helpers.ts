@@ -1,3 +1,4 @@
+'use strict';
 import path from 'path';
 import { fileURLToPath } from 'url';
 import * as fs from 'node:fs';

@@ -1,3 +1,4 @@
+'use strict';
 import chalk from 'chalk';
 
 const README_BASE_URL =
@@ -24,7 +25,7 @@ export const ALL_GENERATORS = [
  * Generator to README anchor mapping
  * Maps generator names to their README section anchors
  */
-export const GENERATOR_ANCHORS = {
+export const GENERATOR_ANCHORS: Record<string, string> = {
   'nr-repository-composer': 'nr-repository-composer-nr-repository-composer',
   'gh-polaris-composer-agent':
     'polaris-pipeline-composer-agent-gh-polaris-composer-agent',
@@ -78,6 +79,22 @@ export function expandGeneratorPattern(pattern: string): string[] {
   return ALL_GENERATORS.filter((gen) => regex.test(gen));
 }
 
+interface GeneratorReport {
+  description: string;
+  // eslint-disable-next-line no-unused-vars
+  workflows: string[] | ((answers: Record<string, unknown>) => string[]);
+  nextSteps:
+    | Array<{
+        generator: string | null;
+        description: string;
+      }>
+    // eslint-disable-next-line no-unused-vars
+    | ((answers: Record<string, unknown>) => Array<{
+        generator: string | null;
+        description: string;
+      }>);
+}
+
 /**
  * Generator report configuration
  * Each generator has:
@@ -87,7 +104,7 @@ export function expandGeneratorPattern(pattern: string): string[] {
  *
  * Generator patterns support * wildcard (e.g., 'gh-*-build' matches 'gh-maven-build', 'gh-nodejs-build')
  */
-export const GENERATOR_REPORTS = {
+export const GENERATOR_REPORTS: Record<string, GeneratorReport> = {
   'nr-repository-composer': {
     description: 'Copied NR Repository Composer tool to repository root',
     workflows: [],
@@ -269,6 +286,16 @@ export const GENERATOR_REPORTS = {
         generator: null,
         description:
           'Configure deployment environments in repository Settings > Environments',
+      },
+    ],
+  },
+  migrations: {
+    description: 'Created database migration file layout',
+    workflows: [],
+    nextSteps: [
+      {
+        generator: null,
+        description: 'Add migration scripts under the migrations/ directory',
       },
     ],
   },

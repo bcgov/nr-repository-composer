@@ -22,6 +22,20 @@ export default [
       parser: tsparser,
     },
   },
+  {
+    files: ['**/*.test.ts'],
+    languageOptions: {
+      globals: {
+        ...globals.jest,
+      },
+    },
+    rules: {
+      'no-unused-vars': [
+        'error',
+        { argsIgnorePattern: '^_', varsIgnorePattern: '^_' },
+      ],
+    },
+  },
   eslint.configs.recommended,
   eslintPluginPrettierRecommended,
   {

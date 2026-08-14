@@ -447,10 +447,13 @@ export const pathToProps: PathToProp[] = [
   },
 ];
 
-export const propRecord = pathToProps.reduce((acc, pathToProp) => {
-  acc[pathToProp.prop] = pathToProp;
-  return acc;
-}, {});
+export const propRecord: Record<string, PathToProp> = pathToProps.reduce(
+  (acc, pathToProp) => {
+    acc[pathToProp.prop] = pathToProp;
+    return acc;
+  },
+  {} as Record<string, PathToProp>,
+);
 
 export function extractFromYaml(
   doc: Document,

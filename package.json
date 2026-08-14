@@ -16,7 +16,8 @@
     "build": "tsc && node scripts/copy-assets.js",
     "lint": "eslint \"src/**/*.ts\"",
     "test": "jest --config jest.config.cjs",
-    "test:watch": "jest --config jest.config.cjs --watch"
+    "test:watch": "jest --config jest.config.cjs --watch",
+    "docs:serve": "npx --yes docsify-cli serve docs"
   },
   "dependencies": {
     "ejs": "^6.0.1",

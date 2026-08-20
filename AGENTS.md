@@ -78,9 +78,55 @@ When generated changes exist:
 3. Push the branch to origin.
 4. Open a pull request with `gh pr create`.
 
+## Documentation
+
+The site in `docs/` is a [Docsify](https://docsify.js.org) static site. It is
+organized around two personas, which the sidebar divides:
+
+- **Using the Tool** (`docs/using/`) — for developers running the generators to
+   scaffold or maintain a repository.
+- **Extending the Tool** (`docs/extending/`) — for developers adding or changing
+   generators.
+- **Reference** (`docs/reference/`) — admin tools and license.
+
+### How to update the docs
+
+1. **Edit the Markdown.** Each page is a Markdown file under `docs/`. The home
+   page is `docs/README.md`.
+2. **Keep the sidebar in sync.** `docs/_sidebar.md` lists every page grouped by
+   persona. When you add, rename, or remove a page, update `_sidebar.md` (and
+   `docs/_navbar.md` if the top-level persona entry changes). A page that is not
+   in the sidebar is unreachable.
+3. **Keep the README in sync.** `README.md` is the canonical source of truth for
+   generator descriptions. When a generator's behavior, output, or prompt changes,
+   update `README.md` and the matching generator page. Each generator has its own
+   page under `docs/using/generators/` (for example,
+   `docs/using/generators/gh-nodejs-build.md`); `docs/using/generators.md` is the
+   index (table plus the shared "OCI Artifacts" and "Deployment Configuration"
+   concepts). Do not let the README, the index, and the per-generator page drift.
+4. **Verify locally.** Serve the site and click through the sidebar:
+
+   ```bash
+   npm run docs:serve
+   ```
+
+   The site loads Docsify from a CDN, so no build step is required.
+5. **Check links.** Confirm every sidebar entry resolves and that in-page
+   anchors (for example, `generators.md#oci-artifacts`) point at a real heading.
+6. **Commit and open a PR** following the standard Git workflow.
+
+### Docsify conventions
+
+- Pages are plain Markdown; Docsify renders them client-side.
+- Cross-page links use relative paths (for example, `using/quick-start.md`).
+- In-page anchors use the heading slug (for example, `#oci-artifacts`).
+- The sidebar and navbar are Markdown files (`_sidebar.md`, `_navbar.md`); the
+   site config lives in `docs/index.html` under `window.$docsify`.
+
 ## Canonical References In This Repository
 
 - `README.md`
+- `docs/` — Docsify documentation site (see [Documentation](#documentation))
 - `.github/copilot-instructions.md`
 - `.github/instructions/polaris-composer.instructions.md`
 - `.github/skills/polaris-pipeline-composer/SKILL.md`

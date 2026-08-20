@@ -1,0 +1,4 @@
+- [Using the Tool](using/quick-start.md)
+- [Generators](using/generators.md)
+- [Extending the Tool](extending/architecture.md)
+- [GitHub](https://github.com/bcgov/nr-repository-composer)

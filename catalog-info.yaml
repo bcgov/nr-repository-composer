@@ -1,0 +1,5 @@
+apiVersion: backstage.io/v1alpha1
+kind: Component
+metadata:
+  annotations:
+    composer.io.nrs.gov.bc.ca/generators: gh-docs-deploy

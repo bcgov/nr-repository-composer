@@ -70,6 +70,13 @@ export function copyCommonBuildWorkflows(generator, answers) {
     generator.templatePath(`${COMMON_GH_TEMPLATE_PATH}/check-token.yaml`),
     destinationGitPath('.github/workflows/check-token.yaml'),
   );
+  generator.fs.copyTpl(
+    generator.templatePath(`${COMMON_GH_TEMPLATE_PATH}/composite-build-setup.yaml`),
+    destinationGitPath('.github/actions/composite-build-setup/action.yaml'),
+    {
+      gitHubProjectSlug: answers.gitHubProjectSlug,
+    },
+  );
 
   generator.fs.copyTpl(
     generator.templatePath(`${COMMON_PD_TEMPLATE_PATH}/env.sh`),

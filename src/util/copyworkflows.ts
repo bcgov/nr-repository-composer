@@ -71,9 +71,7 @@ export function copyCommonBuildWorkflows(generator, answers) {
     destinationGitPath('.github/workflows/check-token.yaml'),
   );
   generator.fs.copyTpl(
-    generator.templatePath(
-      `${COMMON_GH_TEMPLATE_PATH}/version-detect.yaml`,
-    ),
+    generator.templatePath(`${COMMON_GH_TEMPLATE_PATH}/version-detect.yaml`),
     destinationGitPath('.github/actions/version-detect/action.yaml'),
     {
       gitHubProjectSlug: answers.gitHubProjectSlug,

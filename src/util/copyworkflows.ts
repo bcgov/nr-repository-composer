@@ -72,9 +72,9 @@ export function copyCommonBuildWorkflows(generator, answers) {
   );
   generator.fs.copyTpl(
     generator.templatePath(
-      `${COMMON_GH_TEMPLATE_PATH}/composite-build-setup.yaml`,
+      `${COMMON_GH_TEMPLATE_PATH}/version-detect.yaml`,
     ),
-    destinationGitPath('.github/actions/composite-build-setup/action.yaml'),
+    destinationGitPath('.github/actions/version-detect/action.yaml'),
     {
       gitHubProjectSlug: answers.gitHubProjectSlug,
     },

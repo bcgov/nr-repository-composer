@@ -1,5 +1,5 @@
-name: Composite Build Setup
-description: Set common variables for Polaris build action
+name: Version detect
+description: Detect version for Polaris pipeline build action
 inputs:
   GITHUB_TOKEN:
     description: GitHub Action Token

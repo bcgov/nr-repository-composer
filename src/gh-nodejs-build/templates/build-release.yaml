@@ -93,12 +93,6 @@ jobs:
           cache-dependency-path: ./<%= relativePath %>
           node-version: <%= nodeVersion %>
           cache: 'npm'
-      - name: Set version
-        id: set-version
-        run: |
-          echo "VERSION=${APP_VERSION}" >> $GITHUB_ENV
-        env:
-          APP_VERSION: ${{ steps.version-detect.outputs.version }}
       - name: Set build output parameters
         id: set-build-output-parameters
         run: |
@@ -106,6 +100,8 @@ jobs:
           echo "project_version=${VERSION}" >> $GITHUB_OUTPUT
           echo "git_commit=$(git rev-parse --verify HEAD)" >> $GITHUB_OUTPUT
           echo "build_guid=uuid::$(uuidgen)" >> $GITHUB_OUTPUT
+        env:
+          VERSION: ${{ steps.version-detect.outputs.version }}
       - name: Build intention
         run: sh ./.github/workflows/build-intention-<%= serviceName %>.sh
         env:
@@ -138,6 +134,8 @@ jobs:
           cd ./<%= relativePath %>
           npm run build --if-present
         working-directory: ./
+        env:
+          VERSION: ${{ steps.version-detect.outputs.version }}
 <% if (ociArtifacts.length > 0) { _%>
       - name: Pull static artifacts
         run: |

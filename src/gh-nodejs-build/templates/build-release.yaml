@@ -69,46 +69,22 @@ jobs:
       intention_id: ${{ steps.set-intention-id.outputs.intention_id }}
     if: ${{ needs.preflight.outputs.can_rebuild == 'true' }}
     steps:
-      - name: Lookup PR Merge Ref
-        id: lookup-pr-merge-ref
-        run: |
-          if [[ "${{ github.ref_type }}" == "tag" ]]; then
-            echo "checkout_ref=${{ github.ref }}" >> $GITHUB_OUTPUT
-            echo "version_modifier=${{ github.ref_name }}" >> $GITHUB_OUTPUT
-          elif [[ ${{ github.ref_name != 'main' }} = true ]]; then
-            RESPONSE=$(curl -s "https://api.github.com/repos/<%= gitHubProjectSlug %>/pulls?head=<%= gitHubProjectSlug.split('/')[0] %>:${{ github.head_ref || github.ref_name }}&state=open&base=main" \
-              -H "Authorization: token ${{ secrets.GITHUB_TOKEN }}" \
-              -H "Accept: application/vnd.github+json" \
-              --retry 2 \
-              --max-time 30 \
-              --connect-timeout 10 \
-              --retry-delay 5)
-            PULL_REQUEST_NUMBER=$(echo "${RESPONSE}" | jq -r .[0].number)
-            RESPONSE=$(curl -s "https://api.github.com/repos/<%= gitHubProjectSlug %>/pulls/$PULL_REQUEST_NUMBER" \
-              -H "Authorization: token ${{ secrets.GITHUB_TOKEN }}" \
-              -H "Accept: application/vnd.github+json" \
-              --retry 2 \
-              --max-time 30 \
-              --connect-timeout 10 \
-              --retry-delay 5)
-            MERGEABLE=$(echo "${RESPONSE}" | jq -r .mergeable)
-            if [[ "$MERGEABLE" != "true" ]]; then
-              echo "::error ::Pull request #$PULL_REQUEST_NUMBER is not mergeable… aborted."
-              echo "This can be resolved by resolving the merge conflict with the main branch."
-              exit 1
-            fi
-            echo "checkout_ref=refs/pull/$PULL_REQUEST_NUMBER/merge" >> $GITHUB_OUTPUT
-            echo "version_modifier=$PULL_REQUEST_NUMBER" >> $GITHUB_OUTPUT
-          else
-            echo "checkout_ref=${{ github.ref_name }}" >> $GITHUB_OUTPUT
-            echo "version_modifier=${{ github.ref_name }}" >> $GITHUB_OUTPUT
-          fi
+      - name: Sparse checkout actions
+        uses: actions/checkout@v6
+        with:
+          sparse-checkout: '.github/actions/version-detect'
+      - name: Version detect
+        id: version-detect
+        uses: ./.github/actions/version-detect
+        with:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          DEFAULT_VERSION: ${{ env.DEFAULT_VERSION }}
       - name: Checkout repository
         uses: actions/checkout@v6
         with:
             fetch-depth: 0
             fetch-tags: true
-            ref: ${{ steps.lookup-pr-merge-ref.outputs.checkout_ref }}
+            ref: ${{ steps.version-detect.outputs.checkout_ref }}
       - name: Setup ORAS
         uses: oras-project/setup-oras@v2
       - name: Set up Node
@@ -117,18 +93,6 @@ jobs:
           cache-dependency-path: ./<%= relativePath %>
           node-version: <%= nodeVersion %>
           cache: 'npm'
-      - name: Set version
-        id: set-version
-        run: |
-          if [[ ${{ startsWith(github.ref, 'refs/tags/v') }} = true ]]; then
-            TAG=${{ github.ref_name }}
-            APP_VERSION=${TAG#v}
-          else
-            APP_VERSION=${DEFAULT_VERSION/%-merge/-${{ steps.lookup-pr-merge-ref.outputs.version_modifier }}-merge}
-          fi
-          echo "VERSION=${APP_VERSION}" >> $GITHUB_ENV
-        env:
-          DEFAULT_VERSION: ${{ env.DEFAULT_VERSION }}
       - name: Set build output parameters
         id: set-build-output-parameters
         run: |
@@ -136,6 +100,8 @@ jobs:
           echo "project_version=${VERSION}" >> $GITHUB_OUTPUT
           echo "git_commit=$(git rev-parse --verify HEAD)" >> $GITHUB_OUTPUT
           echo "build_guid=uuid::$(uuidgen)" >> $GITHUB_OUTPUT
+        env:
+          VERSION: ${{ steps.version-detect.outputs.version }}
       - name: Build intention
         run: sh ./.github/workflows/build-intention-<%= serviceName %>.sh
         env:
@@ -168,6 +134,8 @@ jobs:
           cd ./<%= relativePath %>
           npm run build --if-present
         working-directory: ./
+        env:
+          VERSION: ${{ steps.version-detect.outputs.version }}
 <% if (ociArtifacts.length > 0) { _%>
       - name: Pull static artifacts
         run: |
@@ -263,7 +231,7 @@ jobs:
 
           EOF
         env:
-          CHECKOUT_REF: ${{ steps.lookup-pr-merge-ref.outputs.checkout_ref }}
+          CHECKOUT_REF: ${{ steps.version-detect.outputs.checkout_ref }}
           COMMIT_HASH: ${{ steps.set-build-output-parameters.outputs.git_commit }}
           PROJECT_VERSION: ${{ steps.set-build-output-parameters.outputs.project_version }}
 <% if (type !== 'library') { -%>

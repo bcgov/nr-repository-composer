@@ -61,6 +61,20 @@ jobs:
     needs: check-release-package
     if: ${{ always() && inputs.preflight_context == 'build' }}
     steps:
+      - name: Display runner public IP
+        shell: bash
+        run: |
+          set +e
+          RUNNER_PUBLIC_IP=$(curl -fsS --max-time 10 https://api.ipify.org)
+          CURL_EXIT_CODE=$?
+          set -e
+
+          if [ "$CURL_EXIT_CODE" -eq 0 ] && [ -n "$RUNNER_PUBLIC_IP" ]; then
+            echo "Runner public IP: $RUNNER_PUBLIC_IP"
+          else
+            echo "Runner public IP: unavailable"
+          fi
+
       - id: set-can-rebuild
         run: |
           if [[ "${{ github.ref_type }}" == "tag" ]]; then

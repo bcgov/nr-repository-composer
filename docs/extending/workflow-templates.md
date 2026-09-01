@@ -65,8 +65,16 @@ jobs:
 ## Common build workflows
 
 Shared build workflows are copied by `copyCommonBuildWorkflows` in
-`src/util/copyworkflows.js`. Use this helper when a new build generator needs the
+`src/util/copyworkflows.ts`. Use this helper when a new build generator needs the
 same preflight, check-build-artifact, or deployment-config workflows.
+
+## Pre-flight runner diagnostics
+
+Each pre-flight job logs its runner's public IP address using a best-effort call
+to `https://api.ipify.org`. The lookup is diagnostic only: unavailable or empty
+responses log `Runner public IP: unavailable` and do not fail the workflow.
+Each job performs its own lookup because GitHub Actions may schedule jobs on
+different runners.
 
 ## Modifying workflow parameters
 

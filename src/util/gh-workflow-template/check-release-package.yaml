@@ -29,6 +29,20 @@ jobs:
     outputs:
       can_rebuild: ${{ steps.check.outputs.can_rebuild }}
     steps:
+      - name: Display runner public IP
+        shell: bash
+        run: |
+          set +e
+          RUNNER_PUBLIC_IP=$(curl -fsS --max-time 10 https://api.ipify.org)
+          CURL_EXIT_CODE=$?
+          set -e
+
+          if [ "$CURL_EXIT_CODE" -eq 0 ] && [ -n "$RUNNER_PUBLIC_IP" ]; then
+            echo "Runner public IP: $RUNNER_PUBLIC_IP"
+          else
+            echo "Runner public IP: unavailable"
+          fi
+
       - name: Checkout only catalog-info.yaml
         uses: actions/checkout@v6
         with:

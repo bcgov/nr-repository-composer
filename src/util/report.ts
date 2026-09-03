@@ -14,6 +14,7 @@ export const ALL_GENERATORS = [
   'backstage-location',
   'gh-common-mono-build',
   'gh-docs-deploy',
+  'gh-issue-templates',
   'gh-maven-build',
   'gh-tomcat-deploy-onprem',
   'gh-nodejs-build',
@@ -33,6 +34,7 @@ export const GENERATOR_ANCHORS: Record<string, string> = {
   'backstage-location': 'backstage-backstage-location',
   'gh-common-mono-build': 'github-gh-common-mono-build',
   'gh-docs-deploy': 'github-docs-deploy-gh-docs-deploy',
+  'gh-issue-templates': 'github-issue-templates-gh-issue-templates',
   'gh-maven-build': 'github-maven-build-gh-maven-build',
   'gh-tomcat-deploy-onprem':
     'github-tomcat-on-prem-deploy-gh-tomcat-deploy-onprem',
@@ -216,6 +218,22 @@ export const GENERATOR_REPORTS: Record<string, GeneratorReport> = {
         description: 'Add static documentation content to the docs/ folder',
       },
     ],
+  },
+  'gh-issue-templates': {
+    description: 'Created GitHub issue templates',
+    workflows: [
+      '.github/ISSUE_TEMPLATE/bug.md',
+      '.github/ISSUE_TEMPLATE/feature.md',
+      '.github/ISSUE_TEMPLATE/task.md',
+      '.github/ISSUE_TEMPLATE/epic.md',
+      '.github/ISSUE_TEMPLATE/question.md',
+      '.github/ISSUE_TEMPLATE/documentation.md',
+      '.github/ISSUE_TEMPLATE/ux.md',
+      '.github/ISSUE_TEMPLATE/decision.md',
+      '.github/ISSUE_TEMPLATE/security-triage.md',
+      '.github/ISSUE_TEMPLATE/custom.md',
+    ],
+    nextSteps: [],
   },
   'gh-maven-build': {
     description: 'Created Maven build workflow and NR Broker intention files',

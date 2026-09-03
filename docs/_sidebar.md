@@ -17,6 +17,7 @@
   - [backstage-location](using/generators/backstage-location.md)
   - [gh-common-mono-build](using/generators/gh-common-mono-build.md)
   - [gh-docs-deploy](using/generators/gh-docs-deploy.md)
+  - [gh-issue-templates](using/generators/gh-issue-templates.md)
   - [gh-maven-build](using/generators/gh-maven-build.md)
   - [gh-nodejs-build](using/generators/gh-nodejs-build.md)
   - [gh-oci-deploy-onprem](using/generators/gh-oci-deploy-onprem.md)

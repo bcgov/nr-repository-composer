@@ -17,6 +17,7 @@ below is the index. The shared concepts that several generators rely on
 | [backstage-location](generators/backstage-location.md) | Catalog monorepo | All | Backstage (kind: location) |
 | [gh-common-mono-build](generators/gh-common-mono-build.md) | Pipeline orchestration | GitHub | GitHub Actions |
 | [gh-docs-deploy](generators/gh-docs-deploy.md) | Documentation | GitHub | GitHub Actions, GitHub Pages |
+| [gh-issue-templates](generators/gh-issue-templates.md) | Issue templates | All | GitHub issue templates |
 | [gh-maven-build](generators/gh-maven-build.md) | Pipeline | GitHub | Java, GitHub Actions |
 | [gh-polaris-composer-agent](generators/gh-polaris-composer-agent.md) | Chat command and agent guidance pack | All | Copilot prompt, agent, and skill files |
 | [gh-tomcat-deploy-onprem](generators/gh-tomcat-deploy-onprem.md) | Deploy (collection ≤ v4.2.0) | GitHub | Java, Tomcat, GitHub Actions |

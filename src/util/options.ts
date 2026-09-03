@@ -13,3 +13,11 @@ export const OPTION_HELP_PROMPTS = {
   description: "Print the generator's prompts and usage",
   default: false,
 };
+
+export const OPTION_SKIP_WRITE = {
+  name: 'skip-write',
+  type: Boolean,
+  required: false,
+  description: 'Skip writing generator answers back to catalog-info.yaml',
+  default: false,
+};

@@ -10,7 +10,11 @@ import {
   YEOMAN_CONFIG_NAMESPACE,
   YEOMAN_OPTION_ASK_ANSWERED,
 } from './constants.js';
-import { OPTION_HEADLESS, OPTION_HELP_PROMPTS } from './options.js';
+import {
+  OPTION_HEADLESS,
+  OPTION_HELP_PROMPTS,
+  OPTION_SKIP_WRITE,
+} from './options.js';
 import { bailOnUnansweredQuestions } from './process.js';
 import { BackstageStorage } from './backstage.storage.js';
 import { BACKSTAGE_FILENAME, BACKSTAGE_KIND_COMPONENT } from './yaml.js';
@@ -46,6 +50,7 @@ export class BaseGenerator extends Generator {
     super(args as string[], opts);
     this.option(OPTION_HEADLESS);
     this.option(OPTION_HELP_PROMPTS);
+    this.option(OPTION_SKIP_WRITE);
     this._nrsayConfig = null;
     this._questions = [];
   }
@@ -138,6 +143,11 @@ export class BaseGenerator extends Generator {
   }
 
   writingBackstage() {
+    // Skip persisting prompt answers and the generator annotation when the
+    // caller explicitly opts out via --skip-write.
+    if (this.options[OPTION_SKIP_WRITE.name]) {
+      return;
+    }
     this.backstageConfig.addGeneratorToDoc(this._getGeneratorName());
     this.backstageConfig.save();
   }

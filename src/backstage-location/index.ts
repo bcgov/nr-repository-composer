@@ -1,5 +1,6 @@
 import { BaseGenerator } from '../util/base-generator.js';
 import { BACKSTAGE_KIND_LOCATION } from '../util/yaml.js';
+import { OPTION_SKIP_WRITE } from '../util/options.js';
 import {
   PROMPT_LOCATION_NAME,
   PROMPT_LOCATION_TARGETS,
@@ -40,10 +41,12 @@ export default class extends BaseGenerator {
 
   writingBackstage() {
     super.writingBackstage();
-    this.backstageConfig.setPath(['spec', 'type'], 'path');
-    this.backstageConfig.save();
+    // save the location-specific path when answers are being written.
+    if (!this.options[OPTION_SKIP_WRITE.name]) {
+      this.backstageConfig.setPath(['spec', 'type'], 'path');
+      this.backstageConfig.save();
+    }
   }
-
   end() {
     super.end();
   }

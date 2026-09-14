@@ -8,6 +8,7 @@ import {
   PROMPT_JAVA_VERSION,
   PROMPT_ARTIFACT_REPOSITORY_PATH,
   PROMPT_TOOLS_LOCAL_BUILD_SECRETS,
+  PROMPT_AUTO_DEPLOY_EPHEMERAL,
   PROMPT_TO_USAGE,
   getPromptToUsage,
 } from './prompts.js';
@@ -25,6 +26,7 @@ describe('prompt definitions', () => {
     expect(PROMPT_LICENSE.default).toBe('Apache-2.0');
     expect(PROMPT_NODE_VERSION.default).toBe('24');
     expect(PROMPT_JAVA_VERSION.default).toBe('8');
+    expect(PROMPT_AUTO_DEPLOY_EPHEMERAL.default).toBe(false);
   });
 
   it('derives the artifact repository path from the repository type', () => {

@@ -189,6 +189,15 @@ export const pathToProps: PathToProp[] = [
     prop: 'deployType',
     writeEmpty: false,
   },
+  {
+    path: [
+      'metadata',
+      'annotations',
+      'playbook.io.nrs.gov.bc.ca/autoDeployEphemeral',
+    ],
+    prop: 'autoDeployEphemeral',
+    writeEmpty: false,
+  },
   // Jasper
   {
     path: [

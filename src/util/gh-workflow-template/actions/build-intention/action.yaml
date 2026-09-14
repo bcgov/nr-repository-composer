@@ -1,0 +1,48 @@
+name: 'Build intention'
+description: 'Open an NR Broker build intention for a service'
+inputs:
+  broker-jwt:
+    description: 'The NR Broker JWT secret used to open the intention'
+    required: true
+  service-name:
+    description: 'The service name (used to locate the build-intention script)'
+    required: true
+  package-build-guid:
+    required: true
+  package-build-number:
+    required: true
+  package-build-version:
+    required: true
+  package-type:
+    required: true
+  package-version:
+    required: true
+outputs:
+  intention-id:
+    description: 'The ID of the opened intention'
+    value: ${{ steps.set-intention-id.outputs.intention_id }}
+runs:
+  using: 'composite'
+  steps:
+    - name: Build intention
+      shell: bash
+      run: sh ./.github/workflows/build-intention-${{ inputs.service-name }}.sh
+      env:
+        EVENT_REASON: Build ${{ github.ref_name }}
+        GITHUB_REPOSITORY: ${{ github.repository }}
+        GITHUB_RUN_ID: ${{ github.run_id }}
+        PACKAGE_BUILD_GUID: ${{ inputs.package-build-guid }}
+        PACKAGE_BUILD_NUMBER: ${{ inputs.package-build-number }}
+        PACKAGE_BUILD_VERSION: ${{ inputs.package-build-version }}
+        PACKAGE_TYPE: ${{ inputs.package-type }}
+        PACKAGE_VERSION: ${{ inputs.package-version }}
+    - name: Open intention
+      uses: bcgov-nr/action-broker-intention-open@v2
+      with:
+        broker_jwt: ${{ inputs.broker-jwt }}
+        intention_path: intention.json
+        quickstart: true
+    - name: Echo intention ID for deploy job
+      id: set-intention-id
+      shell: bash
+      run: echo "intention_id=${INTENTION_ID}" >> $GITHUB_OUTPUT

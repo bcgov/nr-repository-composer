@@ -366,6 +366,14 @@ export const PROMPT_CREATE_DATA_TMP_DIR: PromptQuestion = {
   default: false,
 };
 
+export const PROMPT_AUTO_DEPLOY_EPHEMERAL: PromptQuestion = {
+  type: 'confirm',
+  name: 'autoDeployEphemeral',
+  message:
+    'Automatically deploy an ephemeral instance on feature pull requests targeting main?',
+  default: false,
+};
+
 export const PROMPT_INTENTION_USER: PromptQuestion = {
   type: 'input',
   name: 'intentionUser',
@@ -448,6 +456,11 @@ export const PROMPT_TO_USAGE: Record<
   postDeployTestsPath: {
     description:
       'The path to the post deploy tests (e.g. .github/workflows/postDeploy.yaml)',
+  },
+  autoDeployEphemeral: {
+    description:
+      'Whether to automatically deploy an ephemeral instance on feature pull requests targeting main',
+    example: 'true',
   },
   schemaName: {
     description:

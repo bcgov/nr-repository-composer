@@ -84,38 +84,22 @@ jobs:
           DEPLOYMENT_CONFIG_PATHS: <%= deploymentConfigPaths %>
           DEPLOY_TYPE: <%= deployType %>
           PROJECT_SLUG: <%= gitHubProjectSlug %>
-      - name: Create annotations files
-        run: |
-          cat <<EOF > annotation.json
-          {
-            "\$manifest": {
-              "org.opencontainers.image.description": "Deployment configuration ${PROJECT_TAG}",
-              "org.opencontainers.image.source": "${{ github.repositoryUrl }}",
-              "org.opencontainers.image.title": "deployment-config",
-              "org.opencontainers.image.version": "${PROJECT_TAG}",
-              "ca.gov.nrs.io.broker.intention.id": "${INTENTION_ID}",
-              "ca.gov.nrs.io.broker.intention.url": "${{ env.BROKER_URL }}/v1/intention/${INTENTION_ID}",
-              "ca.gov.nrs.io.broker.intention.action.services": "<%= services.map(service => service.serviceName).join(',') %>"
-            }
-          }
-          EOF
-        env:
-          INTENTION_ID: ${{ env.INTENTION_ID }}
-          PROJECT_TAG: ${{ steps.set-version.outputs.tag }}
       - name: Push deployment config to registry
         id: publish-dc
-        run: |
-          oras login ghcr.io -u ${{ github.actor }} --password-stdin <<< ${{ secrets.GITHUB_TOKEN }}
-          oras push --annotation-file annotation.json --export-manifest manifest.json ghcr.io/${{ github.repository }}/deployment-config:${PROJECT_TAG} <%= deploymentConfigPaths %>
-          MANIFEST=$(cat ./manifest.json)
-          ARTIFACT_SHA256=$(echo $MANIFEST | sha256sum | awk '{print $1}')
-          ARTIFACT_SIZE=$(echo $MANIFEST | jq -r '.layers | map(.size) | add')
-          echo "artifact_sha256=$ARTIFACT_SHA256" >> $GITHUB_OUTPUT
-          echo "artifact_size=$ARTIFACT_SIZE" >> $GITHUB_OUTPUT
-          echo $MANIFEST
-          echo "sha256: $ARTIFACT_SHA256"
-        env:
-          PROJECT_TAG: ${{ steps.set-version.outputs.tag }}
+        uses: ./.github/actions/oci-publish
+        with:
+          service_name: deployment-config
+          title: deployment-config
+          description: Deployment configuration ${{ steps.set-version.outputs.tag }}
+          project_tag: ${{ steps.set-version.outputs.tag }}
+          publish_dir: <%= deploymentConfigPaths %>
+          github_token: ${{ secrets.GITHUB_TOKEN }}
+          extra_annotations: |
+            {
+              "ca.gov.nrs.io.broker.intention.id": "${{ env.INTENTION_ID }}",
+              "ca.gov.nrs.io.broker.intention.url": "${{ env.BROKER_URL }}/v1/intention/${{ env.INTENTION_ID }}",
+              "ca.gov.nrs.io.broker.intention.action.services": "<%= services.map(service => service.serviceName).join(',') %>"
+            }
       - name: Send build info
         run: |
 <%_ for (const service of services) { _%>

@@ -77,6 +77,16 @@ export function copyCommonBuildWorkflows(generator, answers) {
       gitHubProjectSlug: answers.gitHubProjectSlug,
     },
   );
+  generator.fs.copyTpl(
+    generator.templatePath(
+      `${COMMON_GH_TEMPLATE_PATH}/pull-static-artifacts.yaml`,
+    ),
+    destinationGitPath('.github/actions/pull-static-artifacts/action.yaml'),
+  );
+  generator.fs.copyTpl(
+    generator.templatePath(`${COMMON_GH_TEMPLATE_PATH}/oci-publish.yaml`),
+    destinationGitPath('.github/actions/oci-publish/action.yaml'),
+  );
 
   generator.fs.copyTpl(
     generator.templatePath(`${COMMON_PD_TEMPLATE_PATH}/env.sh`),
@@ -175,6 +185,10 @@ export function copyCommonDeploymentConfigWorkflow(
   }));
 
   if (deploymentConfigPaths) {
+    generator.fs.copyTpl(
+      generator.templatePath(`${COMMON_GH_TEMPLATE_PATH}/oci-publish.yaml`),
+      destinationGitPath('.github/actions/oci-publish/action.yaml'),
+    );
     generator.fs.copyTpl(
       generator.templatePath(`${COMMON_GH_TEMPLATE_PATH}/build-dc.json`),
       destinationGitPath(`.github/workflows/build-dc.json`),

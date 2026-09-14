@@ -22,5 +22,7 @@ below is the index. The shared concepts that several generators rely on
 | [gh-polaris-composer-agent](generators/gh-polaris-composer-agent.md) | Chat command and agent guidance pack | All | Copilot prompt, agent, and skill files |
 | [gh-tomcat-deploy-onprem](generators/gh-tomcat-deploy-onprem.md) | Deploy (collection ≤ v4.2.0) | GitHub | Java, Tomcat, GitHub Actions |
 | [gh-nodejs-build](generators/gh-nodejs-build.md) | Pipeline | GitHub | Node.js, GitHub Actions |
+| [gh-docker-build](generators/gh-docker-build.md) | Pipeline | GitHub | Docker, Container Buildx, GitHub Actions |
 | [gh-oci-deploy-onprem](generators/gh-oci-deploy-onprem.md) | Deploy | GitHub | OCI artifacts, GitHub Actions |
+| [gh-oci-deploy-ocp](generators/gh-oci-deploy-ocp.md) | Deploy | GitHub | OpenShift, OCI, Jenkins, GitHub Actions |
 | [migrations](generators/migrations.md) | Database | All | FlyWay, Liquibase |

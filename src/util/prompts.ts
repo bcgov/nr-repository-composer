@@ -271,7 +271,16 @@ export const PROMPT_TOOLS_BUILD_SECRETS: PromptQuestion = {
   type: 'input',
   name: 'toolsBuildSecrets',
   message: 'Tools secrets used with builds (comma-separated):',
-  default: TOOLS_DEFAULT_PROPERTIES,
+  default: (answers) => {
+    switch (answers.artifactRepositoryType) {
+      case 'JFrogArtifactory':
+        return TOOLS_DEFAULT_PROPERTIES;
+      case 'GitHubPackages':
+        return '';
+      default:
+        return '';
+    }
+  },
 };
 export const PROMPT_TOOLS_LOCAL_BUILD_SECRETS: PromptQuestion = {
   type: 'input',

@@ -38,6 +38,16 @@ export function copyCommonBuildWorkflows(generator, answers) {
   const relativePath = relativeGitPath();
 
   generator.fs.copyTpl(
+    generator.templatePath(
+      `${COMMON_GH_TEMPLATE_PATH}/check-build-artifact.yaml`,
+    ),
+    destinationGitPath('.github/workflows/check-build-artifact.yaml'),
+    {
+      gitHubProjectSlug: answers.gitHubProjectSlug,
+    },
+  );
+
+  generator.fs.copyTpl(
     generator.templatePath(`${COMMON_GH_TEMPLATE_PATH}/build-intention.json`),
     destinationGitPath(
       `.github/workflows/build-intention-${answers.serviceName}.json`,

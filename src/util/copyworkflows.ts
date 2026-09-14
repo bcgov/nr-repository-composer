@@ -128,12 +128,23 @@ export function copyCommonBuildWorkflows(generator, answers) {
     destinationGitPath(`.github/workflows/check-release-package.yaml`),
   );
 
+  // Monorepos have multiple services; include all of them so re-running the
+  // generator for one service doesn't drop the others from the matrix.
+  const allServiceNames = Array.from(
+    new Set([
+      ...scanRepositoryForComponents().map(
+        (s) => s.doc.getIn(['metadata', 'name']) || s.name,
+      ),
+      answers.serviceName,
+    ]),
+  );
+
   generator.fs.copyTpl(
     generator.templatePath(`${COMMON_GH_TEMPLATE_PATH}/delete-pr-image.yaml`),
     destinationGitPath('.github/workflows/delete-pr-image.yaml'),
     {
       gitHubProjectSlug: answers.gitHubProjectSlug,
-      serviceName: answers.serviceName,
+      services: allServiceNames,
     },
   );
 
@@ -144,7 +155,7 @@ export function copyCommonBuildWorkflows(generator, answers) {
     destinationGitPath('.github/workflows/delete-pre-packages.yaml'),
     {
       gitHubProjectSlug: answers.gitHubProjectSlug,
-      serviceName: answers.serviceName,
+      services: allServiceNames,
     },
   );
 

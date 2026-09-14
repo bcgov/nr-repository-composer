@@ -15,7 +15,9 @@ jobs:
       fail-fast: false
       matrix:
         package_name:
-          - <%= gitHubProjectSlug.split('/').pop() %>/<%= serviceName %>
+<%_ for (const service of services) { _%>
+          - <%= gitHubProjectSlug.split('/').pop() %>/<%= service %>
+<%_ } _%>
 
     steps:
       - name: Delete package version from GHCR

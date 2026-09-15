@@ -113,7 +113,7 @@ export default class extends BaseGenerator {
     copyCommonBuildWorkflows(this, {
       ...this.answers,
       packageArchitecture: 'container',
-      packageType: 'application/vnd.oci.image.layer.v1.tar+gzip',
+      packageType: 'application/vnd.oci.image.manifest.v1+json',
     });
 
     copyCommonDeploymentConfigWorkflow(brokerJwt, this, this.answers);

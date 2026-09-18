@@ -191,7 +191,7 @@ jobs:
         working-directory: ./<%= relativePath %>
       - name: Send build info
         run: |
-          curl -s POST ${{ env.BROKER_URL }}/v1/intention/action/patch \
+          curl -s -X POST ${{ env.BROKER_URL }}/v1/intention/action/patch \
               -H 'Content-Type: application/json' \
               -H 'X-Broker-Token: '"${BUILD_TOKEN}"'' \
               --retry 2 \

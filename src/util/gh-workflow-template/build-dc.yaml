@@ -18,7 +18,8 @@ env:
 jobs:
   build-dc:
     name: Build deployment config
-    runs-on: ubuntu-latest
+    runs-on:
+      group: Larger Runners - OpenShift Static-IP
     permissions:
       contents: read
       packages: write

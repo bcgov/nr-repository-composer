@@ -25,7 +25,8 @@ permissions:
 jobs:
   check-release-package:
     name: Check if Release Package Exists
-    runs-on: ubuntu-latest
+    runs-on:
+      group: Larger Runners - OpenShift Static-IP
     outputs:
       can_rebuild: ${{ steps.check.outputs.can_rebuild }}
     steps:

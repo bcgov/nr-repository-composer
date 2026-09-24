@@ -69,6 +69,9 @@ export function copyCommonBuildWorkflows(generator, answers) {
   generator.fs.copyTpl(
     generator.templatePath(`${COMMON_GH_TEMPLATE_PATH}/check-token.yaml`),
     destinationGitPath('.github/workflows/check-token.yaml'),
+    {
+      customRunner: answers.customRunner,
+    },
   );
   generator.fs.copyTpl(
     generator.templatePath(`${COMMON_GH_TEMPLATE_PATH}/version-detect.yaml`),
@@ -106,6 +109,9 @@ export function copyCommonBuildWorkflows(generator, answers) {
       `${COMMON_GH_TEMPLATE_PATH}/check-release-package.yaml`,
     ),
     destinationGitPath(`.github/workflows/check-release-package.yaml`),
+    {
+      customRunner: answers.customRunner,
+    },
   );
 
   generator.fs.copyTpl(
@@ -178,7 +184,9 @@ export function copyCommonDeploymentConfigWorkflow(
     generator.fs.copyTpl(
       generator.templatePath(`${COMMON_GH_TEMPLATE_PATH}/build-dc.json`),
       destinationGitPath(`.github/workflows/build-dc.json`),
-      {},
+      {
+        customRunner: answers.customRunner,
+      },
     );
     generator.fs.copyTpl(
       generator.templatePath(`${COMMON_GH_TEMPLATE_PATH}/build-dc.sh`),
@@ -197,6 +205,7 @@ export function copyCommonDeploymentConfigWorkflow(
         deploymentConfigPaths,
         deployType: answers.deployType,
         gitHubProjectSlug: answers.gitHubProjectSlug,
+        customRunner: answers.customRunner,
       },
     );
   }

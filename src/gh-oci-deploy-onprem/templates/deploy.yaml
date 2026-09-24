@@ -334,8 +334,12 @@ jobs:
       actions: read
       packages: read
       contents: read
+<% if (customRunner.startsWith('group:')) { -%>
     runs-on:
-      group: Larger Runners - OpenShift Static-IP
+      <%= customRunner %>
+<% } else { -%>
+    runs-on: <%= customRunner %>
+<% } -%>
     steps:
       # See: https://github.com/bcgov/nr-polaris-pipelines
       - name: Checkout repository

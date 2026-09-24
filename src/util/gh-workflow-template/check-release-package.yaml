@@ -25,8 +25,12 @@ permissions:
 jobs:
   check-release-package:
     name: Check if Release Package Exists
+<% if (customRunner.startsWith('group:')) { -%>
     runs-on:
-      group: Larger Runners - OpenShift Static-IP
+      <%= customRunner %>
+<% } else { -%>
+    runs-on: <%= customRunner %>
+<% } -%>
     outputs:
       can_rebuild: ${{ steps.check.outputs.can_rebuild }}
     steps:

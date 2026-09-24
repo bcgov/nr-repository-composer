@@ -130,6 +130,7 @@ export default class extends BaseGenerator {
         publishArtifactSuffix: this.answers.publishArtifactSuffix,
         toolsLocalBuildSecrets: this.answers.toolsLocalBuildSecrets,
         ociArtifacts,
+        customRunner: this.answers.customRunner,
       },
     );
     copyCommonBuildWorkflows(this, {

@@ -16,8 +16,12 @@ permissions: {}
 jobs:
   check-jwt:
     name: Check broker token
+<% if (customRunner.startsWith('group:')) { -%>
     runs-on:
-      group: Larger Runners - OpenShift Static-IP
+      <%= customRunner %>
+<% } else { -%>
+    runs-on: <%= customRunner %>
+<% } -%>
     steps:
       - name: Display runner public IP
         shell: bash

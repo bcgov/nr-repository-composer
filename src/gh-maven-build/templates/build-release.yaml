@@ -54,8 +54,12 @@ jobs:
 <% } -%>
   build-publish:
     name: Build and publish
+<% if (customRunner.startsWith('group:')) { -%>
     runs-on:
-      group: Larger Runners - OpenShift Static-IP
+      <%= customRunner %>
+<% } else { -%>
+    runs-on: <%= customRunner %>
+<% } -%>
 <% if (unitTestsPath) { -%>
     needs: [preflight, test]
 <% } else { -%>

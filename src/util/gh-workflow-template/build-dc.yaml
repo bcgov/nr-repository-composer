@@ -18,8 +18,12 @@ env:
 jobs:
   build-dc:
     name: Build deployment config
+<% if (customRunner.startsWith('group:')) { -%>
     runs-on:
-      group: Larger Runners - OpenShift Static-IP
+      <%= customRunner %>
+<% } else { -%>
+    runs-on: <%= customRunner %>
+<% } -%>
     permissions:
       contents: read
       packages: write

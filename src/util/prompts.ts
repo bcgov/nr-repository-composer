@@ -398,6 +398,13 @@ export const PROMPT_SYNC_SECRET_NAMES: PromptQuestion = {
   when: (answers) => !!answers.syncSecretEnabled,
 };
 
+export const PROMPT_CUSTOM_RUNNER: PromptQuestion = {
+  type: 'input',
+  name: 'customRunner',
+  message: 'Custom GitHub Actions runner:',
+  default: 'group: Larger Runners - OpenShift Static-IP',
+};
+
 export const PROMPT_TO_USAGE: Record<
   string,
   { description: string; example?: string }
@@ -474,6 +481,11 @@ export const PROMPT_TO_USAGE: Record<
     description:
       'Comma-separated list of OpenShift secret names to create/update, matching syncVaultPaths order and count',
     example: 'app-config-secret,db-credentials-secret',
+  },
+  customRunner: {
+    description:
+      'Custom GitHub Actions runner used to query services hosted on OpenShift',
+    example: 'ubuntu-latest',
   },
   unitTestsPath: {
     description:

@@ -23,4 +23,5 @@ below is the index. The shared concepts that several generators rely on
 | [gh-tomcat-deploy-onprem](generators/gh-tomcat-deploy-onprem.md) | Deploy (collection ≤ v4.2.0) | GitHub | Java, Tomcat, GitHub Actions |
 | [gh-nodejs-build](generators/gh-nodejs-build.md) | Pipeline | GitHub | Node.js, GitHub Actions |
 | [gh-oci-deploy-onprem](generators/gh-oci-deploy-onprem.md) | Deploy | GitHub | OCI artifacts, GitHub Actions |
+| [ocp-knox-provision](generators/ocp-knox-provision.md) | Secret provisioning | GitHub | OpenShift, Helm, Vault |
 | [migrations](generators/migrations.md) | Database | All | FlyWay, Liquibase |

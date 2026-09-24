@@ -21,6 +21,7 @@
   - [gh-maven-build](using/generators/gh-maven-build.md)
   - [gh-nodejs-build](using/generators/gh-nodejs-build.md)
   - [gh-oci-deploy-onprem](using/generators/gh-oci-deploy-onprem.md)
+  - [ocp-knox-provision](using/generators/ocp-knox-provision.md)
   - [gh-polaris-composer-agent](using/generators/gh-polaris-composer-agent.md)
   - [gh-tomcat-deploy-onprem](using/generators/gh-tomcat-deploy-onprem.md)
   - [migrations](using/generators/migrations.md)

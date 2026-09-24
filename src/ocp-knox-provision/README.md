@@ -1,109 +1,140 @@
-# NR Broker Pre-provisioning Secret Pattern
+# Provision Knox Vault Credentials with NR Broker
 
-This pattern allows pods to be stopped and started as required with minimal setup. The service deployment needs to use a secret with the AppRole login values (role id and secret id) to access service credentials. The secret is pre-provisioned by an OpenShift cron job that is installed in the same namespace as the pods. The job is installed using a provided helm chart and rotates the secret automatically.
+This README is a runbook for developers installing and monitoring the
+credential-provisioning CronJob in an OpenShift service. The
+`ocp-knox-provision` generator creates the Helm values files and this README;
+it does not install a Helm release.
 
-## Prerequisites
+The CronJob uses NR Broker to provision and periodically rotate the Vault
+AppRole `secret_id`. The `role_id` identifies the preconfigured AppRole and is
+supplied to the application alongside the provisioned `secret_id` so pods can
+retrieve application secrets from Knox Vault at startup.
 
-- Access to an OpenShift namespace
-- Helm 3 installed
-- A source secret containing the Broker JWT and Vault role ID
+There are two separate synchronization workflows:
 
-The default source and target secret is `knox-secret` with keys:
+- **Tool-secret synchronization:** NR Broker can synchronize the Broker JWT and
+  Vault AppRole role ID, along with other tool credentials, from Vault into
+  Kubernetes or OpenShift Secrets. This can supply the credentials used by the
+  provisioning CronJob.
+- **Application-secret synchronization:** the Helm chart can optionally copy
+  selected application secret paths from Vault into OpenShift Secrets after
+  the AppRole `secret_id` has been provisioned. This is for applications that
+  cannot be modified to authenticate to Vault directly, including COTS
+  applications, or for teams using a simpler deployment while onboarding a
+  service. It should generally be treated as a transitional compatibility
+  option; direct Vault access is preferred when practical.
 
-- `token`: Broker JWT
-- `role_id`: Vault AppRole role ID
-- `secret_id`: provisioned Vault AppRole secret ID
+For the chart's complete configuration reference, see the [upstream
+README](https://github.com/bcgov/nr-broker-credential-injection/blob/main/provision-secret/README.md).
 
-## AppRole Setup
+## Before installation
 
-The AppRole needs to be setup specifically for this pattern to work. The first two are required. The CIDR restriction is recommended.
+Confirm that you have:
 
-### Secret ID TTL
+- Access to the service's OpenShift namespace
+- Helm 3 installed and authenticated to the cluster
+- NR Broker and Vault AppRole configuration for the service and environment
+- A Broker user with the change role for the service and environment
 
-The secret id ttl (time to live) needs to be longer than the CronJob period. If you plan on running the CronJob daily (the default) then you should request the ttl to be longer than 24 hours. To prevent outages, you may want to request that the TTL be even a couple days so that the CronJob failing doesn't immediately impact the ability for pods to start.
+Request an AppRole with a Secret ID TTL longer than the CronJob interval. The
+default schedule is daily, so a TTL longer than 24 hours is required. Request a
+Secret ID usage limit of `0` (unlimited), or a limit that supports the expected
+number of pod starts.
 
-### Secret ID Usage
+## Configure the generated values
 
-The secret id usages needs to be set to 0 (infinite) or some other reasonable number. The default number of usages is 1 which will prevent more than 1 pod starting per provisioning.
+Review the files under `cronjob-deployment/values/` before installing:
 
-### Login CIDR Restriction
+- `common.yaml` contains values shared by environments.
+- `dev.yaml`, `test.yaml`, and `prod.yaml` contain environment-specific NR
+  Broker intention values.
 
-The per-environment AppRole login can be configured to only allow logins from an IP range (CIDR). This ensures that, even though the provisioned login credentials can be used multiple times, the logins are limited to an expected range. This range can be updated anytime without needing to re-provision a new secret id.
+Confirm the service name, project, environment, and Broker user. The Broker user
+must have the change role for the target service and environment. Add any
+required network policy egress rules for the OpenShift environment.
 
-Ideally, the configured CIDR will be unique to the service and environment. You will want to ensure your hosting option can provide this. In any case, this restriction isn't foolproof and other methods like audit log monitoring should be used to identify and investigate unusual logins.
+Create the source Secret in the service namespace before installation. The
+default name is `knox-secret`; it must contain the Broker JWT under `token` and
+may contain the Vault AppRole `role_id`. Never commit either value to source
+control or add them to a values file.
 
-## Install
+## Install the CronJob
 
-This repository uses GitHub Pages to distribute the helm chart. First, ensure you have the helm repo installed.
+Add the chart repository once, then install the release for the target
+environment:
 
 ```bash
 helm repo add broker https://bcgov.github.io/nr-broker-credential-injection
+helm repo update
+cd cronjob-deployment
+helm install knox-provision broker/cronjob-deployment \
+  -f values/common.yaml \
+  -f values/dev.yaml
 ```
 
-Next, create a values file with service and other environment specific settings. The configured user must have the change role for the environment for the service in NR Broker. If this user leaves your team or their access changes, you must update the value to a new user with the change role.
+Use `values/test.yaml` or `values/prod.yaml` for the corresponding environment.
+The release creates the CronJob and supporting Kubernetes resources in the
+current namespace. The generated files only provide the configuration; Helm
+performs the installation.
 
-```yaml
-intention:
-  service:
-    name: "nodejs-sample"
-    project: "oscar-example"
-    environment: "development"
-  user:
-    name: "mbystedt@azureidir"
-```
+Configure the application deployment to read the target Secret, normally
+`knox-secret`, and use its `role_id` and `secret_id` to authenticate to Vault at
+pod startup.
 
-If you are running in an environment that requires egress network policies, you can add values like this to configure it. Please reach out to discuss the CIDR.
+## Monitor the operation
 
-```yaml
-cron:
-  podLabels:
-    DataClass: Medium
-
-networkPolicy:
-  create: true
-  egress:
-    - cidr: x.x.x.x/32
-      ports:
-        - protocol: TCP
-          port: 443
-    - podSelector:
-        matchLabels:
-          app: vault
-```
-
-If you want to sync vault secrets to Openshift Secrets
-
-```yaml
-sync:
-  # Enable or disable the sync job
-  enabled: false
-
-  # Schedule for the sync job (cron expression)
-  # Set to empty string to run as a one-time Job (not CronJob)
-  # schedule: ""
-
-  # Vault secret paths to read (comma-separated)
-  # Example: "secret/data/app-config,secret/data/db-credentials"
-  vaultPaths: ""
-
-  # OpenShift secret names to create/update (comma-separated, must match vaultPaths count)
-  # Example: "app-config-secret,db-credentials-secret"
-  secretNames: ""
-
-  # Source secret containing AppRole credentials (for login) which described below
-  sourceSecret:
-    name: "knox-secret"
-    vaultRoleIdKey: "role_id"
-    vaultSecretIdKey: "secret_id"
-```
-
-Before installation, manually add a secret (default: knox-secret) with the keys 'token' (the service broker token) and 'role_id' (the environment's AppRole role id). The token and role id must never be shared or added to source control. Users in Broker with service sudo access (lead developer) can access this data.
-
-Finally, install the cronjob.
+After installation, confirm that the CronJob exists and that its first Job
+completes:
 
 ```bash
-helm install knox-provision broker/cronjob-deployment -f common.yaml -f dev.yaml
+oc get cronjob knox-provision
+oc get jobs --sort-by=.metadata.creationTimestamp
+oc get secret knox-secret
 ```
 
+Inspect the Job and pod logs when a run fails:
 
-https://github.com/bcgov/nr-broker-credential-injection/blob/main/provision-secret/README.md
+```bash
+oc describe cronjob knox-provision
+oc get pods --sort-by=.metadata.creationTimestamp
+oc logs job/<job-name>
+```
+
+Check that the target Secret contains a current `secret_id` and that the
+application can start and retrieve its Vault secrets. Continue monitoring Job
+completion and credential freshness after deployment; the CronJob's purpose is
+to rotate the credentials before they expire.
+
+For failures, check the source Secret, Broker user permissions, AppRole TTL and
+usage limit, login CIDR, and network access to Broker and Vault.
+
+## Broker JWT Renewal
+
+NR Broker will send out emails when it is time to renew your JWT. If you setup
+tool-secret synchronization, all that is required is clicking generate in NR Broker.
+Otherwise, a developer will need to copy the generated token to each OpenShift project.
+
+## Tool-secret synchronization
+
+If the Broker JWT or AppRole role ID is managed as a tool secret in Vault, NR
+Broker can synchronize it into Kubernetes or OpenShift Secrets for the
+provisioning CronJob to use. This is separate from the chart's optional
+application-secret synchronization. See the [NR Broker Kubernetes sync
+documentation](https://bcgov.github.io/nr-broker/#/operations_kubernetes_sync)
+for configuration details.
+
+The tool-secret synchronization does not permit the target OpenShift secret to have extra values.
+Therefore, `sync.sourceSecret.name` and `sync.targetSecret.name` must be different values.
+Otherwise, the tool-secret synchronization will remove the provisioned `secret_id`.
+
+## Optional application-secret synchronization
+
+The chart can copy selected Vault application secret paths into OpenShift
+Secrets. Use this when an application cannot be changed to log in to Vault with
+AppRole credentials, such as a COTS application, or as an onboarding step before
+direct Vault integration is available.
+
+Configure the chart's `sync` values with matching comma-separated `vaultPaths`
+and `secretNames`. Treat this as a compatibility or transitional option when
+possible. Applications that can use a Vault client or sidecar should retrieve
+secrets directly so that secrets do not need to be copied into OpenShift.

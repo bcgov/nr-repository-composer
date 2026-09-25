@@ -30,7 +30,8 @@ jobs:
   deploy-pre-release-build:
     name: Trigger ${{ inputs.environment }} deployment
     if: ${{ ! startsWith(github.ref, 'refs/tags/') }}
-    runs-on: ubuntu-latest
+    runs-on:
+      group: Larger Runners - OpenShift Static-IP
     environment: ${{ inputs.environment }}
     permissions:
       contents: read
@@ -220,7 +221,8 @@ jobs:
   deploy-release-build:
     name: Trigger deployment
     if: ${{ startsWith(github.ref, 'refs/tags/') }}
-    runs-on: ubuntu-latest
+    runs-on:
+      group: Larger Runners - OpenShift Static-IP
     environment: ${{ inputs.environment }}
     permissions:
       contents: read
@@ -332,7 +334,12 @@ jobs:
       actions: read
       packages: read
       contents: read
-    runs-on: ubuntu-latest
+<% if (customRunner.startsWith('group:')) { -%>
+    runs-on:
+      <%= customRunner %>
+<% } else { -%>
+    runs-on: <%= customRunner %>
+<% } -%>
     steps:
       # See: https://github.com/bcgov/nr-polaris-pipelines
       - name: Checkout repository

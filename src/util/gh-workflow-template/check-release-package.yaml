@@ -25,7 +25,12 @@ permissions:
 jobs:
   check-release-package:
     name: Check if Release Package Exists
-    runs-on: ubuntu-latest
+<% if (customRunner.startsWith('group:')) { -%>
+    runs-on:
+      <%= customRunner %>
+<% } else { -%>
+    runs-on: <%= customRunner %>
+<% } -%>
     outputs:
       can_rebuild: ${{ steps.check.outputs.can_rebuild }}
     steps:

@@ -54,7 +54,12 @@ jobs:
 <% } -%>
   build-publish:
     name: Build and publish
-    runs-on: ubuntu-latest
+<% if (customRunner.startsWith('group:')) { -%>
+    runs-on:
+      <%= customRunner %>
+<% } else { -%>
+    runs-on: <%= customRunner %>
+<% } -%>
 <% if (unitTestsPath) { -%>
     needs: [preflight, test]
 <% } else { -%>

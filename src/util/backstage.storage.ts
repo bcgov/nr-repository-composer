@@ -1,5 +1,6 @@
 import * as fs from 'fs';
 import { Document, parseDocument, isSeq } from 'yaml';
+import { PromptQuestion } from 'yeoman-generator';
 import {
   BACKSTAGE_API_VERSION,
   addGeneratorToDoc,
@@ -147,5 +148,25 @@ export class BackstageStorage {
       this.save();
     }
     return removedProps;
+  }
+
+  processAssumeDefaultValue(questions: PromptQuestion[]) {
+    const assumedDefaultProps: string[] = [];
+    for (const pathToProp of pathToProps) {
+      const path = pathToProp.path;
+      if (!this.backstageDoc.hasIn(path) && pathToProp.assumeDefaultValue) {
+        const defaultValue = questions.find(
+          (question) => question.name === pathToProp.prop,
+        )?.default;
+        if (defaultValue !== null) {
+          assumedDefaultProps.push(pathToProp.prop);
+          this.backstageDoc.setIn(path, defaultValue);
+        }
+      }
+    }
+    if (assumedDefaultProps.length > 0) {
+      this.save();
+    }
+    return assumedDefaultProps;
   }
 }

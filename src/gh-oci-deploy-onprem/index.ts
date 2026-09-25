@@ -20,6 +20,7 @@ import {
   PROMPT_ADD_TOMCAT_CONTEXT,
   PROMPT_CREATE_DATA_TMP_DIR,
   PROMPT_ADD_WEBADE_CONFIG,
+  PROMPT_CUSTOM_RUNNER,
 } from '../util/prompts.js';
 import { copyCommonDeployWorkflows } from '../util/copyworkflows.js';
 import { makeWorkflowDeployPath } from '../util/github.js';
@@ -35,6 +36,7 @@ const questions = [
   PROMPT_TYPE,
   PROMPT_ARTIFACT_SRC,
   PROMPT_DEPLOYMENT_CONFIG_PATHS,
+  PROMPT_CUSTOM_RUNNER,
   {
     ...PROMPT_JAVA_VERSION,
     when: (answers) => answers.deployType === 'tomcat',
@@ -92,6 +94,7 @@ export default class extends BaseGenerator {
     const removedProps = this.backstageConfig.processDeprecated();
     this.showGeneratorDeprecationWarning =
       removedProps.indexOf(PROMPT_PLAYBOOK_PATH.name) !== -1;
+    this.backstageConfig.processAssumeDefaultValue(questions);
   }
 
   _postPrompt() {
@@ -132,6 +135,7 @@ export default class extends BaseGenerator {
         postDeployTestsPath: this.answers.postDeployTestsPath,
         deployRoot,
         deployType: this.answers.deployType,
+        customRunner: this.answers.customRunner,
       },
     );
 

@@ -1,0 +1,71 @@
+name: 'Build finish'
+description: 'Report build info to the broker, close the intention, and write the build summary'
+inputs:
+  action-token-build:
+    description: 'Broker action token used to send build info (required when artifact-sha256 is set)'
+    required: false
+    default: ''
+  checkout-ref:
+    required: true
+  commit-hash:
+    required: true
+  project-version:
+    required: true
+  artifact-sha256:
+    description: 'SHA256 of the published artifact (omit for builds that do not publish an artifact, e.g. libraries)'
+    required: false
+    default: ''
+  artifact-size:
+    required: false
+    default: ''
+runs:
+  using: 'composite'
+  steps:
+    - name: Send build info
+      if: ${{ inputs.artifact-sha256 != '' }}
+      shell: bash
+      run: |
+        curl -s POST ${{ env.BROKER_URL }}/v1/intention/action/patch \
+            -H 'Content-Type: application/json' \
+            -H 'X-Broker-Token: '"${BUILD_TOKEN}"'' \
+            --retry 2 \
+            --max-time 30 \
+            --connect-timeout 10 \
+            --retry-delay 5 \
+            -d '{"package":{"checksum": "sha256:'${ARTIFACT_SHA256}'", "size": '${ARTIFACT_SIZE}'}}'
+      env:
+        ARTIFACT_SHA256: ${{ inputs.artifact-sha256 }}
+        ARTIFACT_SIZE: ${{ inputs.artifact-size }}
+        BUILD_TOKEN: ${{ inputs.action-token-build }}
+    - name: Close intention
+      if: ${{ success() && env.INTENTION_TOKEN != '' }}
+      uses: bcgov-nr/action-broker-intention-close@v3
+      with:
+        intention_token: ${{ env.INTENTION_TOKEN }}
+    - name: Close intention (Failure)
+      if: ${{ failure() && env.INTENTION_TOKEN != '' }}
+      uses: bcgov-nr/action-broker-intention-close@v3
+      with:
+        intention_token: ${{ env.INTENTION_TOKEN }}
+        outcome: failure
+    - name: Generate build summary
+      if: always()
+      shell: bash
+      run: |
+        cat >> $GITHUB_STEP_SUMMARY << EOF
+        # Build Summary
+
+        | | |
+        | - | - |
+        | **Ref** | \`${CHECKOUT_REF}\` |
+        | **Commit** | [${COMMIT_HASH:0:7}](https://github.com/${{ github.repository }}/tree/${COMMIT_HASH}) |
+        | **Version** | ${PROJECT_VERSION} |
+        EOF
+        if [[ -n "${ARTIFACT_SHA256}" ]]; then
+          echo "| **Artifact SHA256** | ${ARTIFACT_SHA256} |" >> $GITHUB_STEP_SUMMARY
+        fi
+      env:
+        CHECKOUT_REF: ${{ inputs.checkout-ref }}
+        COMMIT_HASH: ${{ inputs.commit-hash }}
+        PROJECT_VERSION: ${{ inputs.project-version }}
+        ARTIFACT_SHA256: ${{ inputs.artifact-sha256 }}

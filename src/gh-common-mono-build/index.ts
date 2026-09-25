@@ -11,6 +11,12 @@ import { makeWorkflowBuildPublishPath } from '../util/github.js';
 import { OPTION_HEADLESS } from '../util/options.js';
 import { outputReport } from '../util/report.js';
 
+type Service = {
+  name: string;
+  workflow: string;
+  serviceNeeds: string[];
+};
+
 export default class extends Generator {
   constructor(args: string | string[], opts: BaseOptions) {
     super(args as string[], opts);
@@ -38,12 +44,12 @@ export default class extends Generator {
       );
     });
 
-    const serviceNeeds = {};
-    const services = docs.map((doc) => {
+    const services: Service[] = docs.map((doc) => {
       const name = doc.getPath(['metadata', 'name']) as string;
       return {
         name,
         workflow: makeWorkflowBuildPublishPath(name),
+        serviceNeeds: [],
       };
     });
 
@@ -56,18 +62,15 @@ export default class extends Generator {
       if (subcomponents) {
         for (const subcomponent of subcomponents) {
           const subServiceName = subcomponent.split(':')[1];
-          if (
-            services.findIndex((service) => service.name === subServiceName) ===
-            -1
-          ) {
+          const dependency = services.find(
+            (service) => service.name === subServiceName,
+          );
+          if (!dependency) {
             throw new Error(
               `Subcomponent ${subServiceName} not found in mono-repo`,
             );
           }
-          if (!serviceNeeds[subServiceName]) {
-            serviceNeeds[subServiceName] = [];
-          }
-          serviceNeeds[subServiceName].push(serviceName);
+          dependency.serviceNeeds.push(serviceName);
         }
       }
     }
@@ -77,7 +80,6 @@ export default class extends Generator {
       destinationGitPath(`.github/workflows/build-release.yaml`),
       {
         services,
-        serviceNeeds,
       },
     );
   }

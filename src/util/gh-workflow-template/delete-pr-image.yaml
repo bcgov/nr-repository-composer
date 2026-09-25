@@ -15,7 +15,9 @@ jobs:
       fail-fast: false
       matrix:
         package_name:
-          - <%= gitHubProjectSlug.split('/').pop() %>/<%= serviceName %>
+<%_ for (const service of services) { _%>
+          - <%= gitHubProjectSlug.split('/').pop() %>/<%= service %>
+<%_ } _%>
 
     steps:
       - name: Delete package version from GHCR
@@ -32,8 +34,8 @@ jobs:
             /orgs/${OWNER}/packages/container/${package_name_encoded}/versions \
             --paginate \
             --jq '.[] | select(
-              any(.metadata.container.tags[]?; 
-                test("(^|[-.])'"$PR_NUMBER"'([-.]|$)") 
+              any(.metadata.container.tags[]?;
+                test("(^|[-.])'"$PR_NUMBER"'([-.]|$)")
                 and
                 (test("^'"$PR_NUMBER"'$|^[vVd]?\\d+(\\.\\d+)*$") | not)
               )

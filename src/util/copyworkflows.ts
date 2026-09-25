@@ -38,6 +38,16 @@ export function copyCommonBuildWorkflows(generator, answers) {
   const relativePath = relativeGitPath();
 
   generator.fs.copyTpl(
+    generator.templatePath(
+      `${COMMON_GH_TEMPLATE_PATH}/check-build-artifact.yaml`,
+    ),
+    destinationGitPath('.github/workflows/check-build-artifact.yaml'),
+    {
+      gitHubProjectSlug: answers.gitHubProjectSlug,
+    },
+  );
+
+  generator.fs.copyTpl(
     generator.templatePath(`${COMMON_GH_TEMPLATE_PATH}/build-intention.json`),
     destinationGitPath(
       `.github/workflows/build-intention-${answers.serviceName}.json`,
@@ -77,6 +87,16 @@ export function copyCommonBuildWorkflows(generator, answers) {
       gitHubProjectSlug: answers.gitHubProjectSlug,
     },
   );
+  generator.fs.copyTpl(
+    generator.templatePath(
+      `${COMMON_GH_TEMPLATE_PATH}/pull-static-artifacts.yaml`,
+    ),
+    destinationGitPath('.github/actions/pull-static-artifacts/action.yaml'),
+  );
+  generator.fs.copyTpl(
+    generator.templatePath(`${COMMON_GH_TEMPLATE_PATH}/oci-publish.yaml`),
+    destinationGitPath('.github/actions/oci-publish/action.yaml'),
+  );
 
   generator.fs.copyTpl(
     generator.templatePath(`${COMMON_PD_TEMPLATE_PATH}/env.sh`),
@@ -108,12 +128,23 @@ export function copyCommonBuildWorkflows(generator, answers) {
     destinationGitPath(`.github/workflows/check-release-package.yaml`),
   );
 
+  // Monorepos have multiple services; include all of them so re-running the
+  // generator for one service doesn't drop the others from the matrix.
+  const allServiceNames = Array.from(
+    new Set([
+      ...scanRepositoryForComponents().map(
+        (s) => s.doc.getIn(['metadata', 'name']) || s.name,
+      ),
+      answers.serviceName,
+    ]),
+  );
+
   generator.fs.copyTpl(
     generator.templatePath(`${COMMON_GH_TEMPLATE_PATH}/delete-pr-image.yaml`),
     destinationGitPath('.github/workflows/delete-pr-image.yaml'),
     {
       gitHubProjectSlug: answers.gitHubProjectSlug,
-      serviceName: answers.serviceName,
+      services: allServiceNames,
     },
   );
 
@@ -124,7 +155,7 @@ export function copyCommonBuildWorkflows(generator, answers) {
     destinationGitPath('.github/workflows/delete-pre-packages.yaml'),
     {
       gitHubProjectSlug: answers.gitHubProjectSlug,
-      serviceName: answers.serviceName,
+      services: allServiceNames,
     },
   );
 
@@ -175,6 +206,10 @@ export function copyCommonDeploymentConfigWorkflow(
   }));
 
   if (deploymentConfigPaths) {
+    generator.fs.copyTpl(
+      generator.templatePath(`${COMMON_GH_TEMPLATE_PATH}/oci-publish.yaml`),
+      destinationGitPath('.github/actions/oci-publish/action.yaml'),
+    );
     generator.fs.copyTpl(
       generator.templatePath(`${COMMON_GH_TEMPLATE_PATH}/build-dc.json`),
       destinationGitPath(`.github/workflows/build-dc.json`),

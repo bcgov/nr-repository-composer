@@ -1,0 +1,62 @@
+name: 'Build setup'
+description: 'Resolve the checkout ref/version modifier for a build and check out the repository'
+inputs:
+  github-project-slug:
+    description: 'The org/repo slug of the repository being built'
+    required: true
+  github-token:
+    description: 'Token used to query the GitHub API for pull request mergeability'
+    required: true
+outputs:
+  checkout-ref:
+    description: 'The ref that was checked out (tag, PR merge ref, or branch)'
+    value: ${{ steps.lookup-pr-merge-ref.outputs.checkout_ref }}
+  version-modifier:
+    description: 'Suffix used to build the pre-release version string'
+    value: ${{ steps.lookup-pr-merge-ref.outputs.version_modifier }}
+runs:
+  using: 'composite'
+  steps:
+    - name: Lookup PR Merge Ref
+      id: lookup-pr-merge-ref
+      shell: bash
+      run: |
+        if [[ "${{ github.ref_type }}" == "tag" ]]; then
+          echo "checkout_ref=${{ github.ref }}" >> $GITHUB_OUTPUT
+          echo "version_modifier=${{ github.ref_name }}" >> $GITHUB_OUTPUT
+        elif [[ ${{ github.ref_name != 'main' }} = true ]]; then
+          RESPONSE=$(curl -s "https://api.github.com/repos/${GITHUB_PROJECT_SLUG}/pulls?head=${GITHUB_PROJECT_SLUG%%/*}:${{ github.head_ref || github.ref_name }}&state=open&base=main" \
+            -H "Authorization: token ${{ inputs.github-token }}" \
+            -H "Accept: application/vnd.github+json" \
+            --retry 2 \
+            --max-time 30 \
+            --connect-timeout 10 \
+            --retry-delay 5)
+          PULL_REQUEST_NUMBER=$(echo "${RESPONSE}" | jq -r .[0].number)
+          RESPONSE=$(curl -s "https://api.github.com/repos/${GITHUB_PROJECT_SLUG}/pulls/$PULL_REQUEST_NUMBER" \
+            -H "Authorization: token ${{ inputs.github-token }}" \
+            -H "Accept: application/vnd.github+json" \
+            --retry 2 \
+            --max-time 30 \
+            --connect-timeout 10 \
+            --retry-delay 5)
+          MERGEABLE=$(echo "${RESPONSE}" | jq -r .mergeable)
+          if [[ "$MERGEABLE" != "true" ]]; then
+            echo "::error ::Pull request #$PULL_REQUEST_NUMBER is not mergeable… aborted."
+            echo "This can be resolved by resolving the merge conflict with the main branch."
+            exit 1
+          fi
+          echo "checkout_ref=refs/pull/$PULL_REQUEST_NUMBER/merge" >> $GITHUB_OUTPUT
+          echo "version_modifier=$PULL_REQUEST_NUMBER" >> $GITHUB_OUTPUT
+        else
+          echo "checkout_ref=${{ github.ref_name }}" >> $GITHUB_OUTPUT
+          echo "version_modifier=${{ github.ref_name }}" >> $GITHUB_OUTPUT
+        fi
+      env:
+        GITHUB_PROJECT_SLUG: ${{ inputs.github-project-slug }}
+    - name: Checkout repository
+      uses: actions/checkout@v6
+      with:
+        fetch-depth: 0
+        fetch-tags: true
+        ref: ${{ steps.lookup-pr-merge-ref.outputs.checkout_ref }}

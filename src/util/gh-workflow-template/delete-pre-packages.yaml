@@ -12,8 +12,10 @@ jobs:
       fail-fast: false
       matrix:
         include:
-          - package_name: <%= gitHubProjectSlug.split('/').pop() %>/<%= serviceName %>
+<%_ for (const service of services) { _%>
+          - package_name: <%= gitHubProjectSlug.split('/').pop() %>/<%= service %>
             keep_versions: 10
+<%_ } _%>
 
     steps:
       - name: Delete old non-release versions (Keep ${{ matrix.keep_versions }})

@@ -88,16 +88,12 @@ jobs:
       - name: Setup ORAS
         if: ${{ '<%= type %>' != 'library' || <%= ociArtifacts.length > 0 %> }}
         uses: oras-project/setup-oras@v2
-      - name: Set up Node
-        uses: actions/setup-node@v6
-        with:
-          cache-dependency-path: ./<%= relativePath %>
-          node-version: <%= nodeVersion %>
-          cache: 'npm'
+      - name: Set up Docker Buildx
+        uses: docker/setup-buildx-action@v3
       - name: Set build output parameters
         id: set-build-output-parameters
         run: |
-          source ./env.sh build ./ --skip-vault
+          source ./env.sh build ./<%= relativePath %> --skip-vault
           echo "project_version=${VERSION}" >> $GITHUB_OUTPUT
           echo "git_commit=$(git rev-parse --verify HEAD)" >> $GITHUB_OUTPUT
           echo "build_guid=uuid::$(uuidgen)" >> $GITHUB_OUTPUT
@@ -112,7 +108,7 @@ jobs:
           PACKAGE_BUILD_GUID:  ${{ steps.set-build-output-parameters.outputs.build_guid }}
           PACKAGE_BUILD_NUMBER: ${{ github.run_number }}
           PACKAGE_BUILD_VERSION: ${{ steps.set-build-output-parameters.outputs.git_commit }}
-          PACKAGE_TYPE: application/vnd.oci.image.layer.v1.tar+gzip
+          PACKAGE_TYPE: application/vnd.oci.image.manifest.v1+json
           PACKAGE_VERSION: ${{ steps.set-build-output-parameters.outputs.project_version }}
       - name: Open intention
         uses: bcgov-nr/action-broker-intention-open@v2
@@ -126,17 +122,6 @@ jobs:
           echo "intention_id=${INTENTION_ID}" >> $GITHUB_OUTPUT
         env:
           INTENTION_ID: ${{ env.INTENTION_ID }}
-      - name: npm ci
-        run: npm ci
-        working-directory: ./<%= relativePath %>
-      - name: Build artifact
-        run: |
-          source ./env.sh build ./<%= relativePath %> --skip-vault
-          cd ./<%= relativePath %>
-          npm run build --if-present
-        working-directory: ./
-        env:
-          VERSION: ${{ steps.version-detect.outputs.version }}
       - name: Pull static artifacts
         if: ${{ '<%= type %>' != 'library' && <%= ociArtifacts.length > 0 %> }}
         uses: ./.github/actions/pull-static-artifacts
@@ -144,44 +129,36 @@ jobs:
           oci_artifacts: '<%= JSON.stringify(ociArtifacts) %>'
           github_token: ${{ secrets.GITHUB_TOKEN }}
           working_directory: ./<%= relativePath %>
-      - name: Validate dist directory
+      - name: Log in to GHCR
         if: ${{ '<%= type %>' != 'library' }}
-        run: |
-          if [ ! -d "dist" ]; then
-            echo "::error ::dist directory does not exist"
-            exit 1
-          fi
-          if [ -z "$(ls -A dist)" ]; then
-            echo "::error ::dist directory is empty"
-            exit 1
-          fi
-          echo "dist directory exists and contains files"
-        working-directory: ./<%= relativePath %>
-      - name: Publish artifact
-        if: ${{ '<%= type %>' != 'library' }}
-        id: publish-artifact
-        uses: ./.github/actions/oci-publish
+        uses: docker/login-action@v3
         with:
-          service_name: <%= serviceName %>
-          license: <%= license %>
-          project_tag: ${{ steps.set-build-output-parameters.outputs.project_version }}
-          publish_dir: <%= publishArtifactSuffix %>
-          working_directory: ./<%= relativePath %>
-          github_token: ${{ secrets.GITHUB_TOKEN }}
+          registry: ghcr.io
+          username: ${{ github.actor }}
+          password: ${{ secrets.GITHUB_TOKEN }}
+      - name: Build and push Docker image
+        if: ${{ '<%= type %>' != 'library' }}
+        id: build-docker
+        uses: docker/build-push-action@v6
+        with:
+          context: ./<%= relativePath %>
+          push: true
+          tags: ghcr.io/${{ github.repository }}/<%= serviceName %>:${{ steps.set-build-output-parameters.outputs.project_version }}
+          cache-from: type=gha
+          cache-to: type=gha,mode=max
       - name: Send build info
         if: ${{ '<%= type %>' != 'library' }}
         run: |
-          curl -s -X POST ${{ env.BROKER_URL }}/v1/intention/action/patch \
+          curl -s POST ${{ env.BROKER_URL }}/v1/intention/action/patch \
               -H 'Content-Type: application/json' \
               -H 'X-Broker-Token: '"${BUILD_TOKEN}"'' \
               --retry 2 \
               --max-time 30 \
               --connect-timeout 10 \
               --retry-delay 5 \
-              -d '{"package":{"checksum": "sha256:'${ARTIFACT_SHA256}'", "size": '${ARTIFACT_SIZE}'}}'
+              -d '{"package":{"checksum": "'${ARTIFACT_SHA256}'"}}'
         env:
-          ARTIFACT_SHA256: ${{ steps.publish-artifact.outputs.artifact_sha256 }}
-          ARTIFACT_SIZE: ${{ steps.publish-artifact.outputs.artifact_size }}
+          ARTIFACT_SHA256: ${{ steps.build-docker.outputs.digest }}
           BUILD_TOKEN: ${{ env.ACTION_TOKEN_BUILD }}
       - name: Close intention
         if: ${{ success() && env.INTENTION_TOKEN != '' }}
@@ -214,4 +191,4 @@ jobs:
           CHECKOUT_REF: ${{ steps.version-detect.outputs.checkout_ref }}
           COMMIT_HASH: ${{ steps.set-build-output-parameters.outputs.git_commit }}
           PROJECT_VERSION: ${{ steps.set-build-output-parameters.outputs.project_version }}
-          ARTIFACT_SHA256: ${{ steps.publish-artifact.outputs.artifact_sha256 || 'N/A' }}
+          ARTIFACT_SHA256: ${{ steps.build-docker.outputs.digest || 'N/A' }}

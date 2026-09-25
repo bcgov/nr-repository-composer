@@ -271,7 +271,16 @@ export const PROMPT_TOOLS_BUILD_SECRETS: PromptQuestion = {
   type: 'input',
   name: 'toolsBuildSecrets',
   message: 'Tools secrets used with builds (comma-separated):',
-  default: TOOLS_DEFAULT_PROPERTIES,
+  default: (answers) => {
+    switch (answers.artifactRepositoryType) {
+      case 'JFrogArtifactory':
+        return TOOLS_DEFAULT_PROPERTIES;
+      case 'GitHubPackages':
+        return '';
+      default:
+        return '';
+    }
+  },
 };
 export const PROMPT_TOOLS_LOCAL_BUILD_SECRETS: PromptQuestion = {
   type: 'input',
@@ -363,6 +372,14 @@ export const PROMPT_CREATE_DATA_TMP_DIR: PromptQuestion = {
   type: 'confirm',
   name: 'createDataTmpDir',
   message: 'Create data temp dir:',
+  default: false,
+};
+
+export const PROMPT_AUTO_DEPLOY_EPHEMERAL: PromptQuestion = {
+  type: 'confirm',
+  name: 'autoDeployEphemeral',
+  message:
+    'Automatically deploy an ephemeral instance on feature pull requests targeting main?',
   default: false,
 };
 
@@ -487,6 +504,11 @@ export const PROMPT_TO_USAGE: Record<
   postDeployTestsPath: {
     description:
       'The path to the post deploy tests (e.g. .github/workflows/postDeploy.yaml)',
+  },
+  autoDeployEphemeral: {
+    description:
+      'Whether to automatically deploy an ephemeral instance on feature pull requests targeting main',
+    example: 'true',
   },
   schemaName: {
     description:

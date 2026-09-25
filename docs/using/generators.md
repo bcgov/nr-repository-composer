@@ -17,10 +17,10 @@ rest of the workflow depends on.
 
 | Generator | Purpose |
 | --- | --- |
-| **[nr-repository-composer](generators/nr-repository-composer.md)** | Initializes the Composer tooling and repo support files. |
-| **[backstage](generators/backstage.md)** | Creates the service's Backstage component metadata. |
-| [backstage-location](generators/backstage-location.md) | Adds the monorepo location record used to discover service components. |
-| **[ocp-knox-provision](generators/ocp-knox-provision.md)** | Prepares application access to Knox Vault through the AppRole secret provisioning flow. |
+| **[nr-repository-composer](using/generators/nr-repository-composer.md)** | Initializes the Composer tooling and repo support files. |
+| **[backstage](using/generators/backstage.md)** | Creates the service's Backstage component metadata. |
+| [backstage-location](using/generators/backstage-location.md) | Adds the monorepo location record used to discover service components. |
+| **[ocp-knox-provision](using/generators/ocp-knox-provision.md)** | Prepares application access to Knox Vault through the AppRole secret provisioning flow. |
 
 ## Setup - Monorepo
 
@@ -29,8 +29,8 @@ and orchestrating builds.
 
 | Generator | Purpose |
 | --- | --- |
-| [backstage-location](generators/backstage-location.md) | Adds the monorepo location record used to discover service components. |
-| [gh-common-mono-build](generators/gh-common-mono-build.md) | Orchestrates builds across a monorepo and coordinates component pipelines. |
+| [backstage-location](using/generators/backstage-location.md) | Adds the monorepo location record used to discover service components. |
+| [gh-common-mono-build](using/generators/gh-common-mono-build.md) | Orchestrates builds across a monorepo and coordinates component pipelines. |
 
 ## Build
 
@@ -39,9 +39,9 @@ artifacts.
 
 | Generator | Purpose |
 | --- | --- |
-| **[gh-nodejs-build](generators/gh-nodejs-build.md)** | Builds Node.js services and produces the OCI artifact. |
-| **[gh-maven-build](generators/gh-maven-build.md)** | Builds Java services and produces the OCI artifact. |
-| **[gh-docker-build](generators/gh-docker-build.md)** | Builds Docker containers with Buildx and produces the OCI artifact. |
+| **[gh-nodejs-build](using/generators/gh-nodejs-build.md)** | Builds Node.js services and produces the OCI artifact. |
+| **[gh-maven-build](using/generators/gh-maven-build.md)** | Builds Java services and produces the OCI artifact. |
+| **[gh-docker-build](using/generators/gh-docker-build.md)** | Builds Docker containers with Buildx and produces the OCI artifact. |
 
 ## Deploy
 
@@ -50,10 +50,10 @@ move built artifacts to the target environment.
 
 | Generator | Purpose |
 | --- | --- |
-| **[gh-oci-deploy-onprem](generators/gh-oci-deploy-onprem.md)** | Deploys OCI artifacts to on-premises infrastructure with the standard broker workflow. |
-| [gh-oci-deploy-ocp](generators/gh-oci-deploy-ocp.md) | Deploys OCI artifacts to OpenShift via Jenkins. |
-| [gh-tomcat-deploy-onprem](generators/gh-tomcat-deploy-onprem.md) | Deploys Tomcat-based Java services to on-premises infrastructure. |
-| [gh-docs-deploy](generators/gh-docs-deploy.md) | Publishes documentation to GitHub Pages. |
+| **[gh-oci-deploy-onprem](using/generators/gh-oci-deploy-onprem.md)** | Deploys OCI artifacts to on-premises infrastructure with the standard broker workflow. |
+| [gh-oci-deploy-ocp](using/generators/gh-oci-deploy-ocp.md) | Deploys OCI artifacts to OpenShift via Jenkins. |
+| [gh-tomcat-deploy-onprem](using/generators/gh-tomcat-deploy-onprem.md) | Deploys Tomcat-based Java services to on-premises infrastructure. |
+| [gh-docs-deploy](using/generators/gh-docs-deploy.md) | Publishes documentation to GitHub Pages. |
 
 ## Utility
 
@@ -62,9 +62,9 @@ the core build and deploy lifecycle for every service.
 
 | Generator | Purpose |
 | --- | --- |
-| [gh-issue-templates](generators/gh-issue-templates.md) | Adds standard GitHub issue templates. |
-| [gh-polaris-composer-agent](generators/gh-polaris-composer-agent.md) | Adds the Copilot agent and prompt guidance pack for Polaris work. |
-| [migrations](generators/migrations.md) | Adds database migration scaffolding and related documentation. |
+| [gh-issue-templates](using/generators/gh-issue-templates.md) | Adds standard GitHub issue templates. |
+| [gh-polaris-composer-agent](using/generators/gh-polaris-composer-agent.md) | Adds the Copilot agent and prompt guidance pack for Polaris work. |
+| [migrations](using/generators/migrations.md) | Adds database migration scaffolding and related documentation. |
 
 ## Reference
 
@@ -77,18 +77,18 @@ configurations) are documented on the [OCI Artifacts](oci-artifacts.md) page.
 
 | Generator | Platform | Technologies | Stores metadata in |
 | --- | --- | --- | --- |
-| [nr-repository-composer](generators/nr-repository-composer.md) | Tool setup | All | Podman, Docker |
-| [backstage](generators/backstage.md) | Catalog service | All | Backstage (kind: component) |
-| [backstage-location](generators/backstage-location.md) | Catalog monorepo | All | Backstage (kind: location) |
-| [gh-common-mono-build](generators/gh-common-mono-build.md) | Pipeline orchestration | GitHub | GitHub Actions |
-| [gh-docs-deploy](generators/gh-docs-deploy.md) | Documentation | GitHub | GitHub Actions, GitHub Pages |
-| [gh-issue-templates](generators/gh-issue-templates.md) | Issue templates | All | GitHub issue templates |
-| [gh-maven-build](generators/gh-maven-build.md) | Pipeline | GitHub | Java, GitHub Actions |
-| [gh-polaris-composer-agent](generators/gh-polaris-composer-agent.md) | Chat command and agent guidance pack | All | Copilot prompt, agent, and skill files |
-| [gh-tomcat-deploy-onprem](generators/gh-tomcat-deploy-onprem.md) | Deploy (collection ≤ v4.2.0) | GitHub | Java, Tomcat, GitHub Actions |
-| [gh-nodejs-build](generators/gh-nodejs-build.md) | Pipeline | GitHub | Node.js, GitHub Actions |
-| [gh-docker-build](generators/gh-docker-build.md) | Pipeline | GitHub | Docker, Container Buildx, GitHub Actions |
-| [gh-oci-deploy-onprem](generators/gh-oci-deploy-onprem.md) | Deploy | GitHub | OCI artifacts, GitHub Actions |
-| [gh-oci-deploy-ocp](generators/gh-oci-deploy-ocp.md) | Deploy | GitHub | OpenShift, OCI, Jenkins, GitHub Actions |
-| [ocp-knox-provision](generators/ocp-knox-provision.md) | Secret provisioning | GitHub | OpenShift, Helm, Vault |
-| [migrations](generators/migrations.md) | Database | All | FlyWay, Liquibase |
+| [nr-repository-composer](using/generators/nr-repository-composer.md) | Tool setup | All | Podman, Docker |
+| [backstage](using/generators/backstage.md) | Catalog service | All | Backstage (kind: component) |
+| [backstage-location](using/generators/backstage-location.md) | Catalog monorepo | All | Backstage (kind: location) |
+| [gh-common-mono-build](using/generators/gh-common-mono-build.md) | Pipeline orchestration | GitHub | GitHub Actions |
+| [gh-docs-deploy](using/generators/gh-docs-deploy.md) | Documentation | GitHub | GitHub Actions, GitHub Pages |
+| [gh-issue-templates](using/generators/gh-issue-templates.md) | Issue templates | All | GitHub issue templates |
+| [gh-maven-build](using/generators/gh-maven-build.md) | Pipeline | GitHub | Java, GitHub Actions |
+| [gh-polaris-composer-agent](using/generators/gh-polaris-composer-agent.md) | Chat command and agent guidance pack | All | Copilot prompt, agent, and skill files |
+| [gh-tomcat-deploy-onprem](using/generators/gh-tomcat-deploy-onprem.md) | Deploy (collection ≤ v4.2.0) | GitHub | Java, Tomcat, GitHub Actions |
+| [gh-nodejs-build](using/generators/gh-nodejs-build.md) | Pipeline | GitHub | Node.js, GitHub Actions |
+| [gh-docker-build](using/generators/gh-docker-build.md) | Pipeline | GitHub | Docker, Container Buildx, GitHub Actions |
+| [gh-oci-deploy-onprem](using/generators/gh-oci-deploy-onprem.md) | Deploy | GitHub | OCI artifacts, GitHub Actions |
+| [gh-oci-deploy-ocp](using/generators/gh-oci-deploy-ocp.md) | Deploy | GitHub | OpenShift, OCI, Jenkins, GitHub Actions |
+| [ocp-knox-provision](using/generators/ocp-knox-provision.md) | Secret provisioning | GitHub | OpenShift, Helm, Vault |
+| [migrations](using/generators/migrations.md) | Database | All | FlyWay, Liquibase |

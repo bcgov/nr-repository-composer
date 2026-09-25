@@ -53,7 +53,7 @@ Run a generator against the example directory:
 
 ```bash
 cd ..
-./nr-repository-composer.sh ./test/mod1 backstage --ask-answered
+./nr-repository-composer.sh ./test backstage --ask-answered
 ```
 
 ## Writing a test

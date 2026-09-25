@@ -23,6 +23,26 @@ After running the generator, see the generated
 [`cronjob-deployment/README.md`](https://github.com/bcgov/nr-broker-credential-injection/blob/main/provision-secret/README.md)
 for the provisioning pattern and installation details.
 
+## Usage
+
+```bash
+./nr-repository-composer.sh . ocp-knox-provision
+```
+
+## Key prompts
+
+| Prompt | Affects |
+| --- | --- |
+| **Project / Service** | Identifiers recorded in the generated Helm values. |
+| **Intention user** | Broker intention user that approves the provisioning. |
+| **Enable vault secret sync to OpenShift secrets** | When enabled, the sync prompts below appear. |
+| **Vault secret paths to sync** *(when sync enabled)* | Comma-separated Vault paths, expressed with the **dev** segment as the pattern; test/prod values are derived from it. |
+| **OpenShift secret names** *(when sync enabled)* | Comma-separated secret names to create/update; the count must match the number of Vault paths. |
+
 **Suggested Next Steps:**
 
 - [`gh-nodejs-build`](gh-nodejs-build.md) or [`gh-maven-build`](gh-maven-build.md)
+
+## Generator source
+
+[bcgov/nr-repository-composer/tree/main/src/ocp-knox-provision](https://github.com/bcgov/nr-repository-composer/tree/main/src/ocp-knox-provision)

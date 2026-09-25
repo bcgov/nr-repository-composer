@@ -178,14 +178,28 @@ PULL_IMAGE="true"  # Set to "false" to skip pulling
 
 ## Testing
 
-Test files in `test/` directory:
-- `test/catalog-info.yaml`: Location entity for monorepo
-- `test/mod1/catalog-info.yaml`: Component entity example
-- `test/mod2/catalog-info.yaml`: Component entity example
+The `test/` directory is a git-ignored local scratch repository (not in source
+control, not used by the automated Jest suite, so not present in a fresh clone)
+for running generators by hand. Because the composer requires a `.git`
+directory (it exits with an error otherwise), the scratch directory must be its
+own git repository. Create it and initialize its git repo once:
 
-Run generators against test directory:
 ```bash
-./nr-repository-composer.sh ./test/mod1 backstage --ask-answered
+mkdir test
+cd test
+git init
+```
+
+`git init` supplies the `.git/config` the composer needs to find the repo root,
+but adds no `remote origin`, so generators that derive a GitHub slug from the
+remote find none. Create a `catalog-info.yaml` in a subdirectory (for example
+`test/mod1`) with the `github.com/project-slug` annotation, or configure a
+remote, before running a generator that needs the slug.
+
+Run a generator against the example directory:
+```bash
+cd ..
+./nr-repository-composer.sh ./test backstage --ask-answered
 ```
 
 ## Common Tasks

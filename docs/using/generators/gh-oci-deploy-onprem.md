@@ -6,12 +6,36 @@ GitHub Actions.
 
 The generated files will appear in your `.github/workflows` directory. This
 generator prompts you to select a deployment type (Node.js or Tomcat), and then
-invokes `pd-oci-playbook` to create the Ansible playbook configuration.
+writes the matching Ansible playbook configuration.
 
 This generator should be run at the root directory of your component (service)
 which should contain the `catalog-info.yaml` for it. Run the appropriate build
 generator (`gh-nodejs-build` or `gh-maven-build`) first to set up the build
 workflow.
+
+## Usage
+
+```bash
+./nr-repository-composer.sh . gh-oci-deploy-onprem
+```
+
+## Key prompts
+
+| Prompt | Affects |
+| --- | --- |
+| **Deployment type** | `Node.js application` or `Java/Tomcat application` — selects the generated playbook. Tomcat prompts below appear only for the Tomcat type. |
+| **Project / Service** | Identifiers for the deploy; `Service` names the generated workflow. |
+| **Client ID** | Broker client ID; becomes the `BROKER_JWT` secret name. Blank falls back to the `BROKER_JWT` secret. |
+| **Post deploy tests path** | Path to a post-deploy test workflow to invoke after deployment. |
+| **GitHub Slug** | `<organization>/<repository>`; pre-filled from the git remote. |
+| **Artifact source** | `This repository` (default), `GitHub (public)`, or `Artifactory (private)` — where the deployed OCI artifact is pulled from. |
+| **Deployment config paths** | Comma-separated deployment configuration paths (default `playbooks`); see [Deployment Configuration](../oci-artifacts.md#deployment-configuration). |
+| **Java version** *(Tomcat only)* | `8`, `11`, `17`, or `21` — JDK image for the Tomcat runtime. |
+| **Tomcat context** *(Tomcat only)* | Context path (for example `ext#results`). |
+| **Use alternative webapp directory / name** *(Tomcat only)* | Whether the webapp uses a non-default directory name, and that name. |
+| **Add log4j2 config / Add tomcat context** *(Tomcat only)* | Toggle inclusion of log4j2 and tomcat-context configuration. |
+| **Create data temp dir** | Creates a data temp directory for the deployment. |
+| **Add Webade configuration** *(Tomcat only)* | Adds Webade configuration to the playbook. |
 
 ## Timeout and Retry Handling
 
@@ -47,3 +71,7 @@ detection to handle transient network failures and slow broker/Jenkins responses
 Deployment summaries include submit duration and explicit timeout messaging to
 distinguish between network timeouts (recoverable) and actual failures (requires
 investigation).
+
+## Generator source
+
+[bcgov/nr-repository-composer/tree/main/src/gh-oci-deploy-onprem](https://github.com/bcgov/nr-repository-composer/tree/main/src/gh-oci-deploy-onprem)

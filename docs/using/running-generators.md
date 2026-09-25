@@ -98,6 +98,18 @@ The script:
 - **Pulls the latest image** by default — set `PULL_IMAGE="false"` in the script to disable
 - **Passes all options** to the generator
 
+**Using a local image:**
+
+Pass `--local` as the first argument to run against a locally built image
+(`nr-repository-composer:latest`) instead of pulling from the GitHub registry.
+This skips the pull (`PULL_IMAGE` is forced to `false`), which is useful when
+building and testing a new image from this repository.
+
+```bash
+# Use the local image instead of the registry
+./nr-repository-composer.sh --local . backstage
+```
+
 **Configuration:**
 
 You can edit the script to customize behavior:
@@ -105,6 +117,9 @@ You can edit the script to customize behavior:
 ```bash
 # Modify this to change the image version used
 IMAGE="ghcr.io/bcgov/nr-repository-composer:latest"
+
+# Local image used by the --local flag
+LOCAL_IMAGE="nr-repository-composer:latest"
 
 # Set to "false" to skip pulling the latest image (uses cached version)
 PULL_IMAGE="true"

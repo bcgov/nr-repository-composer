@@ -29,17 +29,30 @@ the package's `"type": "module"` setting).
 The `test/` directory is a git-ignored local scratch repository (see the
 `/test*` entry in `.gitignore`) used to run generators by hand. It is not
 committed to source control and is not used by the automated Jest suite
-described above. It holds example `catalog-info.yaml` files to exercise a
-generator manually:
+described above, so it is **not present in a fresh clone** and you create it
+yourself.
 
-- `test/catalog-info.yaml` — Location entity for a monorepo
-- `test/mod1/catalog-info.yaml` — Component entity example
-- `test/mod2/catalog-info.yaml` — Component entity example
-- `test/mod3/catalog-info.yaml` — Java/Maven component entity example
-
-Run a generator against one of these example directories:
+Because the composer requires a `.git` directory and walks up from the working
+directory to find the repo root (it exits with an error otherwise), the scratch
+directory must be its own git repository. Create it and initialize its git repo
+once:
 
 ```bash
+mkdir test
+cd test
+git init
+```
+
+`git init` gives the composer the `.git/config` it needs to locate the repo
+root, but adds no `remote origin`, so any generator that derives a GitHub slug
+from the remote will find none. Create a `catalog-info.yaml` in a subdirectory
+(for example `test/mod1`) and add the `github.com/project-slug` annotation to
+it, or configure a remote, before running a generator that needs the slug.
+
+Run a generator against the example directory:
+
+```bash
+cd ..
 ./nr-repository-composer.sh ./test/mod1 backstage --ask-answered
 ```
 

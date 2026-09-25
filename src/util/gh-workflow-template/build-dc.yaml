@@ -104,7 +104,7 @@ jobs:
         run: |
 <%_ for (const service of services) { _%>
           echo "Sending build info for action: $ID"
-          curl -s POST "${{ env.BROKER_URL }}/v1/intention/action/patch" \
+          curl -s -X POST "${{ env.BROKER_URL }}/v1/intention/action/patch" \
             -H 'Content-Type: application/json' \
             -H "X-Broker-Token: ${<%= service.tokenEnvVar %>}" \
             -d "{\"package\":{\"checksum\": \"sha256:${ARTIFACT_SHA256}\", \"size\": ${ARTIFACT_SIZE}}}"

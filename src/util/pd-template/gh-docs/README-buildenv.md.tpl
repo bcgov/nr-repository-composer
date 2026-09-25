@@ -48,8 +48,8 @@ The Flatten Maven Plugin is used for install / deploy as described in the offici
 | Context | Version resolved |
 |---|---|
 | **Local build — no env var, no env.sh** | Maven builds with version `UNSET` (clearly invalid, won't be mistaken for a real release) |
-| **Local build — after `source env.sh`** | `.env-build.sh` reads the base version from `VERSION` file (unless `VERSION` is already set in the shell) |
-| **CI/CD — branch or PR** | "Set VERSION" step computes `<base>-<pr-or-branch>-SNAPSHOT` and writes it to `$GITHUB_ENV`; `env.sh` sees it already set and skips the fallback |
+| **Local build — after `source env.sh`** | `.env-build.sh` reads the base version from `VERSION` environment variable |
+| **CI/CD — branch or PR** | "Set VERSION" step computes `<base>-<pr-or-branch>-SNAPSHOT` from the DEFAULT_VERSION repository variable and writes it to `$GITHUB_ENV`; `env.sh` sees it already set and skips the fallback |
 | **CI/CD — tag `v1.2.3`** | "Set VERSION" step strips the `v` prefix and writes `VERSION=1.2.3` to `$GITHUB_ENV` |
 
 To build with a specific version locally:
@@ -66,7 +66,7 @@ Or as a one-liner (no shell modification):
 VERSION=1.2.0-SNAPSHOT ./mvnw clean package
 ```
 
-To bump the base development version, update only the `VERSION` file — `.env-build.sh` and the pipeline both derive from it automatically.
+To bump the base development version for a local build, update the `VERSION` environment variable — `.env-build.sh` will derive from it automatically.
 <% } -%>
 <% } else if (isMonorepo) { -%>
 <!-- Monorepo Repository (Location with Components) -->

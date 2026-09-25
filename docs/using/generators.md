@@ -25,4 +25,5 @@ below is the index. The shared concepts that several generators rely on
 | [gh-docker-build](generators/gh-docker-build.md) | Pipeline | GitHub | Docker, Container Buildx, GitHub Actions |
 | [gh-oci-deploy-onprem](generators/gh-oci-deploy-onprem.md) | Deploy | GitHub | OCI artifacts, GitHub Actions |
 | [gh-oci-deploy-ocp](generators/gh-oci-deploy-ocp.md) | Deploy | GitHub | OpenShift, OCI, Jenkins, GitHub Actions |
+| [ocp-knox-provision](generators/ocp-knox-provision.md) | Secret provisioning | GitHub | OpenShift, Helm, Vault |
 | [migrations](generators/migrations.md) | Database | All | FlyWay, Liquibase |

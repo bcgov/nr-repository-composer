@@ -31,6 +31,8 @@ re-running the generator will overwrite the matching templates.
 To enable the GitHub issue-templates chooser (the menu that lets users pick a
 template), add a `.github/ISSUE_TEMPLATE/config.yml` file to the repository.
 
+This generator takes no prompts; it copies the bundled templates as-is.
+
 ## Skipping the catalog write
 
 By default the generator also records that it ran by adding itself to the
@@ -52,3 +54,7 @@ generator is not registered in the catalog:
 
 The initial files are still created, but the composer will leave them alone. See
 [Command Options](../command-options.md#--skip-write).
+
+## Generator source
+
+[bcgov/nr-repository-composer/tree/main/src/gh-issue-templates](https://github.com/bcgov/nr-repository-composer/tree/main/src/gh-issue-templates)

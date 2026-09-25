@@ -56,7 +56,8 @@ tagged as `nr-repository-composer`.
 
 ## Testing generators locally
 
-Test generators against the `test/` fixtures:
+The `test/` directory is a git-ignored local scratch repository for running
+generators by hand (not committed, not part of the automated suite):
 
 ```bash
 ./nr-repository-composer.sh ./test/mod1 backstage --ask-answered

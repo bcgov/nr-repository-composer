@@ -24,15 +24,20 @@ Jest configuration:
 The config lives in `jest.config.cjs` (CommonJS, so it loads cleanly regardless of
 the package's `"type": "module"` setting).
 
-## Test fixtures
+## Testing generators locally
 
-Test fixtures live in the `test/` directory:
+The `test/` directory is a git-ignored local scratch repository (see the
+`/test*` entry in `.gitignore`) used to run generators by hand. It is not
+committed to source control and is not used by the automated Jest suite
+described above. It holds example `catalog-info.yaml` files to exercise a
+generator manually:
 
 - `test/catalog-info.yaml` — Location entity for a monorepo
 - `test/mod1/catalog-info.yaml` — Component entity example
 - `test/mod2/catalog-info.yaml` — Component entity example
+- `test/mod3/catalog-info.yaml` — Java/Maven component entity example
 
-Run generators against the test directory:
+Run a generator against one of these example directories:
 
 ```bash
 ./nr-repository-composer.sh ./test/mod1 backstage --ask-answered

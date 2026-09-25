@@ -40,7 +40,7 @@ existing one. You clone this repository and run the tool with Node.js.
 - [YAML Path Mappings](extending/yaml-mappings.md) — map prompt answers into `catalog-info.yaml`
 - [Workflow Templates](extending/workflow-templates.md) — author GitHub Actions EJS templates
 - [Development Workflow](extending/development.md) — build, lint, and package the image
-- [Testing](extending/testing.md) — run generators against the test fixtures
+- [Testing](extending/testing.md) — run generators against a local test repository
 
 ## Where to start
 

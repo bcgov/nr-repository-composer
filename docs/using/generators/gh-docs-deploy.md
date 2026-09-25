@@ -6,6 +6,14 @@ in your repository whenever changes are pushed to the main branch.
 
 The generated workflow file appears at `.github/workflows/docs-deploy.yaml`.
 
+## Usage
+
+```bash
+./nr-repository-composer.sh . gh-docs-deploy
+```
+
+This generator takes no prompts; it writes a single GitHub Pages workflow.
+
 **Setup:**
 
 - Enable GitHub Pages in your repository settings
@@ -15,3 +23,7 @@ The generated workflow file appears at `.github/workflows/docs-deploy.yaml`.
 If the repository has multiple components, pick one in which to run the
 generator. This workflow only uploads documentation from a single docs folder in
 the repository.
+
+## Generator source
+
+[bcgov/nr-repository-composer/tree/main/src/gh-docs-deploy](https://github.com/bcgov/nr-repository-composer/tree/main/src/gh-docs-deploy)

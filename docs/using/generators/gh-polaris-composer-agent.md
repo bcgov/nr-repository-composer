@@ -14,7 +14,20 @@ Use `/refresh-polaris-pipeline` in Copilot Chat when you want a chat-driven run.
 Use this generator when you want a repository to be ready for direct-in-repo,
 headless-first, agent-assisted execution without manually copying guidance files.
 
+## Usage
+
+```bash
+./nr-repository-composer.sh . gh-polaris-composer-agent
+```
+
+This generator takes no prompts; it copies the guidance pack into the repository
+as-is.
+
 **Suggested Next Steps:**
 
 - [`gh-maven-build`](gh-maven-build.md), [`gh-nodejs-build`](gh-nodejs-build.md) — Set up build pipeline
 - [`gh-oci-deploy-onprem`](gh-oci-deploy-onprem.md) — Set up Polaris deployment workflow
+
+## Generator source
+
+[bcgov/nr-repository-composer/tree/main/src/gh-polaris-composer-agent](https://github.com/bcgov/nr-repository-composer/tree/main/src/gh-polaris-composer-agent)

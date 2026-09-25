@@ -178,12 +178,14 @@ PULL_IMAGE="true"  # Set to "false" to skip pulling
 
 ## Testing
 
-Test files in `test/` directory:
+The `test/` directory is a git-ignored local scratch repository (not in source
+control, not used by the automated Jest suite) for running generators by hand.
+It holds example `catalog-info.yaml` files:
 - `test/catalog-info.yaml`: Location entity for monorepo
 - `test/mod1/catalog-info.yaml`: Component entity example
 - `test/mod2/catalog-info.yaml`: Component entity example
 
-Run generators against test directory:
+Run a generator against one of these example directories:
 ```bash
 ./nr-repository-composer.sh ./test/mod1 backstage --ask-answered
 ```

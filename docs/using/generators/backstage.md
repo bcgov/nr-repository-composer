@@ -25,6 +25,26 @@ For each component entity, developers should manually define the relationships
 | **`spec.consumesApis`** | States that a component uses (calls) one or more APIs. | When your component needs to call external APIs (internal or third-party) and you want to document that dependency: e.g. "this service consumes the User API", "this frontend calls the Payments API". Good for tracking API dependencies, understanding coupling, impact analysis. If an API changes, you can trace what components will be impacted. | It does *not* capture all dependencies (for instance low-level infrastructure or resources) and doesn't imply subcomponent relationship. Also doesn't capture "resource" dependencies like databases, storage, etc.—those are better done via `dependsOn`. Also, it's not about "part of" structure but about "uses / invokes". |
 | **`spec.dependsOn`** | States that a component (or resource) depends on other components or resources. | Use when your component needs something else to operate, but that thing is *not* necessarily an API: e.g. a database, a message queue, another service, infrastructural resource, or even another component for build-time or runtime dependency. It covers both resource kind entities and component kind entities. | It's less specific: doesn't distinguish *how* the dependency is used ("via API", "via sharing library", etc.). And doesn't imply "is part of". Also, if an API dependency is relevant, using `consumesApis` gives semantics that are more specific / meaningful in API-centric views. |
 
+## Usage
+
+```bash
+# Single-component repository (run at the component root)
+./nr-repository-composer.sh . backstage
+```
+
+## Key prompts
+
+| Prompt | Affects |
+| --- | --- |
+| **Project** | Repository/project identifier; required (validated as alphanumeric/hyphen). Used by other generators to name workflows. |
+| **Service** | Component/service identifier; required. Becomes `metadata.name` in `catalog-info.yaml`. |
+| **Type** | `service`, `website`, or `library` — written to `spec.type`. A `library` type cannot be deployed. |
+| **Lifecycle** | `experimental`, `production`, or `deprecated` (default `production`) — written to `spec.lifecycle`. |
+| **License** | SPDX license identifier (default `Apache-2.0`). |
+| **Owner** | Team or owner recorded in `metadata.owner`. |
+| **Description / Title** | Free-text catalog metadata. |
+| **GitHub Slug** | `<organization>/<repository>`; pre-filled from the git remote and reused by build/deploy generators. |
+
 **Suggested Next Steps:**
 
 - [`gh-common-mono-build`](gh-common-mono-build.md), [`gh-maven-build`](gh-maven-build.md), [`gh-nodejs-build`](gh-nodejs-build.md) — Set up build pipeline
@@ -62,3 +82,6 @@ spec:
   subcomponentOf:
     - component:artist-web
 ```
+## Generator source
+
+[bcgov/nr-repository-composer/tree/main/src/backstage](https://github.com/bcgov/nr-repository-composer/tree/main/src/backstage)

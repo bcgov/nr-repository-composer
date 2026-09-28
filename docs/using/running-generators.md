@@ -68,7 +68,7 @@ You can optionally add the script to a directory in your `PATH`.
 **Usage:**
 
 ```bash
-# Syntax: nr-repository-composer.sh <working-directory> <generator> [options...]
+# Syntax: nr-repository-composer.sh [ --local ] [ --all ] <working-directory> [generator] [options...]
 #    <working-directory> - Path to your repository or subdirectory within it
 #    <generator>         - Generator name (e.g., backstage, gh-maven-build)
 #    [options...]        - Additional generator options (e.g., --help, --ask-answered)
@@ -97,6 +97,7 @@ The script:
 - **Auto-prefixes generator names** — adds `nr-repository-composer:` automatically
 - **Pulls the latest image** by default — set `PULL_IMAGE="false"` in the script to disable
 - **Passes all options** to the generator
+- **Discovers all generators** — pass `--all` to re-run every generator recorded in the catalog (see [Command Options](command-options.md#--all))
 
 **Using a local image:**
 
@@ -109,6 +110,34 @@ building and testing a new image from this repository.
 # Use the local image instead of the registry
 ./nr-repository-composer.sh --local . backstage
 ```
+
+**Running every recorded generator (`--all`):**
+
+Pass `--all` to re-run every generator recorded in the repository's
+`catalog-info.yaml` — the same `composer.io.nrs.gov.bc.ca/generators` annotation
+the automated scan (`tools/composer-update-repo.sh`) reads — instead of naming a
+single generator. A `Location` catalog is processed along with each
+`spec.targets[]` entry in the directory that owns it. Catalog files without the
+annotation, or with `composer.io.nrs.gov.bc.ca/skipAutomatedScan` set to `true`,
+are skipped.
+
+Unlike the automated scan, `--all` performs **no git or GitHub side effects**: it
+does not branch, commit, push, or open pull requests. Use it to refresh a
+repository locally and review the changes with your own git workflow.
+
+By default `--all` runs each generator interactively. Pass generator options
+through to run every generator non-interactively:
+
+```bash
+# Re-run every recorded generator, interactively
+./nr-repository-composer.sh . --all
+
+# Re-run every recorded generator, non-interactively
+./nr-repository-composer.sh . --all --headless --force
+```
+
+`--all` performs the catalog scan inside the container via the `backstage-scan`
+generator. See [Command Options](command-options.md#--all) for details.
 
 **Configuration:**
 

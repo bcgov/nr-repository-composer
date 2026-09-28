@@ -3,8 +3,7 @@
 #
 # Default behaviour is a thin passthrough to `yo`. The `--all` mode re-runs
 # every generator recorded in the repository's catalog-info.yaml files, using
-# the `backstage-scan` generator for discovery so no `yq` (or any other host
-# tooling) is required.
+# the `backstage-scan` generator for discovery.
 set -eu
 
 REPO_ROOT="/src"
@@ -22,10 +21,10 @@ trap "rm -f '$RECORDS'" EXIT
 
 # Discovery runs from the repository root so Location targets resolve.
 cd "$REPO_ROOT"
-yo "$SCAN_GENERATOR" --headless | grep "^COMPONENT${TAB}" > "$RECORDS" || true
+yo "$SCAN_GENERATOR" --headless | grep -E "^(Component|Location)${TAB}" > "$RECORDS" || true
 
 if [ ! -s "$RECORDS" ]; then
-    echo "No components found. Is there a catalog-info.yaml at the repository root?" >&2
+    echo "No catalog-info.yaml files found. Is there one at the repository root?" >&2
     exit 1
 fi
 
@@ -33,11 +32,7 @@ ran=0
 failed=0
 
 # Read from the file, not a pipe, so generators keep stdin for prompting.
-while IFS="$TAB" read -r _tag name dir skip generators; do
-    if [ "$skip" = "true" ]; then
-        echo "Skipping $name ($dir): skipAutomatedScan is set"
-        continue
-    fi
+while IFS="$TAB" read -r _tag dir name generators; do
     if [ -z "$generators" ]; then
         echo "Skipping $name ($dir): no generators recorded"
         continue

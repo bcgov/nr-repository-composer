@@ -565,26 +565,31 @@ export function generateSetAnswerPropPredicate(
 
 export function scanRepositoryForComponents(
   rootCatalogPath = BACKSTAGE_FILENAME,
+  includeLocations = false,
 ) {
   const initCatalogPath = destinationGitPath(rootCatalogPath);
   const gitRoot = destinationGitPath('.');
-  const components: { doc: Document; path: string; name: string }[] = [];
+  const components: {
+    doc: Document;
+    path: string;
+    name: string;
+    parentPath?: string;
+  }[] = [];
 
-  const loadCatalog = (catalogPath) => {
+  const loadCatalog = (catalogPath, parentPath?: string) => {
     let doc;
     try {
       const content = fs.readFileSync(catalogPath, 'utf8');
       doc = parseDocument(content);
       const kind = doc.get('kind');
+      const relativePath = path.relative(gitRoot, catalogPath);
 
       if (
         kind === BACKSTAGE_KIND_COMPONENT ||
-        (kind === BACKSTAGE_KIND_LOCATION &&
-          doc.hasIn(BACKSTAGE_GENERATOR_PATH))
+        (includeLocations && kind === BACKSTAGE_KIND_LOCATION)
       ) {
         const name = doc.getIn(['metadata', 'name']) || 'unknown';
-        const relativePath = path.relative(gitRoot, catalogPath);
-        components.push({ doc, path: relativePath, name });
+        components.push({ doc, path: relativePath, name, parentPath });
       }
 
       if (kind === BACKSTAGE_KIND_LOCATION) {
@@ -604,7 +609,7 @@ export function scanRepositoryForComponents(
               path.dirname(catalogPath),
               targetPath,
             );
-            loadCatalog(resolvedPath);
+            loadCatalog(resolvedPath, relativePath);
           }
         }
       }

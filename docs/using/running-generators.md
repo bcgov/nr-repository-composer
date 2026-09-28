@@ -118,8 +118,7 @@ Pass `--all` to re-run every generator recorded in the repository's
 the automated scan (`tools/composer-update-repo.sh`) reads — instead of naming a
 single generator. A `Location` catalog is processed along with each
 `spec.targets[]` entry in the directory that owns it. Catalog files without the
-annotation, or with `composer.io.nrs.gov.bc.ca/skipAutomatedScan` set to `true`,
-are skipped.
+annotation are skipped.
 
 Unlike the automated scan, `--all` performs **no git or GitHub side effects**: it
 does not branch, commit, push, or open pull requests. Use it to refresh a

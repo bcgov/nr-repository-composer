@@ -1,6 +1,5 @@
 import { parseDocument } from 'yaml';
 import {
-  SCAN_RECORD_PREFIX,
   formatScanRecordsHeadless,
   formatScanRecordsHuman,
   toScanRecord,
@@ -10,7 +9,7 @@ import {
 const doc = (yaml: string) => parseDocument(yaml);
 
 describe('toScanRecord', () => {
-  it('reads name, generators and skip flag', () => {
+  it('reads name and generators', () => {
     const record = toScanRecord(
       doc(`
 kind: Component
@@ -18,15 +17,15 @@ metadata:
   name: world
   annotations:
     composer.io.nrs.gov.bc.ca/generators: backstage,gh-maven-build
-    composer.io.nrs.gov.bc.ca/skipAutomatedScan: "true"
 `),
       'mod1/catalog-info.yaml',
     );
 
     expect(record).toEqual({
+      kind: 'Component',
       name: 'world',
       dir: 'mod1',
-      skip: true,
+      parentPath: undefined,
       generators: ['backstage', 'gh-maven-build'],
     });
   });
@@ -42,7 +41,6 @@ metadata:
     );
 
     expect(record.dir).toBe('.');
-    expect(record.skip).toBe(false);
     expect(record.generators).toEqual([]);
   });
 
@@ -79,9 +77,10 @@ metadata:
     );
 
     expect(record).toEqual({
+      kind: 'Location',
       name: 'components',
       dir: '.',
-      skip: false,
+      parentPath: undefined,
       generators: ['backstage-location', 'gh-common-mono-build'],
     });
   });
@@ -89,14 +88,24 @@ metadata:
 
 describe('formatScanRecordsHeadless', () => {
   const records: ScanRecord[] = [
-    { name: 'world', dir: 'mod1', skip: false, generators: ['backstage'] },
-    { name: 'person', dir: 'mod2', skip: true, generators: [] },
+    {
+      kind: 'Component',
+      name: 'world',
+      dir: 'mod1',
+      generators: ['backstage'],
+    },
+    {
+      kind: 'Location',
+      name: 'person',
+      dir: 'mod2',
+      generators: [],
+    },
   ];
 
-  it('emits one prefixed, tab-separated record per component', () => {
+  it('emits one kind-prefixed, tab-separated record per catalog', () => {
     expect(formatScanRecordsHeadless(records).split('\n')).toEqual([
-      `${SCAN_RECORD_PREFIX}\tworld\tmod1\tfalse\tbackstage`,
-      `${SCAN_RECORD_PREFIX}\tperson\tmod2\ttrue\t`,
+      'Component\tmod1\tworld\tbackstage',
+      'Location\tmod2\tperson\t',
     ]);
   });
 
@@ -106,19 +115,36 @@ describe('formatScanRecordsHeadless', () => {
 });
 
 describe('formatScanRecordsHuman', () => {
-  it('summarizes components and tallies generators', () => {
+  it('summarizes catalog files and their Location parent relationships', () => {
     const output = formatScanRecordsHuman([
-      { name: 'world', dir: 'mod1', skip: false, generators: ['backstage'] },
-      { name: 'person', dir: 'mod2', skip: true, generators: ['backstage'] },
+      {
+        kind: 'Component',
+        name: 'world',
+        dir: 'mod1',
+        parentPath: 'catalog-info.yaml',
+        generators: ['backstage'],
+      },
+      {
+        kind: 'Component',
+        name: 'person',
+        dir: 'mod2',
+        parentPath: 'catalog-info.yaml',
+        generators: ['backstage'],
+      },
     ]);
 
-    expect(output).toContain('Found 2 components');
-    expect(output).toContain('world (mod1)');
-    expect(output).toContain('person (mod2) [skipAutomatedScan]');
+    expect(output).toContain('Found 2 catalog-info.yaml files');
+    expect(output).toContain(
+      './mod1/catalog-info.yaml\n    Component: world',
+    );
+    expect(output).toContain('./mod2/catalog-info.yaml\n    Component: person');
+    expect(output).not.toContain('skipAutomatedScan');
     expect(output).toContain('backstage (2)');
+    expect(output).toContain('Configured generators:');
+    expect(output).toContain('--all would run 2 generator invocations.');
   });
 
   it('reports when no components are found', () => {
-    expect(formatScanRecordsHuman([])).toContain('No components found');
+    expect(formatScanRecordsHuman([])).toContain('No catalog-info.yaml files');
   });
 });

@@ -38,8 +38,7 @@ scan, `tools/composer-update-repo.sh`, reads) and re-runs each one locally, in
 the directory that owns the catalog file.
 
 - A `Location` catalog is processed along with each `spec.targets[]` entry.
-- Catalog files without a `generators` annotation are skipped, as are catalog
-   files with `composer.io.nrs.gov.bc.ca/skipAutomatedScan` set to `true`.
+- Catalog files without a `generators` annotation are skipped.
 - It performs **no git or GitHub side effects** — it does not branch, commit,
    push, or open pull requests. Review the resulting changes with your own git
    workflow. This is the manual, in-repo counterpart to the automated scan.

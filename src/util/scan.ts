@@ -2,7 +2,6 @@ import path from 'path';
 import type { Document } from 'yaml';
 import {
   BACKSTAGE_GENERATOR_PATH,
-  BACKSTAGE_SKIP_SCAN_PATH,
   scanRepositoryForComponents,
 } from './yaml.js';
 
@@ -10,23 +9,24 @@ import {
  * A single component's composer summary.
  */
 export interface ScanRecord {
+  /** Backstage kind of the catalog document */
+  kind: string;
   /** metadata.name of the component */
   name: string;
   /** Directory holding the catalog file, relative to the git root ('.' at root) */
   dir: string;
-  /** True when composer.io.nrs.gov.bc.ca/skipAutomatedScan is set */
-  skip: boolean;
+  /** Parent catalog path, relative to the git root, when reached from a Location */
+  parentPath?: string;
   /** Generators recorded in composer.io.nrs.gov.bc.ca/generators */
   generators: string[];
 }
 
-/**
- * Leading token on every machine-readable record so consumers can ignore
- * unrelated output (container pull progress, warnings) with a simple match.
- */
-export const SCAN_RECORD_PREFIX = 'COMPONENT';
-
 const stripTabs = (value: string) => value.replace(/[\t\r\n]+/g, ' ').trim();
+
+const formatCatalogPath = (catalogPath: string) =>
+  catalogPath === 'catalog-info.yaml'
+    ? './catalog-info.yaml'
+    : `./${catalogPath}`;
 
 /**
  * Read the composer annotations off a parsed catalog document.
@@ -37,6 +37,7 @@ const stripTabs = (value: string) => value.replace(/[\t\r\n]+/g, ' ').trim();
 export function toScanRecord(
   doc: Document,
   catalogRelativePath: string,
+  parentPath?: string,
 ): ScanRecord {
   const rawGenerators = doc.getIn(BACKSTAGE_GENERATOR_PATH);
   const generators =
@@ -47,39 +48,40 @@ export function toScanRecord(
           .filter(Boolean)
       : [];
 
-  const rawSkip = doc.getIn(BACKSTAGE_SKIP_SCAN_PATH);
   const name = doc.getIn(['metadata', 'name']);
+  const kind = doc.get('kind');
 
   return {
+    kind: kind ? stripTabs(String(kind)) : 'unknown',
     name: name ? stripTabs(String(name)) : 'unknown',
     dir: path.dirname(catalogRelativePath) || '.',
-    skip: String(rawSkip) === 'true',
+    parentPath,
     generators,
   };
 }
 
 /**
- * Summarize every component reachable from the repository's root catalog file.
+ * Summarize every catalog reachable from the repository's root catalog file,
+ * including Location catalogs.
  */
 export function scanRepository(): ScanRecord[] {
-  return scanRepositoryForComponents().map((component) =>
-    toScanRecord(component.doc, component.path),
+  return scanRepositoryForComponents(undefined, true).map((component) =>
+    toScanRecord(component.doc, component.path, component.parentPath),
   );
 }
 
 /**
  * Tab-separated records for consumption by scripts.
  *
- * Layout: `COMPONENT<TAB>name<TAB>dir<TAB>skip<TAB>generators-csv`
+ * Layout: `kind<TAB>dir<TAB>name<TAB>generators-csv`
  */
 export function formatScanRecordsHeadless(records: ScanRecord[]): string {
   return records
     .map((record) =>
       [
-        SCAN_RECORD_PREFIX,
-        record.name,
+        record.kind,
         record.dir,
-        record.skip ? 'true' : 'false',
+        record.name,
         record.generators.join(','),
       ].join('\t'),
     )
@@ -87,27 +89,36 @@ export function formatScanRecordsHeadless(records: ScanRecord[]): string {
 }
 
 /**
- * Human-readable summary of the composers recorded in the repository.
+ * Human-readable catalog summary, including each Location parent relationship.
  */
 export function formatScanRecordsHuman(records: ScanRecord[]): string {
   if (records.length === 0) {
-    return 'No components found. Is there a catalog-info.yaml at the repository root?';
+    return 'No catalog-info.yaml files found. Is there one at the repository root?';
   }
 
   const lines: string[] = [];
   lines.push(
-    `Found ${records.length} component${records.length === 1 ? '' : 's'}:`,
+    `Found ${records.length} catalog-info.yaml file${records.length === 1 ? '' : 's'}:`,
   );
   lines.push('');
 
+  const depths = new Map<string, number>();
   for (const record of records) {
-    const flags = record.skip ? ' [skipAutomatedScan]' : '';
-    lines.push(`  ${record.name} (${record.dir})${flags}`);
+    const catalogPath = path.join(record.dir, 'catalog-info.yaml');
+    const depth = record.parentPath
+      ? (depths.get(record.parentPath) ?? 0) + 1
+      : 0;
+    const indent = '  '.repeat(depth);
+    depths.set(catalogPath, depth);
+
+    lines.push(`${indent}${formatCatalogPath(catalogPath)}`);
+    lines.push(`${indent}  ${record.kind}: ${record.name}`);
     lines.push(
       record.generators.length > 0
-        ? `    generators: ${record.generators.join(', ')}`
-        : '    generators: (none recorded)',
+        ? `${indent}  generators: ${record.generators.join(', ')}`
+        : `${indent}  generators: (none recorded)`,
     );
+    lines.push('');
   }
 
   const tally = new Map<string, number>();
@@ -117,14 +128,17 @@ export function formatScanRecordsHuman(records: ScanRecord[]): string {
     }
   }
 
-  lines.push('');
   if (tally.size === 0) {
     lines.push('No generators recorded in this repository.');
   } else {
-    lines.push('Generators in use:');
+    lines.push('Configured generators:');
     for (const [generator, count] of [...tally.entries()].sort()) {
       lines.push(`  ${generator} (${count})`);
     }
+    lines.push('');
+    lines.push(
+      `--all would run ${[...tally.values()].reduce((total, count) => total + count, 0)} generator invocation${[...tally.values()].reduce((total, count) => total + count, 0) === 1 ? '' : 's'}.`,
+    );
   }
 
   return lines.join('\n');

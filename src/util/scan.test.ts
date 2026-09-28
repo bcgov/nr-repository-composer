@@ -134,9 +134,7 @@ describe('formatScanRecordsHuman', () => {
     ]);
 
     expect(output).toContain('Found 2 catalog-info.yaml files');
-    expect(output).toContain(
-      './mod1/catalog-info.yaml\n    Component: world',
-    );
+    expect(output).toContain('./mod1/catalog-info.yaml\n    Component: world');
     expect(output).toContain('./mod2/catalog-info.yaml\n    Component: person');
     expect(output).not.toContain('skipAutomatedScan');
     expect(output).toContain('backstage (2)');

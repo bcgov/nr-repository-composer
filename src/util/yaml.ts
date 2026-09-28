@@ -15,6 +15,12 @@ export const BACKSTAGE_GENERATOR_PATH = [
   'composer.io.nrs.gov.bc.ca/generators',
 ];
 
+export const BACKSTAGE_SKIP_SCAN_PATH = [
+  'metadata',
+  'annotations',
+  'composer.io.nrs.gov.bc.ca/skipAutomatedScan',
+];
+
 interface PathToProp {
   path: string[];
   prop: string;
@@ -569,11 +575,19 @@ export function scanRepositoryForComponents(
     try {
       const content = fs.readFileSync(catalogPath, 'utf8');
       doc = parseDocument(content);
-      if (doc.get('kind') === BACKSTAGE_KIND_COMPONENT) {
+      const kind = doc.get('kind');
+
+      if (
+        kind === BACKSTAGE_KIND_COMPONENT ||
+        (kind === BACKSTAGE_KIND_LOCATION &&
+          doc.hasIn(BACKSTAGE_GENERATOR_PATH))
+      ) {
         const name = doc.getIn(['metadata', 'name']) || 'unknown';
         const relativePath = path.relative(gitRoot, catalogPath);
         components.push({ doc, path: relativePath, name });
-      } else if (doc.get('kind') === BACKSTAGE_KIND_LOCATION) {
+      }
+
+      if (kind === BACKSTAGE_KIND_LOCATION) {
         const targets = doc.getIn(['spec', 'targets']);
         // Handle both plain arrays and YAML sequence nodes
         const targetArray = Array.isArray(targets)

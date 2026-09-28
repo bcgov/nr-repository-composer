@@ -78,12 +78,9 @@ export function scanRepository(): ScanRecord[] {
 export function formatScanRecordsHeadless(records: ScanRecord[]): string {
   return records
     .map((record) =>
-      [
-        record.kind,
-        record.dir,
-        record.name,
-        record.generators.join(','),
-      ].join('\t'),
+      [record.kind, record.dir, record.name, record.generators.join(',')].join(
+        '\t',
+      ),
     )
     .join('\n');
 }

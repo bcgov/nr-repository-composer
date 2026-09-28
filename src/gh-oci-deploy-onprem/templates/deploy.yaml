@@ -203,7 +203,7 @@ jobs:
           SERVICE_NAME: ${{ env.SERVICE_NAME }}
           BUILD_SHA: ${{ steps.lookup-pr-merge-ref.outputs.build_sha }}
       - name: Checkout repository
-        uses: actions/checkout@v6
+        uses: actions/checkout@v7
         with:
             fetch-depth: 0
             fetch-tags: true
@@ -307,7 +307,7 @@ jobs:
           ARTIFACT_TAG: ${{ inputs.artifact_tag }}
 <% } -%>
       - name: Checkout repository
-        uses: actions/checkout@v6
+        uses: actions/checkout@v7
         with:
             fetch-depth: 0
             fetch-tags: true
@@ -336,7 +336,7 @@ jobs:
     steps:
       # See: https://github.com/bcgov/nr-polaris-pipelines
       - name: Checkout repository
-        uses: actions/checkout@v6
+        uses: actions/checkout@v7
         with:
             fetch-depth: 0
             fetch-tags: true

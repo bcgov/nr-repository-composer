@@ -16,7 +16,12 @@ permissions: {}
 jobs:
   check-jwt:
     name: Check broker token
-    runs-on: ubuntu-latest
+<% if (customRunner.startsWith('group:')) { -%>
+    runs-on:
+      <%= customRunner %>
+<% } else { -%>
+    runs-on: <%= customRunner %>
+<% } -%>
     steps:
       - name: Display runner public IP
         shell: bash

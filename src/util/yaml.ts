@@ -24,6 +24,7 @@ interface PathToProp {
   transform?: (val: any) => any;
   // eslint-disable-next-line no-unused-vars
   deprecated?: (config: any, value?: any) => void;
+  assumeDefaultValue?: boolean;
 }
 
 export const pathToProps: PathToProp[] = [
@@ -482,6 +483,12 @@ export const pathToProps: PathToProp[] = [
         value ? 'GitHubPackages' : 'JFrogArtifactory',
       );
     },
+  },
+  {
+    path: ['metadata', 'annotations', 'playbook.io.nrs.gov.bc.ca/customRunner'],
+    prop: 'customRunner',
+    writeEmpty: true,
+    assumeDefaultValue: true,
   },
 ];
 

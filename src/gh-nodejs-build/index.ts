@@ -21,6 +21,7 @@ import {
   PROMPT_TOOLS_BUILD_SECRETS,
   PROMPT_TOOLS_LOCAL_BUILD_SECRETS,
   PROMPT_UNIT_TESTS_PATH,
+  PROMPT_CUSTOM_RUNNER,
 } from '../util/prompts.js';
 import {
   copyCommonBuildWorkflows,
@@ -44,6 +45,7 @@ const questions = [
   PROMPT_ARTIFACT_REPOSITORY_PATH,
   PROMPT_TOOLS_BUILD_SECRETS,
   PROMPT_TOOLS_LOCAL_BUILD_SECRETS,
+  PROMPT_CUSTOM_RUNNER,
 ];
 
 /**
@@ -72,6 +74,7 @@ export default class extends BaseGenerator {
     const removedProps = this.backstageConfig.processDeprecated();
     this.showGeneratorDeprecationWarning =
       removedProps.indexOf(PROMPT_DEPLOY_ON_PREM.name) !== -1;
+    this.backstageConfig.processAssumeDefaultValue(questions);
   }
 
   async prompting() {
@@ -112,6 +115,7 @@ export default class extends BaseGenerator {
         toolsLocalBuildSecrets: this.answers.toolsLocalBuildSecrets,
         relativePath,
         ociArtifacts,
+        customRunner: this.answers.customRunner,
       },
     );
     copyCommonBuildWorkflows(this, {

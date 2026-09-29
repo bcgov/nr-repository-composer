@@ -1,5 +1,9 @@
+import * as fs from 'fs';
+import chalk from 'chalk';
 import { BaseGenerator } from '../util/base-generator.js';
+import { destinationGitPath } from '../util/git.js';
 import { BACKSTAGE_KIND_LOCATION } from '../util/yaml.js';
+import { normalizeCatalogTargets } from '../util/backstage.js';
 import { OPTION_SKIP_WRITE } from '../util/options.js';
 import {
   PROMPT_LOCATION_NAME,
@@ -16,7 +20,8 @@ export default class extends BaseGenerator {
     super(args, opts);
     this._nrsayConfig = {
       title: 'NR Backstage Software Catalog Generator',
-      subtitle: 'Create a `catalog-info.yaml` Backstage location file',
+      subtitle:
+        'Create a `catalog-info.yaml` location file at the repository root to describe a multi-service monorepo',
       links: [
         [
           'Generator',
@@ -35,6 +40,13 @@ export default class extends BaseGenerator {
     return super.prompting();
   }
 
+  _postPrompt() {
+    this.backstageConfig.setPath(
+      PROMPT_LOCATION_TARGETS.name,
+      normalizeCatalogTargets(this.answers?.[PROMPT_LOCATION_TARGETS.name]),
+    );
+  }
+
   _getStorageOptions() {
     return { kind: BACKSTAGE_KIND_LOCATION, storageOptions: {} };
   }
@@ -47,7 +59,23 @@ export default class extends BaseGenerator {
       this.backstageConfig.save();
     }
   }
+
   end() {
     super.end();
+    const locationTargets = this.backstageConfig.getPath(
+      PROMPT_LOCATION_TARGETS.name,
+    );
+
+    if (Array.isArray(locationTargets)) {
+      for (const normalized of locationTargets) {
+        if (!fs.existsSync(destinationGitPath(normalized))) {
+          this.log(
+            chalk.yellow(
+              `Warning: catalog file for target "${normalized}" not found.`,
+            ),
+          );
+        }
+      }
+    }
   }
 }

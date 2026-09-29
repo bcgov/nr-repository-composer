@@ -15,6 +15,12 @@ export const BACKSTAGE_GENERATOR_PATH = [
   'composer.io.nrs.gov.bc.ca/generators',
 ];
 
+export const BACKSTAGE_SKIP_SCAN_PATH = [
+  'metadata',
+  'annotations',
+  'composer.io.nrs.gov.bc.ca/skipAutomatedScan',
+];
+
 interface PathToProp {
   path: string[];
   prop: string;
@@ -559,21 +565,34 @@ export function generateSetAnswerPropPredicate(
 
 export function scanRepositoryForComponents(
   rootCatalogPath = BACKSTAGE_FILENAME,
+  includeLocations = false,
 ) {
   const initCatalogPath = destinationGitPath(rootCatalogPath);
   const gitRoot = destinationGitPath('.');
-  const components: { doc: Document; path: string; name: string }[] = [];
+  const components: {
+    doc: Document;
+    path: string;
+    name: string;
+    parentPath?: string;
+  }[] = [];
 
-  const loadCatalog = (catalogPath) => {
+  const loadCatalog = (catalogPath, parentPath?: string) => {
     let doc;
     try {
       const content = fs.readFileSync(catalogPath, 'utf8');
       doc = parseDocument(content);
-      if (doc.get('kind') === BACKSTAGE_KIND_COMPONENT) {
+      const kind = doc.get('kind');
+      const relativePath = path.relative(gitRoot, catalogPath);
+
+      if (
+        kind === BACKSTAGE_KIND_COMPONENT ||
+        (includeLocations && kind === BACKSTAGE_KIND_LOCATION)
+      ) {
         const name = doc.getIn(['metadata', 'name']) || 'unknown';
-        const relativePath = path.relative(gitRoot, catalogPath);
-        components.push({ doc, path: relativePath, name });
-      } else if (doc.get('kind') === BACKSTAGE_KIND_LOCATION) {
+        components.push({ doc, path: relativePath, name, parentPath });
+      }
+
+      if (kind === BACKSTAGE_KIND_LOCATION) {
         const targets = doc.getIn(['spec', 'targets']);
         // Handle both plain arrays and YAML sequence nodes
         const targetArray = Array.isArray(targets)
@@ -590,7 +609,7 @@ export function scanRepositoryForComponents(
               path.dirname(catalogPath),
               targetPath,
             );
-            loadCatalog(resolvedPath);
+            loadCatalog(resolvedPath, relativePath);
           }
         }
       }

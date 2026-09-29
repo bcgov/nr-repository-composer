@@ -164,19 +164,10 @@ The runner script provides containerized execution:
 - **Sets working directory** to relative path within repo
 - **Auto-prefixes** generator names with `nr-repository-composer:`
 - **Pulls images** by default (configurable with `PULL_IMAGE`)
-- **Discovers all generators** with `--all`: re-runs every generator recorded in the `catalog-info.yaml` `composer.io.nrs.gov.bc.ca/generators` annotation (Location targets and `skipAutomatedScan` handled), with no git/GitHub side effects. The scan runs inside the container via `backstage-scan`, so no host-side `yq` install is needed.
 
 ### Usage Pattern
 ```bash
-nr-repository-composer.sh [ --local ] [ --all ] <working-directory> [generator] [options]
-```
-
-### `--all`
-Re-run every recorded generator in a repository locally (interactive by default; pass `--headless --force` through for a non-interactive run). It reads the same `generators` annotation as `tools/composer-update-repo.sh` but performs no branching, committing, pushing, or PRs.
-
-```bash
-./nr-repository-composer.sh . --all
-./nr-repository-composer.sh . --all --headless --force
+nr-repository-composer.sh <working-directory> <generator> [options]
 ```
 
 ### Configuration Variables

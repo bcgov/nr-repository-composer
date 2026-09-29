@@ -1,4 +1,4 @@
-FROM node:26-alpine
+FROM node:24-alpine
 
 ARG APP=app
 ARG HOME=/home/node
@@ -13,12 +13,9 @@ COPY --chown=node:node src/ $HOME/$APP/src/
 COPY --chown=node:node scripts/ $HOME/$APP/scripts/
 RUN cd $HOME/$APP/ && npm ci && npm run build && npm link
 
-COPY docker-entrypoint.sh /usr/local/bin/docker-entrypoint.sh
-RUN chmod 755 /usr/local/bin/docker-entrypoint.sh
-
 ENV HOME=/tmp
 WORKDIR /src
 VOLUME ["/src"]
 
-ENTRYPOINT ["/usr/local/bin/docker-entrypoint.sh"]
+ENTRYPOINT ["yo"]
 CMD []

@@ -1,8 +1,9 @@
-import { destinationGitPath } from './git.js';
-import { TOOLS_DEFAULT_PROPERTIES } from './constants.js';
 import { Document, parseDocument } from 'yaml';
 import * as fs from 'node:fs';
 import path from 'path';
+
+import { destinationGitPath } from './git.js';
+import { TOOLS_DEFAULT_PROPERTIES } from './constants.js';
 
 export const BACKSTAGE_FILENAME = 'catalog-info.yaml';
 export const BACKSTAGE_API_VERSION = 'backstage.io/v1alpha1';

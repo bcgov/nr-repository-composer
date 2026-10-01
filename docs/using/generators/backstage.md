@@ -36,7 +36,7 @@ For each component entity, developers should manually define the relationships
 
 | Prompt | Affects |
 | --- | --- |
-| **Project** | Repository/project identifier; required (validated as alphanumeric/hyphen). Used by other generators to name workflows. |
+| **Project** | Repository/project identifier; required (validated as alphanumeric/hyphen). Used by other generators to name workflows.  Becomes `spec.system` in `catalog-info.yaml` |
 | **Service** | Component/service identifier; required. Becomes `metadata.name` in `catalog-info.yaml`. |
 | **Type** | `service`, `website`, or `library` — written to `spec.type`. A `library` type cannot be deployed. |
 | **Lifecycle** | `experimental`, `production`, or `deprecated` (default `production`) — written to `spec.lifecycle`. |

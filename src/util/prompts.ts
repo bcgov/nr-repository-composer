@@ -2,6 +2,7 @@ import chalk from 'chalk';
 import { extractGitHubSlug, getGitRepoOriginUrl } from '../util/git.js';
 import { alphaDashValidate } from '../util/github.js';
 import { TOOLS_DEFAULT_PROPERTIES } from './constants.js';
+import { STANDARD_ENVIRONMENTS, type CatalogInstance } from './instances.js';
 import { PromptQuestion } from 'yeoman-generator';
 
 export const PROMPT_LOCATION_NAME: PromptQuestion = {
@@ -82,7 +83,73 @@ export const PROMPT_GITHUB_PROJECT_SLUG: PromptQuestion = {
   message: 'GitHub Slug (<organization or owner>/<repository>):',
   default: extractGitHubSlug(getGitRepoOriginUrl()) ?? '',
 };
+/**
+ * Deployed-instance prompts.
+ *
+ * `PROMPT_INSTANCES_ENVS` selects from the standard environments; one
+ * `PROMPT_INSTANCE_URL` prompt per selected environment captures its optional
+ * URL. Custom, non-standard environments are supplied via
+ * `PROMPT_INSTANCES_CUSTOM` as a JSON array of `{ env, name?, url? }`.
+ */
+export const PROMPT_INSTANCES_ENVS: PromptQuestion = {
+  type: 'checkbox',
+  name: 'instanceEnvs',
+  message: `Deployed environments (${STANDARD_ENVIRONMENTS.join(', ')}):`,
+  choices: STANDARD_ENVIRONMENTS,
+  default: [],
+};
 
+/**
+ * Build the per-environment URL prompt for a single environment. The prompt
+ * only appears (`when`) when its environment is selected, and pre-fills the
+ * stored URL on re-runs so existing values are preserved.
+ *
+ * @param env - The environment key (e.g. `tools`, `production`).
+ * @returns The prompt for that environment's URL.
+ */
+export const PROMPT_INSTANCE_URL = (env: string): PromptQuestion => ({
+  type: 'input',
+  name: `instanceUrl:${env}`,
+  message: `URL for ${env} (optional):`,
+  default: '',
+  when: (answers: Record<string, unknown>) =>
+    Array.isArray(answers.instanceEnvs) &&
+    (answers.instanceEnvs as string[]).includes(env),
+});
+
+export const PROMPT_INSTANCES_CUSTOM: PromptQuestion = {
+  type: 'input',
+  name: 'instancesCustom',
+  message:
+    'Additional instances [{"env":"production","name":"blue","url":"https://blue.example.gov.bc.ca"}]:',
+  default: '',
+  validate: (input) => {
+    if (!input.trim()) {
+      return true;
+    }
+    try {
+      const parsed = JSON.parse(input);
+      if (!Array.isArray(parsed)) {
+        return 'Additional instances must be a JSON array';
+      }
+      for (const item of parsed as CatalogInstance[]) {
+        if (
+          !item ||
+          typeof item.env !== 'string' ||
+          item.env.trim() === '' ||
+          (item.name !== undefined && typeof item.name !== 'string') ||
+          (item.url !== undefined && typeof item.url !== 'string')
+        ) {
+          return 'Each instance must have a non-empty string "env" and optional string "name" and "url" fields';
+        }
+      }
+      return true;
+      // eslint-disable-next-line no-unused-vars
+    } catch (e) {
+      return 'Invalid JSON format for additional instances';
+    }
+  },
+};
 export const PROMPT_CLIENT_ID: PromptQuestion = {
   type: 'input',
   name: 'clientId',
@@ -473,6 +540,28 @@ export const PROMPT_TO_USAGE: Record<
     description:
       'The GitHub slug of the service. If not provided, will be auto-detected from the git remote URL',
     example: 'bcgov-c/edqa-war',
+  },
+  instanceEnvs: {
+    description:
+      'Standard deployed environments to include in the catalog. Select any of tools, development, test, or production.',
+  },
+  instancesCustom: {
+    description:
+      'Additional deployed instances as a JSON array. Name defaults to env; use different names for multiple instances in one environment.',
+    example:
+      '[{"env":"production","name":"blue","url":"https://blue.example.gov.bc.ca"}]',
+  },
+  'instanceUrl:tools': {
+    description: 'Optional URL for the tools environment.',
+  },
+  'instanceUrl:development': {
+    description: 'Optional URL for the development environment.',
+  },
+  'instanceUrl:test': {
+    description: 'Optional URL for the test environment.',
+  },
+  'instanceUrl:production': {
+    description: 'Optional URL for the production environment.',
   },
   clientId: {
     description:

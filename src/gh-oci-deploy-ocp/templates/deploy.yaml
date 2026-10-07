@@ -100,7 +100,7 @@ jobs:
             --arg serviceProject "$SERVICE_PROJECT" \
             --arg serviceName "$SERVICE_NAME" \
             --arg artifactTag "$ARTIFACT_TAG" \
-            '{"actions.action":"package-build","actions.service.project":$serviceProject,"actions.service.name":$serviceName,"actions.package.version":$artifactTag} | @uri')
+            '{"actions.id":"build","actions.service.project":$serviceProject,"actions.service.name":$serviceName,"actions.package.version":$artifactTag} | @uri')
 
           RESPONSE=$(curl -s -X 'POST' \
             "${BROKER_URL}/v1/intention/search?where=${WHERE_QUERY}&offset=0&limit=1" \
@@ -162,7 +162,7 @@ jobs:
             --arg serviceProject "$SERVICE_PROJECT" \
             --arg serviceName "$SERVICE_NAME" \
             --arg buildSha "$BUILD_SHA" \
-            '{"actions.action":"package-build","actions.service.project":$serviceProject,"actions.service.name":$serviceName,"actions.package.buildVersion":$buildSha} | @uri')
+            '{"actions.id":"build","actions.service.project":$serviceProject,"actions.service.name":$serviceName,"actions.package.buildVersion":$buildSha} | @uri')
 
           RESPONSE=$(curl -s -X 'POST' \
             "${BROKER_URL}/v1/intention/search?where=${WHERE_QUERY}&offset=0&limit=1" \
@@ -261,7 +261,7 @@ jobs:
             --arg serviceProject "$SERVICE_PROJECT" \
             --arg serviceName "$SERVICE_NAME" \
             --arg projectVersion "$PROJECT_VERSION" \
-            '{"actions.action":"package-build","actions.service.project":$serviceProject,"actions.service.name":$serviceName,"actions.package.version":$projectVersion} | @uri')
+            '{"actions.id":"build","actions.service.project":$serviceProject,"actions.service.name":$serviceName,"actions.package.version":$projectVersion} | @uri')
 
           RESPONSE=$(curl -s -X 'POST' \
             "${BROKER_URL}/v1/intention/search?where=${WHERE_QUERY}&offset=0&limit=1" \

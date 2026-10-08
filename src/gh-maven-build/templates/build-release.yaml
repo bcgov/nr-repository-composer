@@ -175,7 +175,7 @@ jobs:
           license: <%= license %>
           project_tag: ${{ steps.set-build-output-parameters.outputs.project_version }}
           publish_dir: .
-          working-directory: <%= publishArtifactSuffix %>
+          working_directory: <%= publishArtifactSuffix %>
           github_token: ${{ secrets.GITHUB_TOKEN }}
       - name: Send build info
         if: ${{ '<%= type %>' != 'library' }}

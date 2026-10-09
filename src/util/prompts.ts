@@ -111,6 +111,13 @@ export const PROMPT_PUBLISH_ARTIFACT_SUFFIX: PromptQuestion = {
   default: 'dist',
 };
 
+export const PROMPT_PUBLISH_BASE_DIRECTORY: PromptQuestion = {
+  type: 'input',
+  name: 'publishBaseDirectory',
+  message: 'Base publish directory:',
+  default: 'dist',
+};
+
 export const PROMPT_DEPLOY_ON_PREM: PromptQuestion = {
   type: 'confirm',
   name: 'deployOnPrem',
@@ -541,6 +548,10 @@ export const PROMPT_TO_USAGE: Record<
     description:
       'A space separated list with the first used as the overall checksum.',
     example: 'dist node_modules package.json package-lock.json',
+  },
+  publishBaseDirectory: {
+    description: 'The base directory for published artifacts.',
+    example: 'dist',
   },
   javaPattern: {
     description:

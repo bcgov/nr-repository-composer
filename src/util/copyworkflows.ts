@@ -120,6 +120,10 @@ export function copyCommonBuildWorkflows(generator, answers) {
       toolsLocalBuildSecrets: answers.toolsLocalBuildSecrets,
       artifactRepositoryPath: answers.artifactRepositoryPath,
       publishArtifactSuffix: answers.publishArtifactSuffix,
+      publishDirectory: path.join(
+        relativePath,
+        answers.publishBaseDirectory ?? '.',
+      ),
     },
     { mode: 0o755 },
   );

@@ -1,4 +1,5 @@
 import chalk from 'chalk';
+import path from 'path';
 import { BaseGenerator } from '../util/base-generator.js';
 import {
   destinationGitPath,
@@ -18,6 +19,7 @@ import {
   PROMPT_NODE_VERSION,
   PROMPT_OCI_ARTIFACTS,
   PROMPT_PUBLISH_ARTIFACT_SUFFIX,
+  PROMPT_PUBLISH_BASE_DIRECTORY,
   PROMPT_TOOLS_BUILD_SECRETS,
   PROMPT_TOOLS_LOCAL_BUILD_SECRETS,
   PROMPT_UNIT_TESTS_PATH,
@@ -40,6 +42,10 @@ const questions = [
   PROMPT_NODE_PATTERN,
   PROMPT_OCI_ARTIFACTS,
   PROMPT_PUBLISH_ARTIFACT_SUFFIX,
+  {
+    ...PROMPT_PUBLISH_BASE_DIRECTORY,
+    default: '.',
+  },
   PROMPT_UNIT_TESTS_PATH,
   PROMPT_ARTIFACT_REPOSITORY_TYPE,
   PROMPT_ARTIFACT_REPOSITORY_PATH,
@@ -111,6 +117,10 @@ export default class extends BaseGenerator {
         unitTestsPath: this.answers.unitTestsPath,
         nodeVersion: this.answers.nodeVersion,
         publishArtifactSuffix: this.answers.publishArtifactSuffix,
+        publishRelativePath: path.join(
+          relativePath,
+          this.answers.publishBaseDirectory || '.',
+        ),
         toolsBuildSecrets: this.answers.toolsBuildSecrets,
         toolsLocalBuildSecrets: this.answers.toolsLocalBuildSecrets,
         relativePath,

@@ -152,16 +152,17 @@ jobs:
       - name: Validate dist directory
         if: ${{ '<%= type %>' != 'library' }}
         run: |
-          if [ ! -d "dist" ]; then
-            echo "::error ::dist directory does not exist"
+          PUBLISH_DIR="<%= publishArtifactSuffix.split(' ')[0] %>"
+          if [ ! -d "$PUBLISH_DIR" ]; then
+            echo "::error ::$PUBLISH_DIR directory does not exist"
             exit 1
           fi
-          if [ -z "$(ls -A dist)" ]; then
-            echo "::error ::dist directory is empty"
+          if [ -z "$(ls -A "$PUBLISH_DIR")" ]; then
+            echo "::error ::$PUBLISH_DIR directory is empty"
             exit 1
           fi
-          echo "dist directory exists and contains files"
-        working-directory: ./<%= relativePath %>
+          echo "$PUBLISH_DIR directory exists and contains files"
+        working-directory: ./<%= publishRelativePath %>
       - name: Publish artifact
         if: ${{ '<%= type %>' != 'library' }}
         id: publish-artifact
@@ -171,7 +172,7 @@ jobs:
           license: <%= license %>
           project_tag: ${{ steps.set-build-output-parameters.outputs.project_version }}
           publish_dir: <%= publishArtifactSuffix %>
-          working_directory: ./<%= relativePath %>
+          working_directory: ./<%= publishRelativePath %>
           github_token: ${{ secrets.GITHUB_TOKEN }}
       - name: Send build info
         if: ${{ '<%= type %>' != 'library' }}

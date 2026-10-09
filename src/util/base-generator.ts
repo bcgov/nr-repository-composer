@@ -47,7 +47,10 @@ export class BaseGenerator extends Generator {
   protected showGeneratorDeprecationWarning = false;
 
   constructor(args: string | string[], opts: BaseOptions) {
-    super(args as string[], opts, { customInstallTask: true });
+    super(args as string[], opts, {
+      customInstallTask: true,
+      allowTemplatesOutsideRoot: true,
+    });
     this.option(OPTION_HEADLESS);
     this.option(OPTION_HELP_PROMPTS);
     this.option(OPTION_SKIP_WRITE);

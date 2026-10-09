@@ -415,6 +415,45 @@ export const PROMPT_SYNC_SECRET_NAMES: PromptQuestion = {
   when: (answers) => !!answers.syncSecretEnabled,
 };
 
+export const PROMPT_OCP_KNOX_CRON_SCHEDULE: PromptQuestion = {
+  type: 'input',
+  name: 'ocpKnoxCronSchedule',
+  message: 'CronJob schedule (cron.schedule, e.g. "0 2 * * *" or "* * * * *"):',
+  default: '0 2 * * *',
+};
+
+export const PROMPT_OCP_KNOX_SOURCE_SECRET_NAME: PromptQuestion = {
+  type: 'input',
+  name: 'ocpKnoxSourceSecretName',
+  message: 'Source secret name holding the Broker JWT + role_id:',
+  default: 'knox-secret',
+};
+
+export const PROMPT_OCP_KNOX_TARGET_SECRET_NAME: PromptQuestion = {
+  type: 'input',
+  name: 'ocpKnoxTargetSecretName',
+  message: 'Target secret name for the provisioned secret_id:',
+  default: 'knox-secret',
+};
+
+export const PROMPT_OCP_KNOX_SYNC_SCHEDULE: PromptQuestion = {
+  type: 'input',
+  name: 'ocpKnoxSyncSchedule',
+  message:
+    'Secret sync schedule (sync.schedule, empty = one-time Job, e.g. "0 3 * * *"):',
+  default: '',
+  when: (answers) => !!answers.syncSecretEnabled,
+};
+
+export const PROMPT_OCP_KNOX_SYNC_SOURCE_SECRET_NAME: PromptQuestion = {
+  type: 'input',
+  name: 'ocpKnoxSyncSourceSecretName',
+  message:
+    'Sync login source secret name (optional; defaults to the target Secret):',
+  default: '',
+  when: (answers) => !!answers.syncSecretEnabled,
+};
+
 export const PROMPT_CUSTOM_RUNNER: PromptQuestion = {
   type: 'input',
   name: 'customRunner',
@@ -487,17 +526,17 @@ export const PROMPT_TO_USAGE: Record<
   },
   syncSecretEnabled: {
     description:
-      'Whether to enable syncing vault secrets to OpenShift secrets in the dev environment (initially dev only)',
+      'Whether to enable the optional application-secret synchronization job; written to common.yaml.',
   },
   syncVaultPaths: {
     description:
-      'Comma-separated list of vault secret paths to read for the sync job',
-    example: 'secret/data/app-config,secret/data/db-credentials',
+      'Comma-separated Vault paths; the first path segment is changed to dev, test, or prod for each environment.',
+    example: 'dev/secret/data/myapp/config',
   },
   syncSecretNames: {
     description:
-      'Comma-separated list of OpenShift secret names to create/update, matching syncVaultPaths order and count',
-    example: 'app-config-secret,db-credentials-secret',
+      'Comma-separated OpenShift Secret names corresponding to the Vault paths.',
+    example: 'myapp-config-secret',
   },
   customRunner: {
     description:
@@ -643,6 +682,31 @@ export const PROMPT_TO_USAGE: Record<
   intentionUser: {
     description: 'The intention user for the service',
     example: 'mbystedt@azureidir',
+  },
+  ocpKnoxCronSchedule: {
+    description:
+      'The shared provisioning CronJob schedule written to common.yaml (cron.schedule).',
+    example: '0 2 * * *',
+  },
+  ocpKnoxSourceSecretName: {
+    description:
+      'The source Secret name holding the Broker JWT and role_id (sourceSecret.name).',
+    example: 'knox-secret',
+  },
+  ocpKnoxTargetSecretName: {
+    description:
+      'The target Secret name for the provisioned secret_id (targetSecret.name).',
+    example: 'knox-secret',
+  },
+  ocpKnoxSyncSchedule: {
+    description:
+      'The shared application-secret sync schedule; empty creates a one-time Job.',
+    example: '0 3 * * *',
+  },
+  ocpKnoxSyncSourceSecretName: {
+    description:
+      'Optional source Secret used by the sync job to log in; defaults to the target Secret.',
+    example: 'knox-secret',
   },
 };
 

@@ -7,6 +7,7 @@ import {
   makeWorkflowBuildPublishFile,
   makeWorkflowDeployFile,
 } from '../util/github.js';
+import { BaseGenerator } from './base-generator.js';
 
 const COMMON_GH_TEMPLATE_PATH = '../../util/gh-workflow-template';
 const COMMON_PD_TEMPLATE_PATH = '../../util/pd-template';
@@ -34,7 +35,7 @@ export function rmIfExists(generator, path) {
   }
 }
 
-export function copyCommonBuildWorkflows(generator, answers) {
+export function copyCommonBuildWorkflows(generator: BaseGenerator, answers) {
   const relativePath = relativeGitPath();
 
   generator.fs.copyTpl(
@@ -105,7 +106,7 @@ export function copyCommonBuildWorkflows(generator, answers) {
     generator.templatePath(`${COMMON_PD_TEMPLATE_PATH}/env.sh`),
     destinationGitPath('env.sh'),
     {},
-    { mode: 0o755 },
+    { mode: 0o755 } as any,
   );
 
   generator.fs.copyTpl(
@@ -121,7 +122,7 @@ export function copyCommonBuildWorkflows(generator, answers) {
       artifactRepositoryPath: answers.artifactRepositoryPath,
       publishArtifactSuffix: answers.publishArtifactSuffix,
     },
-    { mode: 0o755 },
+    { mode: 0o755 } as any,
   );
 
   generator.fs.copyTpl(

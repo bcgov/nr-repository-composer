@@ -1,4 +1,5 @@
 import chalk from 'chalk';
+import path from 'path';
 import { BaseGenerator } from '../util/base-generator.js';
 import {
   destinationGitPath,
@@ -21,6 +22,7 @@ import {
   PROMPT_MAVEN_BUILD_COMMAND,
   PROMPT_OCI_ARTIFACTS,
   PROMPT_PUBLISH_ARTIFACT_SUFFIX,
+  PROMPT_PUBLISH_BASE_DIRECTORY,
   PROMPT_POM_ROOT,
   PROMPT_TOOLS_BUILD_SECRETS,
   PROMPT_TOOLS_LOCAL_BUILD_SECRETS,
@@ -44,6 +46,11 @@ const questions = [
   PROMPT_OCI_ARTIFACTS,
   {
     ...PROMPT_PUBLISH_ARTIFACT_SUFFIX,
+    default: '.',
+    when: (answers) => answers.type !== 'library',
+  },
+  {
+    ...PROMPT_PUBLISH_BASE_DIRECTORY,
     when: (answers) => answers.type !== 'library',
   },
   PROMPT_UNIT_TESTS_PATH,
@@ -124,6 +131,15 @@ export default class extends BaseGenerator {
         unitTestsPath: this.answers.unitTestsPath,
         gitHubProjectSlug: this.answers.gitHubProjectSlug,
         relativePath,
+        publishRelativePath: path.join(
+          relativePath,
+          this.answers.publishBaseDirectory || '.',
+        ),
+        publishDirectory: path.join(
+          relativePath,
+          this.answers.publishBaseDirectory || 'dist',
+          (this.answers.publishArtifactSuffix || '.').split(' ')[0],
+        ),
         isMonoRepo: isMonoRepo(),
         toolsBuildSecrets: this.answers.toolsBuildSecrets,
         mavenBuildCommand: this.answers.mavenBuildCommand,

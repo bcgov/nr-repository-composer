@@ -33,7 +33,8 @@ which should contain the `catalog-info.yaml` for it.
 | **Java version** | `8`, `11`, `17`, or `21` (default `8`) — selects the JDK image. |
 | **Java pattern** | `SpringBoot`, `Tomcat`, or `unknown` (default `SpringBoot`) — shapes the packaged artifact. |
 | **POM root** | Path to `pom.xml` relative to the component root (default `./`). |
-| **Published files/folders** | Artifact contents to publish (default `dist`); skipped for `library` type. |
+| **Published files/folders** | Artifact contents to publish (default `.`); skipped for `library` type. |
+| **Base publish directory** | Directory under the component root where the package is staged (default `dist`); skipped for `library` type. |
 | **OCI Artifacts** | JSON array of `[{"artifact":...,"output":...}]` static assets pulled from other builds (see [OCI Artifacts](../oci-artifacts.md#static-assets)). |
 | **Unit tests path** | Path to a unit-test workflow to invoke from the build. |
 | **Artifact repository type / path** | `GitHubPackages` (default) or `JFrogArtifactory`; the path defaults from the slug/type. |

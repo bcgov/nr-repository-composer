@@ -145,7 +145,7 @@ jobs:
         working-directory: ./
         run: |
           source ./env.sh build ./<%= relativePath %> --skip-vault
-          PACKAGE_DIR="${PUBLISH_DIR:-<%= publishArtifactSuffix %>}"
+          PACKAGE_DIR="${PUBLISH_DIR:-<%= publishDirectory %>}"
           PACKAGE_DIR="${PACKAGE_DIR%% *}"
           ./mvnw <%= mavenBuildCommand %> -Dpublish.dir="$PACKAGE_DIR"
           ARTIFACT_FILE="<%= pomRoot %>target/${ARTIFACT_ID}-${PROJECT_VERSION}.${PACKAGE_TYPE}"
@@ -175,7 +175,7 @@ jobs:
           license: <%= license %>
           project_tag: ${{ steps.set-build-output-parameters.outputs.project_version }}
           publish_dir: <%= publishArtifactSuffix %>
-          working_directory: ./<%= relativePath %>
+          working_directory: ./<%= publishRelativePath %>
           github_token: ${{ secrets.GITHUB_TOKEN }}
       - name: Send build info
         if: ${{ '<%= type %>' != 'library' }}
@@ -196,7 +196,7 @@ jobs:
         if: ${{ '<%= type %>' == 'library' }}
         run: |
           source ./env.sh build ./<%= relativePath %> --skip-vault
-          PACKAGE_DIR="${PUBLISH_DIR:-<%= publishArtifactSuffix %>}"
+          PACKAGE_DIR="${PUBLISH_DIR:-<%= publishDirectory %>}"
           PACKAGE_DIR="${PACKAGE_DIR%% *}"
           ./mvnw <%= mavenBuildCommand %> -Dpublish.dir="$PACKAGE_DIR"
         env:

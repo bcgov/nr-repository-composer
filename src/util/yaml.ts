@@ -54,6 +54,12 @@ export const pathToProps: PathToProp[] = [
     prop: 'ociArtifacts',
     writeEmpty: true,
   },
+  // Deployed instances (environments and their optional URLs)
+  {
+    path: ['metadata', 'annotations', 'playbook.io.nrs.gov.bc.ca/instances'],
+    prop: 'instances',
+    writeEmpty: true,
+  },
   {
     path: ['metadata', 'tags'],
     prop: 'tags',

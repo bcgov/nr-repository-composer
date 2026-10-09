@@ -63,7 +63,10 @@ export class BackstageStorage {
   getPath(path: string | string[], option = ''): unknown {
     const docPath = Array.isArray(path) ? path : propRecord[path]?.path;
     if (!docPath) {
-      throw new Error(`Mapping from "${path}" to YAML document path not found`);
+      // Unmapped names (e.g. transient per-environment prompt keys such as
+      // `instanceUrl:tools`) are not catalog fields. Return undefined rather
+      // than throwing so the standard Yeoman prompt flow can round-trip them.
+      return undefined;
     }
     // console.log(
     //   `Getting path "${docPath}: ${this.backstageDoc.getIn(docPath)}"`,
@@ -103,8 +106,13 @@ export class BackstageStorage {
       // Do not set null values
       return;
     }
+    const resolvedPath = Array.isArray(path) ? path : propRecord[path]?.path;
+    if (!resolvedPath) {
+      // Unmapped names (e.g. transient per-environment prompt keys) are not
+      // catalog fields; skip them rather than writing to an undefined path.
+      return;
+    }
     const csv = propRecord[path as string]?.csv;
-    const resolvedPath = Array.isArray(path) ? path : propRecord[path].path;
     this.backstageDoc.setIn(resolvedPath, csv ? value.split(',') : value);
   }
 

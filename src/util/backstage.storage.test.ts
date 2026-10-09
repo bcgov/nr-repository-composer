@@ -105,6 +105,39 @@ metadata:
     expect(storage.get('serviceName')).toBe('renamed-service');
   });
 
+  it('ignores transient prompt names that have no catalog mapping', () => {
+    const storage = new BackstageStorage(
+      'my-service',
+      BACKSTAGE_KIND_COMPONENT,
+      configPath,
+    );
+
+    expect(storage.getPath('instanceUrl:tools')).toBeUndefined();
+    expect(() =>
+      storage.setPath('instanceUrl:tools', 'https://tools.example'),
+    ).not.toThrow();
+  });
+
+  it('stores instances in the playbook annotation and reads them back', () => {
+    const storage = new BackstageStorage(
+      'my-service',
+      BACKSTAGE_KIND_COMPONENT,
+      configPath,
+    );
+    const instances = [{ env: 'production', url: 'https://app.example' }];
+
+    storage.setPath('instances', JSON.stringify(instances));
+
+    expect(
+      storage.doc.getIn([
+        'metadata',
+        'annotations',
+        'playbook.io.nrs.gov.bc.ca/instances',
+      ]),
+    ).toBe(JSON.stringify(instances));
+    expect(storage.getAnswers().instances).toBe(JSON.stringify(instances));
+  });
+
   it('saves the document back to disk', () => {
     const storage = new BackstageStorage(
       'my-service',

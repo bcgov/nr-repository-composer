@@ -45,6 +45,18 @@ describe('pathToProps / propRecord', () => {
     expect(propRecord.locationTargets.csv).toBe(true);
     expect(propRecord.serviceName.csv).toBeFalsy();
   });
+
+  it('maps OCP Knox values prompts for persistence', () => {
+    expect(
+      [
+        'ocpKnoxCronSchedule',
+        'ocpKnoxSourceSecretName',
+        'ocpKnoxTargetSecretName',
+        'ocpKnoxSyncSchedule',
+        'ocpKnoxSyncSourceSecretName',
+      ].every((prop) => Boolean(propRecord[prop])),
+    ).toBe(true);
+  });
 });
 
 describe('extractFromYaml', () => {

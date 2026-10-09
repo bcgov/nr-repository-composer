@@ -1,3 +1,5 @@
+import type { BaseOptions } from 'yeoman-generator';
+
 import { BaseGenerator } from '../util/base-generator.js';
 import { BACKSTAGE_KIND_COMPONENT } from '../util/yaml.js';
 import { OPTION_HEADLESS } from '../util/options.js';
@@ -6,7 +8,6 @@ import {
   formatScanRecordsHuman,
   scanRepository,
 } from '../util/scan.js';
-import type { BaseOptions } from 'yeoman-generator';
 
 /**
  * Summarize the composers (generators) recorded across a repository's

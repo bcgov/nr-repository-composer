@@ -386,6 +386,15 @@ export const pathToProps: PathToProp[] = [
     prop: 'publishArtifactSuffix',
     writeEmpty: true,
   },
+  {
+    path: [
+      'metadata',
+      'annotations',
+      'playbook.io.nrs.gov.bc.ca/publishBaseDirectory',
+    ],
+    prop: 'publishBaseDirectory',
+    writeEmpty: true,
+  },
   // Migrations
   {
     path: ['metadata', 'annotations', 'migration.io.nrs.gov.bc.ca/schemaName'],

@@ -24,7 +24,7 @@ export PACKAGE_REPO="<%= artifactRepositoryPath %>"
 # Maven build configuration
 export POM_ROOT="<%= pomRoot %>"
 export MAVEN_ARGS="--file $POM_ROOT"
-export PUBLISH_DIR="<%= (typeof publishArtifactSuffix !== 'undefined' && publishArtifactSuffix ? publishArtifactSuffix.split(' ')[0] : 'dist') %>"
+export PUBLISH_DIR="<%= publishDirectory %>"
 export VERSION="${VERSION:-0.0.0-SNAPSHOT}"
 <% } else { -%>
 # Non-Maven build configuration (e.g. Node)

@@ -105,6 +105,33 @@ metadata:
     expect(storage.get('serviceName')).toBe('renamed-service');
   });
 
+  it('removes tags when the answer is blank', () => {
+    const storage = new BackstageStorage(
+      'my-service',
+      BACKSTAGE_KIND_COMPONENT,
+      configPath,
+    );
+
+    storage.set('tags', '');
+    expect(storage.doc.hasIn(['metadata', 'tags'])).toBe(false);
+
+    storage.set('tags', 'node, api');
+    storage.set('tags', '   ');
+    expect(storage.doc.hasIn(['metadata', 'tags'])).toBe(false);
+  });
+
+  it('removes empty CSV entries from tags', () => {
+    const storage = new BackstageStorage(
+      'my-service',
+      BACKSTAGE_KIND_COMPONENT,
+      configPath,
+    );
+
+    storage.set('tags', 'hi, , there');
+
+    expect(storage.get('tags')).toBe('hi,there');
+  });
+
   it('ignores transient prompt names that have no catalog mapping', () => {
     const storage = new BackstageStorage(
       'my-service',

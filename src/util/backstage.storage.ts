@@ -94,31 +94,10 @@ export class BackstageStorage {
 
   set(key: string, value: string) {
     console.log(`Setting key "${key}" to`, value);
-    const prop = propRecord[key];
-    if (prop && !prop.writeEmpty && !value.trim()) {
-      if (this.backstageDoc.hasIn(prop.path)) {
-        this.backstageDoc.deleteIn(prop.path);
-      }
-      return;
-    }
-    const storedValue = prop.csv
-      ? value
-          .split(',')
-          .map((item) => item.trim())
-          .filter((item) => item.length > 0)
-      : value;
-    if (
-      prop.csv &&
-      !prop.writeEmpty &&
-      Array.isArray(storedValue) &&
-      storedValue.length === 0
-    ) {
-      if (this.backstageDoc.hasIn(prop.path)) {
-        this.backstageDoc.deleteIn(prop.path);
-      }
-      return;
-    }
-    this.backstageDoc.setIn(prop.path, storedValue);
+    this.backstageDoc.setIn(
+      propRecord[key].path,
+      propRecord[key].csv ? value.split(',') : value,
+    );
   }
 
   setPath(path: string | string[], value: string | null) {

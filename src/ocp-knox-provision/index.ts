@@ -1,12 +1,10 @@
-import { BaseGenerator } from '../util/base-generator.js';
-import { BACKSTAGE_KIND_COMPONENT } from '../util/yaml.js';
-import { destinationGitPath } from '../util/git.js';
-import { stringify } from 'yaml';
-import path from 'path';
-import { fileURLToPath } from 'url';
+import * as fs from 'node:fs';
+import { parse, stringify } from 'yaml';
+import deepMerge from 'deepmerge';
 import type { BaseOptions } from 'yeoman-generator';
 
-const __dirname = path.dirname(fileURLToPath(import.meta.url));
+import { BaseGenerator } from '../util/base-generator.js';
+import { BACKSTAGE_KIND_COMPONENT } from '../util/yaml.js';
 import {
   PROMPT_PROJECT,
   PROMPT_SERVICE,
@@ -14,48 +12,60 @@ import {
   PROMPT_SYNC_SECRET_ENABLED,
   PROMPT_SYNC_VAULT_PATHS,
   PROMPT_SYNC_SECRET_NAMES,
+  PROMPT_OCP_KNOX_CRON_SCHEDULE,
+  PROMPT_OCP_KNOX_SOURCE_SECRET_NAME,
+  PROMPT_OCP_KNOX_TARGET_SECRET_NAME,
+  PROMPT_OCP_KNOX_SYNC_SCHEDULE,
+  PROMPT_OCP_KNOX_SYNC_SOURCE_SECRET_NAME,
 } from '../util/prompts.js';
 
 const questions = [
   PROMPT_PROJECT,
   PROMPT_SERVICE,
   PROMPT_INTENTION_USER,
+  PROMPT_OCP_KNOX_CRON_SCHEDULE,
+  PROMPT_OCP_KNOX_SOURCE_SECRET_NAME,
+  PROMPT_OCP_KNOX_TARGET_SECRET_NAME,
   PROMPT_SYNC_SECRET_ENABLED,
   PROMPT_SYNC_VAULT_PATHS,
   PROMPT_SYNC_SECRET_NAMES,
+  PROMPT_OCP_KNOX_SYNC_SCHEDULE,
+  PROMPT_OCP_KNOX_SYNC_SOURCE_SECRET_NAME,
 ];
 
+const OCP_KNOX_PROVISION_PATH = 'ocp-knox-provision';
+
 // Maps the short/long environment names used within vault path segments (e.g. ".../dev/.../development").
-const VAULT_PATH_ENV_SEGMENTS: Record<string, { short: string; long: string }> =
-  {
-    dev: { short: 'dev', long: 'development' },
-    test: { short: 'test', long: 'test' },
-    prod: { short: 'prod', long: 'production' },
-  };
+const VAULT_PATH_ENV_SEGMENTS: {
+  short: 'dev' | 'test' | 'prod';
+  long: string;
+}[] = [
+  { short: 'dev', long: 'development' },
+  { short: 'test', long: 'test' },
+  { short: 'prod', long: 'production' },
+];
 
 // Rewrites the dev vault paths' env segments (short and long forms) for the target environment.
 function deriveVaultPaths(
   devVaultPaths: string,
-  targetEnv: 'test' | 'prod',
+  targetEnv: 'dev' | 'test' | 'prod',
 ): string {
-  const target = VAULT_PATH_ENV_SEGMENTS[targetEnv];
   return devVaultPaths
     .split(',')
-    .map((vaultPath) =>
-      vaultPath
-        .trim()
-        .split('/')
-        .map((segment) => {
-          if (segment === 'dev') return target.short;
-          if (segment === 'development') return target.long;
-          return segment;
-        })
-        .join('/'),
-    )
+    .map((vaultPath) => {
+      const pathArr = vaultPath.trim().split('/');
+      if (pathArr.length > 2) {
+        pathArr[2] = targetEnv;
+      }
+      return pathArr.join('/');
+    })
     .join(',');
 }
 
-// Builds the Helm values object for a single environment, rendered to YAML via the `yaml` package rather than an EJS template.
+// Builds the per-environment values for a single environment, rendered to YAML
+// via the `yaml` package rather than an EJS template. Only the path-derived,
+// environment-specific fields (sync vault paths / secret names) and the NR
+// Broker intention live here. Environment-shared settings live in common.yaml.
 function buildEnvValues(options: {
   projectName: string;
   serviceName: string;
@@ -77,8 +87,8 @@ function buildEnvValues(options: {
   const values: Record<string, unknown> = {
     intention: {
       service: {
-        name: projectName,
-        project: serviceName,
+        name: serviceName,
+        project: projectName,
         environment,
       },
       user: {
@@ -88,12 +98,33 @@ function buildEnvValues(options: {
   };
   if (syncSecretEnabled) {
     values.sync = {
-      enabled: true,
       vaultPaths: syncVaultPaths,
       secretNames: syncSecretNames,
     };
   }
   return values;
+}
+
+// Reads an existing values file from disk (if a prior run created it) and
+// returns its parsed object, or an empty object when the file is absent.
+function readExistingValues(existingPath: string): Record<string, unknown> {
+  if (fs.existsSync(existingPath)) {
+    return parse(fs.readFileSync(existingPath, 'utf8')) ?? {};
+  }
+  return {};
+}
+
+// Overlays the freshly built prompt values onto any existing values file so
+// that hand-edited values survive a re-run of the generator.
+function writeMergedValues(
+  gen: BaseGenerator,
+  fileName: string,
+  generated: Record<string, unknown>,
+) {
+  gen.fs.write(
+    fileName,
+    stringify(deepMerge(readExistingValues(fileName), generated)),
+  );
 }
 
 /**
@@ -126,7 +157,7 @@ export default class extends BaseGenerator {
     };
   }
 
-  // Generate GitHub workflows
+  // Generate the common and per-environment Helm values files.
   writingWorkflow() {
     const {
       projectName,
@@ -135,67 +166,76 @@ export default class extends BaseGenerator {
       syncSecretEnabled,
       syncVaultPaths,
       syncSecretNames,
+      ocpKnoxCronSchedule,
+      ocpKnoxSourceSecretName,
+      ocpKnoxTargetSecretName,
+      ocpKnoxSyncSchedule,
+      ocpKnoxSyncSourceSecretName,
     } = this.answers;
     const syncEnabled = !!syncSecretEnabled;
     const devVaultPaths = syncVaultPaths ?? '';
     this.fs.copyTpl(
-      path.join(__dirname, 'README.md'),
-      destinationGitPath('cronjob-deployment/README.md'),
+      this.templatePath('README.md'),
+      this.destinationPath(OCP_KNOX_PROVISION_PATH, 'README.md'),
       {},
     );
-    this.fs.write(
-      destinationGitPath('cronjob-deployment/values/common.yaml'),
-      stringify({
-        global: { name: 'knox-provision' },
-        image: { tag: 'v4.0.0' },
-      }),
+
+    // Values that are shared across environments are written to common.yaml.
+    // Everything the chart can source from a single source of truth lands here
+    // rather than being repeated in each per-environment file.
+    const common: Record<string, unknown> = {
+      cron: {
+        schedule: ocpKnoxCronSchedule ?? '0 2 * * *',
+      },
+      sourceSecret: {
+        name: ocpKnoxSourceSecretName ?? 'knox-secret',
+      },
+      targetSecret: {
+        name: ocpKnoxTargetSecretName ?? 'knox-secret',
+      },
+      sync: {
+        enabled: syncEnabled,
+        schedule: syncEnabled ? (ocpKnoxSyncSchedule ?? '') : '',
+      },
+    };
+
+    if (syncEnabled) {
+      // Login source-secret for the sync job is optional; default is the target
+      // secret, so only emit when the user chose a different one.
+      if (ocpKnoxSyncSourceSecretName) {
+        (common.sync as Record<string, unknown>).sourceSecret = {
+          name: ocpKnoxSyncSourceSecretName,
+        };
+      }
+    }
+
+    writeMergedValues(
+      this,
+      this.destinationPath(OCP_KNOX_PROVISION_PATH, 'values', 'common.yaml'),
+      common,
     );
-    this.fs.write(
-      destinationGitPath('cronjob-deployment/values/dev.yaml'),
-      stringify(
+
+    for (const env of Object.values(VAULT_PATH_ENV_SEGMENTS)) {
+      writeMergedValues(
+        this,
+        this.destinationPath(
+          OCP_KNOX_PROVISION_PATH,
+          'values',
+          `${env.short}.yaml`,
+        ),
         buildEnvValues({
           projectName,
           serviceName,
-          environment: 'development',
-          intentionUser,
-          syncSecretEnabled: syncEnabled,
-          syncVaultPaths: devVaultPaths,
-          syncSecretNames: syncSecretNames ?? '',
-        }),
-      ),
-    );
-    this.fs.write(
-      destinationGitPath('cronjob-deployment/values/test.yaml'),
-      stringify(
-        buildEnvValues({
-          projectName,
-          serviceName,
-          environment: 'test',
+          environment: env.long,
           intentionUser,
           syncSecretEnabled: syncEnabled,
           syncVaultPaths: syncEnabled
-            ? deriveVaultPaths(devVaultPaths, 'test')
+            ? deriveVaultPaths(devVaultPaths, env.short)
             : '',
           syncSecretNames: syncEnabled ? (syncSecretNames ?? '') : '',
         }),
-      ),
-    );
-    this.fs.write(
-      destinationGitPath('cronjob-deployment/values/prod.yaml'),
-      stringify(
-        buildEnvValues({
-          projectName,
-          serviceName,
-          environment: 'production',
-          intentionUser,
-          syncSecretEnabled: syncEnabled,
-          syncVaultPaths: syncEnabled
-            ? deriveVaultPaths(devVaultPaths, 'prod')
-            : '',
-          syncSecretNames: syncEnabled ? (syncSecretNames ?? '') : '',
-        }),
-      ),
-    );
+      );
+    }
   }
 
   writingBackstage() {

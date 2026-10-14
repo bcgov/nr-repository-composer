@@ -381,6 +381,51 @@ export const pathToProps: PathToProp[] = [
     path: [
       'metadata',
       'annotations',
+      'playbook.io.nrs.gov.bc.ca/knoxProvisionCronSchedule',
+    ],
+    prop: 'ocpKnoxCronSchedule',
+    writeEmpty: false,
+  },
+  {
+    path: [
+      'metadata',
+      'annotations',
+      'playbook.io.nrs.gov.bc.ca/knoxProvisionSourceSecretName',
+    ],
+    prop: 'ocpKnoxSourceSecretName',
+    writeEmpty: false,
+  },
+  {
+    path: [
+      'metadata',
+      'annotations',
+      'playbook.io.nrs.gov.bc.ca/knoxProvisionTargetSecretName',
+    ],
+    prop: 'ocpKnoxTargetSecretName',
+    writeEmpty: false,
+  },
+  {
+    path: [
+      'metadata',
+      'annotations',
+      'playbook.io.nrs.gov.bc.ca/knoxProvisionSyncSchedule',
+    ],
+    prop: 'ocpKnoxSyncSchedule',
+    writeEmpty: false,
+  },
+  {
+    path: [
+      'metadata',
+      'annotations',
+      'playbook.io.nrs.gov.bc.ca/knoxProvisionSyncSourceSecretName',
+    ],
+    prop: 'ocpKnoxSyncSourceSecretName',
+    writeEmpty: false,
+  },
+  {
+    path: [
+      'metadata',
+      'annotations',
       'playbook.io.nrs.gov.bc.ca/publishArtifactSuffix',
     ],
     prop: 'publishArtifactSuffix',

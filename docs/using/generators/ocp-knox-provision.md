@@ -14,7 +14,7 @@ to copy tool secrets such as the Broker JWT and AppRole role ID from Vault into
 Kubernetes or OpenShift Secrets. It is not part of this generator's application
 access setup.
 
-The generated files appear in the `cronjob-deployment/` directory, including
+The generated files appear in the `ocp-knox-provision/` directory, including
 environment-specific Helm values and a README with installation and monitoring
 guidance.
 
@@ -22,7 +22,7 @@ This generator should be run at the root directory of your component (service),
 which should contain the `catalog-info.yaml` for it.
 
 After running the generator, see the generated
-[`cronjob-deployment/README.md`](https://github.com/bcgov/nr-repository-composer/blob/main/src/ocp-knox-provision/README.md)
+[`ocp-knox-provision/README.md`](https://github.com/bcgov/nr-repository-composer/blob/main/src/ocp-knox-provision/templates/README.md)
 for the provisioning pattern and installation details.
 
 ## Usage

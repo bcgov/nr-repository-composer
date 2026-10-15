@@ -39,6 +39,8 @@ For each component entity, developers should manually define the relationships
 | **Project** | Repository/project identifier; required (validated as alphanumeric/hyphen). Used by other generators to name workflows.  Becomes `spec.system` in `catalog-info.yaml` |
 | **Service** | Component/service identifier; required. Becomes `metadata.name` in `catalog-info.yaml`. |
 | **Type** | `service`, `website`, or `library` — written to `spec.type`. A `library` type cannot be deployed. |
+| **Tags** | Comma-separated list of tags for categorizing and searching the component in the catalog UI (e.g. `java, api, backend`) — written to `metadata.tags`. Leave blank for none. |
+| **Instances** | Select any standard environments (`tools`, `development`, `test`, `production`) and optionally provide a URL for each. Additional instances use JSON entries with `env`, optional `name`, and optional `url`; `name` defaults to `env`, and distinct names allow multiple instances in one environment. For example, `[ {"env":"production","name":"blue","url":"https://blue.example.gov.bc.ca"} ]`. Saved under the `playbook.io.nrs.gov.bc.ca/instances` annotation. When instances already exist, these prompts are skipped; use `--ask-answered` to edit them. |
 | **Lifecycle** | `experimental`, `production`, or `deprecated` (default `production`) — written to `spec.lifecycle`. |
 | **License** | SPDX license identifier (default `Apache-2.0`). |
 | **Owner** | Team or owner recorded in `metadata.owner`. |

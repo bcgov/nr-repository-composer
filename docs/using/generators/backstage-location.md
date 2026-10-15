@@ -11,8 +11,7 @@ in your repository. Each target can be a bare directory (for example
 `frontend`) — the generator appends `catalog-info.yaml` automatically — or the
 full path (for example `./some-component/catalog-info.yaml`). Targets
 (`spec.targets` in the `catalog-info.yaml`) are relative to the repository root.
-If a target's catalog file does not exist, the generator prints a warning so you
-can fix it before wiring up the build.
+If a target's catalog file does not exist, the generator prints a warning.
 
 You can rerun this composer to add additional targets or manually edit the file.
 Remember to use the flag `--ask-answered` if you are adding additional targets.

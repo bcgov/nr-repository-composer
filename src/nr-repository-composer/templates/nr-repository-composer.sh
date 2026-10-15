@@ -51,8 +51,12 @@ print_usage() {
 OPT_ALL=""
 EXTRA_ARGS=()
 ARGV=("$@")
-for arg in "${ARGV[@]}"; do
+for arg in "${ARGV[@]+"${ARGV[@]}"}"; do
     case "$arg" in
+        --help|-h)
+            print_usage
+            exit 0
+            ;;
         --local)
             USE_LOCAL="true"
             PULL_IMAGE="false"

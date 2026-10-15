@@ -9,9 +9,13 @@ import {
   PROMPT_ARTIFACT_REPOSITORY_PATH,
   PROMPT_TOOLS_LOCAL_BUILD_SECRETS,
   PROMPT_AUTO_DEPLOY_EPHEMERAL,
+  PROMPT_INSTANCES_ENVS,
+  PROMPT_INSTANCE_URL,
+  PROMPT_INSTANCES_CUSTOM,
   PROMPT_TO_USAGE,
   getPromptToUsage,
 } from './prompts.js';
+import { STANDARD_ENVIRONMENTS } from './instances.js';
 
 describe('prompt definitions', () => {
   it('validates project and service names with alphaDashValidate', () => {
@@ -46,6 +50,30 @@ describe('prompt definitions', () => {
       _answers: Record<string, unknown>,
     ) => string;
     expect(defaultFn({ toolsBuildSecrets: 'FOO,BAR' })).toBe('FOO,BAR');
+  });
+
+  it('offers the standard instance environments and gates their URL prompts', () => {
+    expect(PROMPT_INSTANCES_ENVS.choices).toEqual(STANDARD_ENVIRONMENTS);
+
+    const urlPrompt = PROMPT_INSTANCE_URL('tools');
+    expect(urlPrompt.when?.({ instanceEnvs: ['tools'] })).toBe(true);
+    expect(urlPrompt.when?.({ instanceEnvs: ['production'] })).toBe(false);
+  });
+
+  it('validates custom instances as an array of environment names and optional URLs', () => {
+    const validate = PROMPT_INSTANCES_CUSTOM.validate as (
+      _input: string,
+    ) => true | string;
+
+    expect(validate('')).toBe(true);
+    expect(validate('[{"env":"staging"}]')).toBe(true);
+    expect(validate('[{"env":"staging","url":"https://stage.example"}]')).toBe(
+      true,
+    );
+    expect(validate('[{"url":"https://stage.example"}]')).toEqual(
+      expect.any(String),
+    );
+    expect(validate('{invalid')).toEqual(expect.any(String));
   });
 });
 

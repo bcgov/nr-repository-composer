@@ -48,7 +48,7 @@
 <% } -%>
 <% if (addLog4j2Config === true || addLog4j2Config === 'true') { %>
     # Add log4j2 config from template
-    # See: https://github.com/bcgov/nr-polaris-collection/tree/main/polaris/deploy/roles/log4j2 
+    # See: https://github.com/bcgov/nr-polaris-collection/tree/main/polaris/deploy/roles/log4j2
     - role: log4j2
 <% } -%>
 <% if (addTomcatContext === true || addTomcatContext === 'true') { %>

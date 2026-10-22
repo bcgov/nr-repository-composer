@@ -2,7 +2,7 @@ import * as fs from 'node:fs';
 import * as os from 'node:os';
 import * as path from 'node:path';
 import { BackstageStorage } from './backstage.storage.js';
-import { BACKSTAGE_KIND_COMPONENT } from './yaml.js';
+import { BACKSTAGE_KIND_COMPONENT, BACKSTAGE_KIND_LOCATION } from './yaml.js';
 
 describe('BackstageStorage', () => {
   let tmpDir: string;
@@ -153,5 +153,90 @@ metadata:
       configPath,
     );
     expect(reloaded.get('serviceName')).toBe('saved-service');
+  });
+
+  const multiDocCatalog = `apiVersion: backstage.io/v1alpha1
+kind: ${BACKSTAGE_KIND_COMPONENT}
+metadata:
+  name: component-service
+---
+apiVersion: backstage.io/v1alpha1
+kind: ${BACKSTAGE_KIND_LOCATION}
+metadata:
+  name: my-location
+spec:
+  type: path
+`;
+
+  it('parses a multi-document file and selects the document matching its kind', () => {
+    fs.writeFileSync(configPath, multiDocCatalog);
+
+    const component = new BackstageStorage(
+      'component-service',
+      BACKSTAGE_KIND_COMPONENT,
+      configPath,
+    );
+    expect(component.doc.getIn(['kind'])).toBe(BACKSTAGE_KIND_COMPONENT);
+    expect(component.get('serviceName')).toBe('component-service');
+
+    const location = new BackstageStorage(
+      'my-location',
+      BACKSTAGE_KIND_LOCATION,
+      configPath,
+    );
+    expect(location.doc.getIn(['kind'])).toBe(BACKSTAGE_KIND_LOCATION);
+    expect(location.doc.getIn(['metadata', 'name'])).toBe('my-location');
+  });
+
+  it('preserves documents of other kinds when saving', () => {
+    fs.writeFileSync(configPath, multiDocCatalog);
+
+    const component = new BackstageStorage(
+      'component-service',
+      BACKSTAGE_KIND_COMPONENT,
+      configPath,
+    );
+    component.set('serviceName', 'renamed-service');
+    component.save();
+
+    const content = fs.readFileSync(configPath, 'utf8');
+    // The Location document must survive the save untouched.
+    expect(content).toContain('---');
+    expect(content).toContain(`kind: ${BACKSTAGE_KIND_LOCATION}`);
+    expect(content).toContain('name: my-location');
+    expect(content).toContain('name: renamed-service');
+  });
+
+  it('keeps a single-kind catalog file free of the multi-document delimiter', () => {
+    const storage = new BackstageStorage(
+      'my-service',
+      BACKSTAGE_KIND_COMPONENT,
+      configPath,
+    );
+    storage.set('serviceName', 'solo-service');
+    storage.save();
+
+    const content = fs.readFileSync(configPath, 'utf8');
+    expect(content).not.toContain('\n---\n');
+  });
+
+  it('exposes all held documents via the docs accessor', () => {
+    fs.writeFileSync(configPath, multiDocCatalog);
+
+    const component = new BackstageStorage(
+      'component-service',
+      BACKSTAGE_KIND_COMPONENT,
+      configPath,
+    );
+
+    const kinds = component.docs
+      .filter((doc) => doc.contents)
+      .map((doc) => doc.getIn(['kind']));
+    expect(kinds).toEqual(
+      expect.arrayContaining([
+        BACKSTAGE_KIND_COMPONENT,
+        BACKSTAGE_KIND_LOCATION,
+      ]),
+    );
   });
 });

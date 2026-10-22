@@ -1,5 +1,5 @@
 import * as fs from 'fs';
-import { Document, parseDocument, isSeq } from 'yaml';
+import { Document, isSeq, parseAllDocuments } from 'yaml';
 import { PromptQuestion } from 'yeoman-generator';
 import {
   BACKSTAGE_API_VERSION,
@@ -13,6 +13,11 @@ import {
 export class BackstageStorage {
   private path: string;
   private name: string;
+  // The catalog file may hold several YAML documents separated by the `---`
+  // delimiter (one per Backstage `kind`). `backstageDoc` is the document that
+  // matches this instance's `kind`; the others are kept so a save can write the
+  // whole multi-document file back without dropping unrelated kinds.
+  private backstageDocs: Document[] = [];
   private backstageDoc!: Document;
 
   constructor(
@@ -26,21 +31,63 @@ export class BackstageStorage {
 
     if (fs.existsSync(this.path)) {
       const backstageYaml = fs.readFileSync(this.path, 'utf8');
-      this.backstageDoc = parseDocument(backstageYaml);
-      if (!options.ignoreKindMismatch && this.getPath(['kind']) !== kind) {
-        throw new Error(
-          `Backstage document kind mismatch: expected "${kind}", found "${this.getPath(['kind'])}". Are you running the correct generator for the current working directory?`,
-        );
+      this.backstageDocs = parseAllDocuments(backstageYaml);
+      // Skip empty documents (e.g. a stray trailing `---`) when locating the
+      // one that matches this instance's kind.
+      const populated = this.backstageDocs.filter((doc) => doc.contents);
+
+      // Prefer the document that already matches this instance's kind, so a
+      // catalog file holding several kinds keeps each kind's data in its own
+      // document.
+      const existing = populated.find((doc) => doc.getIn(['kind']) === kind);
+
+      if (existing) {
+        this.backstageDoc = existing;
+      } else if (options.ignoreKindMismatch) {
+        // No document of this kind exists. Preserve the historic single-document
+        // behaviour: attach to the first existing document when there is one.
+        this.backstageDoc = populated[0] ?? this.newDocumentForKind(kind);
+      } else {
+        const active = populated[0];
+        if (active) {
+          const foundKind = active.getIn(['kind']);
+          throw new Error(
+            `Backstage document kind mismatch: expected "${kind}", found "${foundKind}". Are you running the correct generator for the current working directory?`,
+          );
+        }
+        // The file exists but is blank; start a document for this kind.
+        this.backstageDoc = this.newDocumentForKind(kind);
+      }
+
+      // Keep the active document registered so save() can emit it even when it
+      // was created fresh for this kind.
+      if (!this.backstageDocs.includes(this.backstageDoc)) {
+        this.backstageDocs.push(this.backstageDoc);
       }
     } else {
-      this.backstageDoc = new Document();
-      this.setPath(['apiVersion'], BACKSTAGE_API_VERSION);
-      this.setPath(['kind'], kind);
+      this.backstageDoc = this.newDocumentForKind(kind);
+      this.backstageDocs = [this.backstageDoc];
     }
+  }
+
+  /** Create and register a fresh document carrying the standard Backstage header. */
+  private newDocumentForKind(kind: string): Document {
+    const doc = new Document();
+    doc.setIn(['apiVersion'], BACKSTAGE_API_VERSION);
+    doc.setIn(['kind'], kind);
+    return doc;
   }
 
   get doc() {
     return this.backstageDoc;
+  }
+
+  /**
+   * Every document currently held for this catalog file. Useful when a caller
+   * needs to inspect or persist kinds other than this instance's own.
+   */
+  get docs(): Document[] {
+    return this.backstageDocs;
   }
 
   getAnswers() {
@@ -57,7 +104,14 @@ export class BackstageStorage {
 
   save() {
     console.log(`Saving backstage document to ${this.path}`);
-    fs.writeFileSync(this.path, this.backstageDoc.toString());
+    // Emit every held document, one per Backstage `kind`, joined with the
+    // standard YAML multi-document delimiter. Empty documents are dropped so a
+    // single-kind file stays a plain single document (byte-identical output).
+    const output = this.backstageDocs
+      .filter((doc) => doc.contents)
+      .map((doc) => doc.toString())
+      .join('\n---\n');
+    fs.writeFileSync(this.path, output);
   }
 
   getPath(path: string | string[], option = ''): unknown {

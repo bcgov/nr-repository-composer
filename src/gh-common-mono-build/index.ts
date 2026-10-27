@@ -6,7 +6,7 @@ import {
   BACKSTAGE_KIND_LOCATION,
 } from '../util/yaml.js';
 import { BackstageStorage } from '../util/backstage.storage.js';
-import { destinationGitPath } from '../util/git.js';
+import { destinationGitPath, ensureGitRepositoryRoot } from '../util/git.js';
 import { makeWorkflowBuildPublishPath } from '../util/github.js';
 import { OPTION_HEADLESS } from '../util/options.js';
 import { outputReport } from '../util/report.js';
@@ -27,8 +27,13 @@ export default class extends Generator {
     return new BackstageStorage(
       this.rootGeneratorName(),
       BACKSTAGE_KIND_LOCATION,
+      undefined,
       this.destinationPath(BACKSTAGE_FILENAME),
     );
+  }
+
+  initializing() {
+    ensureGitRepositoryRoot(this.destinationRoot(), 'gh-common-mono-build');
   }
 
   // Generate common mono repo build files
@@ -40,6 +45,7 @@ export default class extends Generator {
       return new BackstageStorage(
         this.rootGeneratorName(),
         BACKSTAGE_KIND_COMPONENT,
+        undefined,
         this.destinationPath(target),
       );
     });

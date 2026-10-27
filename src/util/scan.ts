@@ -1,9 +1,6 @@
 import path from 'path';
 import type { Document } from 'yaml';
-import {
-  BACKSTAGE_GENERATOR_PATH,
-  scanRepositoryForComponents,
-} from './yaml.js';
+import { getGeneratorsFromDoc, scanRepositoryForComponents } from './yaml.js';
 
 /**
  * A single component's composer summary.
@@ -17,7 +14,11 @@ export interface ScanRecord {
   dir: string;
   /** Parent catalog path, relative to the git root, when reached from a Location */
   parentPath?: string;
-  /** Generators recorded in composer.io.nrs.gov.bc.ca/generators */
+  /**
+   * Generators recorded by the composer. Read from the paired NRComposer
+   * document's `spec.generators` sequence, falling back to the legacy
+   * `composer.io.nrs.gov.bc.ca/generators` annotation on the entity.
+   */
   generators: string[];
 }
 
@@ -29,24 +30,22 @@ const formatCatalogPath = (catalogPath: string) =>
     : `./${catalogPath}`;
 
 /**
- * Read the composer annotations off a parsed catalog document.
+ * Read the composer bookkeeping off a parsed catalog entity.
  *
- * @param doc Parsed catalog-info.yaml document
+ * @param doc Parsed entity (Component/Location) document
  * @param catalogRelativePath Catalog file path relative to the git root
+ * @param parentPath Parent catalog path, when reached from a Location
+ * @param composerDoc The paired NRComposer document carrying `spec.generators`
  */
 export function toScanRecord(
   doc: Document,
   catalogRelativePath: string,
   parentPath?: string,
+  composerDoc?: Document,
 ): ScanRecord {
-  const rawGenerators = doc.getIn(BACKSTAGE_GENERATOR_PATH);
-  const generators =
-    typeof rawGenerators === 'string'
-      ? rawGenerators
-          .split(',')
-          .map((generator) => stripTabs(generator))
-          .filter(Boolean)
-      : [];
+  const generators = getGeneratorsFromDoc(composerDoc ?? doc).map((generator) =>
+    stripTabs(generator),
+  );
 
   const name = doc.getIn(['metadata', 'name']);
   const kind = doc.get('kind');
@@ -66,7 +65,12 @@ export function toScanRecord(
  */
 export function scanRepository(): ScanRecord[] {
   return scanRepositoryForComponents(undefined, true).map((component) =>
-    toScanRecord(component.doc, component.path, component.parentPath),
+    toScanRecord(
+      component.doc,
+      component.path,
+      component.parentPath,
+      component.composerDoc,
+    ),
   );
 }
 

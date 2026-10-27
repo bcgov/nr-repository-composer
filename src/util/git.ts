@@ -71,6 +71,21 @@ export function relativeGitPath(...dest) {
 }
 
 /**
+ * Throw unless a directory is the root of its git repository.
+ *
+ * @param {string} dir - Directory the generator runs in.
+ * @param {string} generatorName - Generator name used in the error message.
+ * @throws When `dir` is a subdirectory of the repository root.
+ */
+export function ensureGitRepositoryRoot(dir, generatorName) {
+  if (relativeGitPath(dir)) {
+    throw new Error(
+      `The ${generatorName} generator must be run at the root of the repository.`,
+    );
+  }
+}
+
+/**
  * Determine whether the current repository is a monorepo.
  *
  * This function infers monorepo status by calling `relativeGitPath()` and

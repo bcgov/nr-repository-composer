@@ -1,9 +1,8 @@
+import { parseDocument } from 'yaml';
 import {
-  mergeInstances,
+  getInstanceName,
+  instanceFromDoc,
   parseInstances,
-  prefillInstancePrompts,
-  shouldSkipInstancePrompts,
-  STANDARD_ENVIRONMENTS,
 } from './instances.js';
 
 describe('instance catalog helpers', () => {
@@ -24,113 +23,21 @@ describe('instance catalog helpers', () => {
     expect(parseInstances('not-json')).toEqual([]);
   });
 
-  it('prefills standard environments and URL values from stored instances', () => {
-    const prefill = prefillInstancePrompts([
-      { env: 'production', url: 'https://app.example.gov.bc.ca' },
-      {
-        env: 'production',
-        name: 'blue',
-        url: 'https://blue.example.gov.bc.ca',
-      },
-      { env: 'staging', url: 'https://staging.example.gov.bc.ca' },
-    ]);
-
-    expect(prefill.selectedEnvs).toEqual(['production']);
-    expect(prefill.urlByEnv.get('production')).toBe(
-      'https://app.example.gov.bc.ca',
-    );
-    expect(prefill.urlByEnv.get('staging')).toBe(
-      'https://staging.example.gov.bc.ca',
-    );
+  it('defaults the instance name to its environment', () => {
+    expect(getInstanceName({ env: 'test' })).toBe('test');
+    expect(getInstanceName({ env: 'test', name: 'blue' })).toBe('blue');
   });
 
-  it('merges current standard selections and custom entries with stored values', () => {
-    const instances = mergeInstances({
-      stored: [
-        { env: 'development', url: 'https://old-dev.example.gov.bc.ca' },
-        { env: 'test', url: 'https://test.example.gov.bc.ca' },
-        { env: 'staging', url: 'https://old-staging.example.gov.bc.ca' },
-        {
-          env: 'development',
-          name: 'canary',
-          url: 'https://old-canary.example.gov.bc.ca',
-        },
-      ],
-      selectedEnvs: ['tools', 'development', 'production'],
-      urlByEnv: {
-        production: 'https://app.example.gov.bc.ca',
-      },
-      custom: [
-        { env: 'staging', url: 'https://staging.example.gov.bc.ca' },
-        {
-          env: 'development',
-          name: 'canary',
-          url: 'https://canary.example.gov.bc.ca',
-        },
-      ],
+  it('reads the instance described by an Instance document', () => {
+    const doc = parseDocument(`kind: Instance
+spec:
+  env: production
+  url: https://app.example.gov.bc.ca
+`);
+    expect(instanceFromDoc(doc)).toEqual({
+      env: 'production',
+      url: 'https://app.example.gov.bc.ca',
     });
-
-    expect(instances).toEqual([
-      { env: 'tools' },
-      { env: 'development', url: 'https://old-dev.example.gov.bc.ca' },
-      { env: 'production', url: 'https://app.example.gov.bc.ca' },
-      { env: 'staging', url: 'https://staging.example.gov.bc.ca' },
-      {
-        env: 'development',
-        name: 'canary',
-        url: 'https://canary.example.gov.bc.ca',
-      },
-    ]);
-    expect(STANDARD_ENVIRONMENTS).toEqual([
-      'tools',
-      'development',
-      'test',
-      'production',
-    ]);
-  });
-
-  it('removes custom instances omitted from the edited custom list', () => {
-    expect(
-      mergeInstances({
-        stored: [{ env: 'staging', url: 'https://staging.example.gov.bc.ca' }],
-        selectedEnvs: [],
-        urlByEnv: {},
-        custom: [],
-      }),
-    ).toEqual([]);
-  });
-
-  it('uses the environment as the default name and permits multiple named instances per environment', () => {
-    expect(
-      mergeInstances({
-        stored: [],
-        selectedEnvs: ['test'],
-        urlByEnv: { test: 'https://test.example.gov.bc.ca' },
-        custom: [
-          { env: 'test', name: 'blue', url: 'https://blue.example.gov.bc.ca' },
-          {
-            env: 'test',
-            name: 'green',
-            url: 'https://green.example.gov.bc.ca',
-          },
-        ],
-      }),
-    ).toEqual([
-      { env: 'test', url: 'https://test.example.gov.bc.ca' },
-      { env: 'test', name: 'blue', url: 'https://blue.example.gov.bc.ca' },
-      { env: 'test', name: 'green', url: 'https://green.example.gov.bc.ca' },
-    ]);
-  });
-
-  it('skips instance prompts when values exist unless answered prompts are requested', () => {
-    const storedInstances = [
-      { env: 'production', name: 'APM' },
-      { env: 'production', name: 'Knox' },
-      { env: 'production', name: 'Polaris' },
-    ];
-
-    expect(shouldSkipInstancePrompts(storedInstances, false)).toBe(true);
-    expect(shouldSkipInstancePrompts(storedInstances, true)).toBe(false);
-    expect(shouldSkipInstancePrompts([], false)).toBe(false);
+    expect(instanceFromDoc(parseDocument('kind: Instance'))).toBeUndefined();
   });
 });

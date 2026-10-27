@@ -5,6 +5,7 @@ import {
   relativeGitPath,
   isMonoRepo,
   getGitRepoOriginUrl,
+  ensureGitRepositoryRoot,
 } from './git.js';
 import path from 'path';
 
@@ -68,6 +69,20 @@ describe('relativeGitPath / isMonoRepo', () => {
 
   it('returns a boolean', () => {
     expect(typeof isMonoRepo()).toBe('boolean');
+  });
+});
+
+describe('ensureGitRepositoryRoot', () => {
+  it('passes at the repository root', () => {
+    expect(() =>
+      ensureGitRepositoryRoot(destinationGitPath('.'), 'gen'),
+    ).not.toThrow();
+  });
+
+  it('throws in a subdirectory of the repository', () => {
+    expect(() =>
+      ensureGitRepositoryRoot(destinationGitPath('src'), 'gen'),
+    ).toThrow('The gen generator must be run at the root of the repository.');
   });
 });
 

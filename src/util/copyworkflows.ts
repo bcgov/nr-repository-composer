@@ -350,7 +350,7 @@ export function updateReadmeWithPipelineGuide(generator) {
 
   const templateData = {
     hasMavenBuild: services.some((s) =>
-      hasGeneratorInDoc(s.doc, 'gh-maven-build'),
+      hasGeneratorInDoc(s.composerDoc, 'gh-maven-build'),
     ),
     services,
     isMonorepo: services.length > 1,

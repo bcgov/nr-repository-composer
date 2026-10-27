@@ -1,8 +1,8 @@
 import type { BaseOptions } from 'yeoman-generator';
 
 import { BaseGenerator } from '../util/base-generator.js';
-import { BACKSTAGE_KIND_COMPONENT } from '../util/yaml.js';
 import { OPTION_HEADLESS } from '../util/options.js';
+import { BACKSTAGE_KIND_NRCOMPOSER } from '../util/yaml.js';
 import {
   formatScanRecordsHeadless,
   formatScanRecordsHuman,
@@ -32,10 +32,7 @@ export default class extends BaseGenerator {
   }
 
   _getStorageOptions() {
-    return {
-      kind: BACKSTAGE_KIND_COMPONENT,
-      storageOptions: { ignoreKindMismatch: true },
-    };
+    return { kind: BACKSTAGE_KIND_NRCOMPOSER };
   }
 
   async prompting() {

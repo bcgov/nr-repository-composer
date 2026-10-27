@@ -3,13 +3,20 @@ import {
   BACKSTAGE_FILENAME,
   BACKSTAGE_API_VERSION,
   BACKSTAGE_KIND_COMPONENT,
+  BACKSTAGE_KIND_INSTANCE,
   BACKSTAGE_KIND_LOCATION,
+  BACKSTAGE_KIND_NRCOMPOSER,
   BACKSTAGE_GENERATOR_PATH,
+  NRCOMPOSER_SKIP_SCAN_PATH,
   pathToProps,
   propRecord,
   extractFromYaml,
   addGeneratorToDoc,
   hasGeneratorInDoc,
+  getGeneratorsFromDoc,
+  migrateComposerAnnotations,
+  pairCatalogDocs,
+  parseCatalog,
   generateSetAnswerPropPredicate,
 } from './yaml.js';
 
@@ -19,6 +26,7 @@ describe('yaml constants', () => {
     expect(BACKSTAGE_API_VERSION).toBe('backstage.io/v1alpha1');
     expect(BACKSTAGE_KIND_COMPONENT).toBe('Component');
     expect(BACKSTAGE_KIND_LOCATION).toBe('Location');
+    expect(BACKSTAGE_KIND_NRCOMPOSER).toBe('NRComposer');
   });
 
   it('points the generator annotation path at the composer namespace', () => {
@@ -98,36 +106,112 @@ metadata:
 });
 
 describe('addGeneratorToDoc / hasGeneratorInDoc', () => {
-  it('adds a generator to a document that has no generator annotation', () => {
-    const doc = parseDocument(
+  it('stores a generator as an entry in the NRComposer spec.generators array', () => {
+    const composer = parseDocument(
       `apiVersion: ${BACKSTAGE_API_VERSION}
-kind: ${BACKSTAGE_KIND_COMPONENT}
-metadata:
-  name: my-service
+kind: ${BACKSTAGE_KIND_NRCOMPOSER}
 `,
     );
-    expect(hasGeneratorInDoc(doc, 'gh-nodejs-build')).toBe(false);
-    addGeneratorToDoc(doc, 'gh-nodejs-build');
-    expect(hasGeneratorInDoc(doc, 'gh-nodejs-build')).toBe(true);
+    expect(hasGeneratorInDoc(composer, 'gh-nodejs-build')).toBe(false);
+    addGeneratorToDoc(composer, 'gh-nodejs-build');
+    expect(hasGeneratorInDoc(composer, 'gh-nodejs-build')).toBe(true);
+    expect(getGeneratorsFromDoc(composer)).toEqual(['gh-nodejs-build']);
   });
 
-  it('appends to an existing comma-separated generator list', () => {
-    const doc = parseDocument(
+  it('appends to an existing spec.generators array', () => {
+    const composer = parseDocument(
       `apiVersion: ${BACKSTAGE_API_VERSION}
-kind: ${BACKSTAGE_KIND_COMPONENT}
-metadata:
-  name: my-service
-  annotations:
-    composer.io.nrs.gov.bc.ca/generators: gh-nodejs-build
+kind: ${BACKSTAGE_KIND_NRCOMPOSER}
+spec:
+  generators:
+    - gh-nodejs-build
 `,
     );
-    addGeneratorToDoc(doc, 'gh-oci-deploy-onprem');
-    expect(hasGeneratorInDoc(doc, 'gh-nodejs-build')).toBe(true);
-    expect(hasGeneratorInDoc(doc, 'gh-oci-deploy-onprem')).toBe(true);
+    addGeneratorToDoc(composer, 'gh-oci-deploy-onprem');
+    expect(getGeneratorsFromDoc(composer)).toEqual([
+      'gh-nodejs-build',
+      'gh-oci-deploy-onprem',
+    ]);
+    expect(hasGeneratorInDoc(composer, 'gh-nodejs-build')).toBe(true);
+    expect(hasGeneratorInDoc(composer, 'gh-oci-deploy-onprem')).toBe(true);
   });
 
   it('does not add a duplicate generator', () => {
-    const doc = parseDocument(
+    const composer = parseDocument(
+      `apiVersion: ${BACKSTAGE_API_VERSION}
+kind: ${BACKSTAGE_KIND_NRCOMPOSER}
+spec:
+  generators:
+    - gh-nodejs-build
+`,
+    );
+    addGeneratorToDoc(composer, 'gh-nodejs-build');
+    const stored = getGeneratorsFromDoc(composer);
+    expect(stored.filter((g) => g === 'gh-nodejs-build')).toHaveLength(1);
+  });
+
+  it('migrates a legacy comma-separated annotation into the spec.generators array', () => {
+    const composer = parseDocument(
+      `apiVersion: ${BACKSTAGE_API_VERSION}
+kind: ${BACKSTAGE_KIND_NRCOMPOSER}
+metadata:
+  annotations:
+    composer.io.nrs.gov.bc.ca/generators: gh-nodejs-build,gh-maven-build
+`,
+    );
+    addGeneratorToDoc(composer, 'gh-oci-deploy-onprem');
+    expect(getGeneratorsFromDoc(composer)).toEqual([
+      'gh-nodejs-build',
+      'gh-maven-build',
+      'gh-oci-deploy-onprem',
+    ]);
+    // The legacy annotation is cleared once the array is authoritative.
+    expect(composer.hasIn(BACKSTAGE_GENERATOR_PATH)).toBe(false);
+  });
+
+  it('returns false for a generator that is not present', () => {
+    const composer = parseDocument(
+      `apiVersion: ${BACKSTAGE_API_VERSION}
+kind: ${BACKSTAGE_KIND_NRCOMPOSER}
+`,
+    );
+    expect(hasGeneratorInDoc(composer, 'gh-maven-build')).toBe(false);
+  });
+});
+
+describe('migrateComposerAnnotations', () => {
+  it('moves the generators annotation off the entity into the NRComposer array', () => {
+    const entity = parseDocument(
+      `apiVersion: ${BACKSTAGE_API_VERSION}
+kind: ${BACKSTAGE_KIND_COMPONENT}
+metadata:
+  name: my-service
+  annotations:
+    composer.io.nrs.gov.bc.ca/generators: " backstage , gh-nodejs-build "
+    composer.io.nrs.gov.bc.ca/skipAutomatedScan: true
+`,
+    );
+    const composer = parseDocument(
+      `apiVersion: ${BACKSTAGE_API_VERSION}
+kind: ${BACKSTAGE_KIND_NRCOMPOSER}
+`,
+    );
+
+    const migrated = migrateComposerAnnotations(composer, entity);
+    expect(migrated).toBe(true);
+    expect(getGeneratorsFromDoc(composer)).toEqual([
+      'backstage',
+      'gh-nodejs-build',
+    ]);
+    expect(composer.getIn(NRCOMPOSER_SKIP_SCAN_PATH)).toBe(true);
+    // Legacy annotations are removed from the entity.
+    expect(entity.hasIn(BACKSTAGE_GENERATOR_PATH)).toBe(false);
+    // A now-empty annotations map is dropped so the entity stays clean.
+    expect(entity.getIn(['metadata', 'annotations'])).toBeUndefined();
+  });
+
+  it('is idempotent when the NRComposer already carries the generators', () => {
+    const entity = parseDocument(
       `apiVersion: ${BACKSTAGE_API_VERSION}
 kind: ${BACKSTAGE_KIND_COMPONENT}
 metadata:
@@ -136,22 +220,228 @@ metadata:
     composer.io.nrs.gov.bc.ca/generators: gh-nodejs-build
 `,
     );
-    addGeneratorToDoc(doc, 'gh-nodejs-build');
-    const stored = doc.getIn(BACKSTAGE_GENERATOR_PATH) as string;
-    expect(
-      stored.split(',').filter((g) => g === 'gh-nodejs-build'),
-    ).toHaveLength(1);
-  });
+    const composer = parseDocument(
+      `apiVersion: ${BACKSTAGE_API_VERSION}
+kind: ${BACKSTAGE_KIND_NRCOMPOSER}
+spec:
+  generators:
+    - gh-nodejs-build
+    - gh-oci-deploy-onprem
+`,
+    );
 
-  it('returns false for a generator that is not present', () => {
-    const doc = parseDocument(
+    migrateComposerAnnotations(composer, entity);
+    // Existing array is preserved; the legacy annotation is still cleared.
+    expect(getGeneratorsFromDoc(composer)).toEqual([
+      'gh-nodejs-build',
+      'gh-oci-deploy-onprem',
+    ]);
+    expect(entity.hasIn(BACKSTAGE_GENERATOR_PATH)).toBe(false);
+  });
+});
+
+describe('pairCatalogDocs', () => {
+  it('reuses the NRComposer document that follows the entity', () => {
+    const entity = parseDocument(
       `apiVersion: ${BACKSTAGE_API_VERSION}
 kind: ${BACKSTAGE_KIND_COMPONENT}
 metadata:
   name: my-service
 `,
     );
-    expect(hasGeneratorInDoc(doc, 'gh-maven-build')).toBe(false);
+    const existing = parseDocument(
+      `apiVersion: ${BACKSTAGE_API_VERSION}
+kind: ${BACKSTAGE_KIND_NRCOMPOSER}
+spec:
+  generators:
+    - gh-nodejs-build
+`,
+    );
+    const docs = [entity, existing];
+
+    const [paired] = pairCatalogDocs(docs);
+    expect(paired.doc).toBe(entity);
+    expect(paired.composerDoc).toBe(existing);
+    expect(getGeneratorsFromDoc(paired.composerDoc)).toEqual([
+      'gh-nodejs-build',
+    ]);
+    expect(docs).toHaveLength(2);
+  });
+
+  it('creates a NRComposer document after the entity when none exists', () => {
+    const entity = parseDocument(
+      `apiVersion: ${BACKSTAGE_API_VERSION}
+kind: ${BACKSTAGE_KIND_COMPONENT}
+metadata:
+  name: my-service
+  annotations:
+    composer.io.nrs.gov.bc.ca/generators: gh-nodejs-build
+    playbook.io.nrs.gov.bc.ca/nodeVersion: "20"
+`,
+    );
+    const docs = [entity];
+
+    const [{ composerDoc }] = pairCatalogDocs(docs);
+    expect(composerDoc.get('kind')).toBe(BACKSTAGE_KIND_NRCOMPOSER);
+    expect(composerDoc.has('metadata')).toBe(false);
+    expect(getGeneratorsFromDoc(composerDoc)).toEqual(['gh-nodejs-build']);
+    expect(composerDoc.getIn(['spec', 'answers', 'nodeVersion'])).toBe('20');
+    expect(entity.getIn(['metadata', 'annotations'])).toBeUndefined();
+    // The new document is registered on the docs array for save().
+    expect(docs).toEqual([entity, composerDoc]);
+  });
+
+  it('shares the single NRComposer across entities and skips Instance documents', () => {
+    const { docs, entities } = parseCatalog(
+      `apiVersion: ${BACKSTAGE_API_VERSION}
+kind: ${BACKSTAGE_KIND_LOCATION}
+metadata:
+  name: components
+---
+apiVersion: ${BACKSTAGE_API_VERSION}
+kind: ${BACKSTAGE_KIND_COMPONENT}
+metadata:
+  name: my-service
+---
+apiVersion: ${BACKSTAGE_API_VERSION}
+kind: ${BACKSTAGE_KIND_NRCOMPOSER}
+spec:
+  generators:
+    - gh-maven-build
+---
+apiVersion: ${BACKSTAGE_API_VERSION}
+kind: ${BACKSTAGE_KIND_INSTANCE}
+metadata:
+  name: my-service-test
+spec:
+  env: test
+`,
+    );
+
+    expect(entities.map((e) => e.doc.get('kind'))).toEqual([
+      BACKSTAGE_KIND_LOCATION,
+      BACKSTAGE_KIND_COMPONENT,
+    ]);
+    expect(entities[0].composerDoc).toBe(entities[1].composerDoc);
+    expect(getGeneratorsFromDoc(entities[0].composerDoc)).toEqual([
+      'gh-maven-build',
+    ]);
+    expect(docs.map((doc) => doc.get('kind'))).toEqual([
+      BACKSTAGE_KIND_LOCATION,
+      BACKSTAGE_KIND_COMPONENT,
+      BACKSTAGE_KIND_NRCOMPOSER,
+      BACKSTAGE_KIND_INSTANCE,
+    ]);
+  });
+
+  it('rejects a catalog with more than one NRComposer document', () => {
+    expect(() =>
+      parseCatalog(
+        `apiVersion: ${BACKSTAGE_API_VERSION}
+kind: ${BACKSTAGE_KIND_COMPONENT}
+metadata:
+  name: my-service
+---
+apiVersion: ${BACKSTAGE_API_VERSION}
+kind: ${BACKSTAGE_KIND_NRCOMPOSER}
+---
+apiVersion: ${BACKSTAGE_API_VERSION}
+kind: ${BACKSTAGE_KIND_LOCATION}
+metadata:
+  name: components
+---
+apiVersion: ${BACKSTAGE_API_VERSION}
+kind: ${BACKSTAGE_KIND_NRCOMPOSER}
+`,
+      ),
+    ).toThrow(/only one is supported/);
+  });
+
+  it('keeps existing Instance documents over a legacy instances answer', () => {
+    const { docs } = parseCatalog(
+      `apiVersion: ${BACKSTAGE_API_VERSION}
+kind: ${BACKSTAGE_KIND_COMPONENT}
+metadata:
+  name: my-service
+---
+apiVersion: ${BACKSTAGE_API_VERSION}
+kind: ${BACKSTAGE_KIND_NRCOMPOSER}
+spec:
+  answers:
+    instances: '[{"env":"tools"}]'
+---
+apiVersion: ${BACKSTAGE_API_VERSION}
+kind: ${BACKSTAGE_KIND_INSTANCE}
+metadata:
+  name: my-service-test
+spec:
+  env: test
+`,
+    );
+
+    const instances = docs.filter(
+      (doc) => doc.get('kind') === BACKSTAGE_KIND_INSTANCE,
+    );
+    expect(instances.map((doc) => doc.getIn(['spec', 'env']))).toEqual([
+      'test',
+    ]);
+    expect(docs[1].hasIn(['spec', 'answers'])).toBe(false);
+  });
+
+  it('pairs a lone entity with a lone NRComposer placed before it', () => {
+    const { entities } = parseCatalog(
+      `apiVersion: ${BACKSTAGE_API_VERSION}
+kind: ${BACKSTAGE_KIND_NRCOMPOSER}
+spec:
+  generators:
+    - gh-nodejs-build
+---
+apiVersion: ${BACKSTAGE_API_VERSION}
+kind: ${BACKSTAGE_KIND_COMPONENT}
+metadata:
+  name: my-service
+`,
+    );
+
+    expect(getGeneratorsFromDoc(entities[0].composerDoc)).toEqual([
+      'gh-nodejs-build',
+    ]);
+  });
+});
+
+describe('getGeneratorsFromDoc', () => {
+  it('prefers spec.generators over a legacy annotation', () => {
+    const composer = parseDocument(
+      `apiVersion: ${BACKSTAGE_API_VERSION}
+kind: ${BACKSTAGE_KIND_NRCOMPOSER}
+spec:
+  generators:
+    - gh-nodejs-build
+  annotations:
+    composer.io.nrs.gov.bc.ca/generators: "stale,legacy"
+`,
+    );
+    expect(getGeneratorsFromDoc(composer)).toEqual(['gh-nodejs-build']);
+  });
+
+  it('falls back to the legacy annotation when no spec.generators exist', () => {
+    const composer = parseDocument(
+      `apiVersion: ${BACKSTAGE_API_VERSION}
+kind: ${BACKSTAGE_KIND_COMPONENT}
+metadata:
+  name: my-service
+  annotations:
+    composer.io.nrs.gov.bc.ca/generators: " backstage , gh-maven-build "
+`,
+    );
+    expect(getGeneratorsFromDoc(composer)).toEqual([
+      'backstage',
+      'gh-maven-build',
+    ]);
+  });
+
+  it('returns an empty list for an undefined document', () => {
+    expect(getGeneratorsFromDoc(undefined)).toEqual([]);
   });
 });
 

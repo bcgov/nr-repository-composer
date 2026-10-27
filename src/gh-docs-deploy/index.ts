@@ -1,6 +1,6 @@
 import { BaseGenerator } from '../util/base-generator.js';
-import { BACKSTAGE_KIND_COMPONENT } from '../util/yaml.js';
-import { destinationGitPath } from '../util/git.js';
+import { BACKSTAGE_KIND_NRCOMPOSER } from '../util/yaml.js';
+import { destinationGitPath, ensureGitRepositoryRoot } from '../util/git.js';
 import type { BaseOptions } from 'yeoman-generator';
 
 /**
@@ -21,15 +21,13 @@ export default class extends BaseGenerator {
     };
   }
 
-  async prompting() {
-    return super.prompting();
+  _getStorageOptions() {
+    return { kind: BACKSTAGE_KIND_NRCOMPOSER };
   }
 
-  _getStorageOptions() {
-    return {
-      kind: BACKSTAGE_KIND_COMPONENT,
-      storageOptions: { ignoreKindMismatch: true },
-    };
+  async prompting() {
+    ensureGitRepositoryRoot(this.destinationRoot(), this._getGeneratorName());
+    return super.prompting();
   }
 
   // Generate GitHub workflows

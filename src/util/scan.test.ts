@@ -84,6 +84,33 @@ metadata:
       generators: ['backstage-location', 'gh-common-mono-build'],
     });
   });
+
+  it('reads generators from a paired NRComposer document', () => {
+    const record = toScanRecord(
+      doc(`
+kind: Component
+metadata:
+  name: world
+`),
+      'mod1/catalog-info.yaml',
+      undefined,
+      doc(`
+kind: NRComposer
+spec:
+  generators:
+    - backstage
+    - gh-maven-build
+`),
+    );
+
+    expect(record).toEqual({
+      kind: 'Component',
+      name: 'world',
+      dir: 'mod1',
+      parentPath: undefined,
+      generators: ['backstage', 'gh-maven-build'],
+    });
+  });
 });
 
 describe('formatScanRecordsHeadless', () => {

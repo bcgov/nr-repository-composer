@@ -1,85 +1,273 @@
 import * as fs from 'fs';
-import { Document, isSeq, parseAllDocuments } from 'yaml';
+import { Document, isMap, isSeq } from 'yaml';
 import { PromptQuestion } from 'yeoman-generator';
 import {
   BACKSTAGE_API_VERSION,
+  BACKSTAGE_FILENAME,
+  BACKSTAGE_KIND_COMPONENT,
+  BACKSTAGE_KIND_INSTANCE,
+  BACKSTAGE_KIND_LOCATION,
+  BACKSTAGE_KIND_NRCOMPOSER,
+  NRCOMPOSER_ANSWERS_PATH,
   addGeneratorToDoc,
   hasGeneratorInDoc,
+  hasNrcomposerContent,
   extractFromYaml,
+  isDocumentProp,
+  newNrcomposerDoc,
+  parseCatalog,
   propRecord,
   pathToProps,
 } from './yaml.js';
+import {
+  PROMPT_INSTANCE_ENV,
+  PROMPT_INSTANCE_NAME,
+  PROMPT_INSTANCE_URL,
+} from './prompts.js';
+
+/**
+ * Kinds that may appear more than once in a catalog file. The shared answers
+ * map cannot tell their documents apart, so their prompt answers are stored on
+ * the document itself (prompt name to document path). Blank answers are not
+ * written, so once the `required` path is set a missing value was answered
+ * blank.
+ */
+const MULTI_DOCUMENT_KINDS: Record<
+  string,
+  { required: string[]; prompts: Record<string, string[]> }
+> = {
+  [BACKSTAGE_KIND_INSTANCE]: {
+    required: ['spec', 'env'],
+    prompts: {
+      [PROMPT_INSTANCE_ENV.name]: ['spec', 'env'],
+      [PROMPT_INSTANCE_NAME.name]: ['spec', 'name'],
+      [PROMPT_INSTANCE_URL.name]: ['spec', 'url'],
+    },
+  },
+};
+
+// The generator that creates each catalog entity kind.
+const KIND_GENERATORS: Record<string, string> = {
+  [BACKSTAGE_KIND_COMPONENT]: 'backstage',
+  [BACKSTAGE_KIND_LOCATION]: 'backstage-location',
+};
 
 export class BackstageStorage {
   private path: string;
   private name: string;
   // The catalog file may hold several YAML documents separated by the `---`
-  // delimiter (one per Backstage `kind`). `backstageDoc` is the document that
-  // matches this instance's `kind`; the others are kept so a save can write the
-  // whole multi-document file back without dropping unrelated kinds.
+  // delimiter. On load every entity document is paired with a NRComposer
+  // document (created if missing) carrying its composer bookkeeping, so reads
+  // only need `backstageDoc` and its `composerDoc`. All documents are kept so
+  // a save writes the whole multi-document file back.
   private backstageDocs: Document[] = [];
   private backstageDoc!: Document;
+  private composerDoc!: Document;
 
   constructor(
     name: string,
     kind: string,
+    metadataName: string | undefined,
     configPath: string,
-    options: { ignoreKindMismatch?: boolean } = {},
   ) {
     this.path = configPath;
     this.name = name;
 
-    if (fs.existsSync(this.path)) {
-      const backstageYaml = fs.readFileSync(this.path, 'utf8');
-      this.backstageDocs = parseAllDocuments(backstageYaml);
-      // Skip empty documents (e.g. a stray trailing `---`) when locating the
-      // one that matches this instance's kind.
-      const populated = this.backstageDocs.filter((doc) => doc.contents);
+    const { docs, entities } = fs.existsSync(this.path)
+      ? parseCatalog(fs.readFileSync(this.path, 'utf8'))
+      : { docs: [], entities: [] };
+    this.backstageDocs = docs;
 
-      // Prefer the document that already matches this instance's kind, so a
-      // catalog file holding several kinds keeps each kind's data in its own
-      // document.
-      const existing = populated.find((doc) => doc.getIn(['kind']) === kind);
-
-      if (existing) {
-        this.backstageDoc = existing;
-      } else if (options.ignoreKindMismatch) {
-        // No document of this kind exists. Preserve the historic single-document
-        // behaviour: attach to the first existing document when there is one.
-        this.backstageDoc = populated[0] ?? this.newDocumentForKind(kind);
-      } else {
-        const active = populated[0];
-        if (active) {
-          const foundKind = active.getIn(['kind']);
-          throw new Error(
-            `Backstage document kind mismatch: expected "${kind}", found "${foundKind}". Are you running the correct generator for the current working directory?`,
-          );
-        }
-        // The file exists but is blank; start a document for this kind.
-        this.backstageDoc = this.newDocumentForKind(kind);
-      }
-
-      // Keep the active document registered so save() can emit it even when it
-      // was created fresh for this kind.
-      if (!this.backstageDocs.includes(this.backstageDoc)) {
-        this.backstageDocs.push(this.backstageDoc);
-      }
-    } else {
-      this.backstageDoc = this.newDocumentForKind(kind);
-      this.backstageDocs = [this.backstageDoc];
+    // Only one document per kind is supported, except for multi-document
+    // kinds.
+    const kinds = docs
+      .filter((doc) => doc.contents)
+      .map((doc) => String(doc.get('kind')))
+      .filter((k) => !MULTI_DOCUMENT_KINDS[k]);
+    const duplicate = kinds.find((k, i) => kinds.indexOf(k) !== i);
+    if (duplicate) {
+      throw new Error(
+        `Backstage catalog ${this.path} has more than one "${duplicate}" document; only one document per kind is supported.`,
+      );
     }
+
+    if (kind === BACKSTAGE_KIND_NRCOMPOSER) {
+      // This instance *is* the composer document.
+      this.backstageDoc =
+        docs.find((doc) => doc.contents && doc.get('kind') === kind) ??
+        this.appendDocument(kind);
+      this.composerDoc = this.backstageDoc;
+      return;
+    }
+
+    let entity = entities.find((e) => e.doc.get('kind') === kind);
+    if (!entity) {
+      const doc = this.appendDocument(kind, metadataName);
+      // The file's NRComposer is shared by all of its entities.
+      let composerDoc = entities[0]?.composerDoc;
+      if (!composerDoc) {
+        composerDoc = newNrcomposerDoc();
+        this.backstageDocs.push(composerDoc);
+      }
+      entity = { doc, composerDoc };
+    }
+    this.backstageDoc = entity.doc;
+    this.composerDoc = entity.composerDoc;
   }
 
   /** Create and register a fresh document carrying the standard Backstage header. */
-  private newDocumentForKind(kind: string): Document {
+  private appendDocument(kind: string, metadataName?: string): Document {
     const doc = new Document();
     doc.setIn(['apiVersion'], BACKSTAGE_API_VERSION);
     doc.setIn(['kind'], kind);
+    if (metadataName) {
+      doc.setIn(['metadata', 'name'], metadataName);
+    }
+    this.backstageDocs.push(doc);
     return doc;
+  }
+
+  /** The documents of a kind held in this catalog file, in file order. */
+  kindDocs(kind: string): Document[] {
+    return this.backstageDocs.filter(
+      (doc) => doc.contents && doc.get('kind') === kind,
+    );
+  }
+
+  /**
+   * The nth (zero-based) document of a kind. An index equal to the current
+   * count creates and registers a new document of that kind after the last
+   * one. Kinds limited to one document per catalog only accept index 0.
+   */
+  kindDoc(kind: string, index: number): Document {
+    const docs = this.kindDocs(kind);
+    const max = MULTI_DOCUMENT_KINDS[kind] ? docs.length : 0;
+    if (!Number.isInteger(index) || index < 0 || index > max) {
+      throw new Error(
+        `${kind} index ${index} is out of range: ${docs.length} ${kind} document(s) exist.`,
+      );
+    }
+    if (index < docs.length) {
+      return docs[index];
+    }
+    const doc = new Document();
+    doc.setIn(['apiVersion'], BACKSTAGE_API_VERSION);
+    doc.setIn(['kind'], kind);
+    const after = docs[docs.length - 1] ?? this.composerDoc;
+    const position = this.backstageDocs.indexOf(after);
+    this.backstageDocs.splice(
+      position === -1 ? this.backstageDocs.length : position + 1,
+      0,
+      doc,
+    );
+    return doc;
+  }
+
+  /**
+   * Make the nth (zero-based) document of a kind the one this storage reads
+   * and writes, creating it when the index equals the current count (see
+   * `kindDoc`).
+   */
+  selectKindDoc(kind: string, index: number): Document {
+    this.backstageDoc = this.kindDoc(kind, index);
+    return this.backstageDoc;
+  }
+
+  /**
+   * The catalog's document of a kind, which must already have been created
+   * (named) by the generator that owns the kind.
+   *
+   * @throws When the catalog has no named document of the kind.
+   */
+  ensureKindExists(kind: string): Document {
+    const [doc] = this.kindDocs(kind);
+    const name = doc?.getIn(['metadata', 'name']);
+    if (typeof name !== 'string' || !name) {
+      const owner = KIND_GENERATORS[kind];
+      throw new Error(
+        `No ${kind} found in ${BACKSTAGE_FILENAME}.${owner ? ` Run the ${owner} generator first.` : ''}`,
+      );
+    }
+    return doc;
+  }
+
+  /**
+   * Read the catalog values for a list of prompts from a document of a kind.
+   *
+   * Each prompt's value is looked up at the catalog path its `name` maps to in
+   * `propRecord` (the same mapping the storage layer uses), so a caller can pull
+   * values that live on the entity document — and are therefore not prompt
+   * answers — without hard-coding the path. Unmapped prompts are skipped.
+   *
+   * @param kind The document kind to read (e.g. BACKSTAGE_KIND_COMPONENT).
+   * @param prompts The prompts whose catalog values to extract; each prompt's
+   *   `name` selects the path.
+   * @returns A map of the extracted prompt names to their string values.
+   */
+  extractPromptValues(
+    kind: string,
+    ...prompts: PromptQuestion[]
+  ): Record<string, string> {
+    const doc = this.ensureKindExists(kind);
+    const values: Record<string, string> = {};
+    for (const prompt of prompts) {
+      const pathToProp = propRecord[prompt.name];
+      if (pathToProp) {
+        values[prompt.name] = String(doc.getIn(pathToProp.path) ?? '');
+      }
+    }
+    return values;
   }
 
   get doc() {
     return this.backstageDoc;
+  }
+
+  /**
+   * The mapping of a prompt whose value is written directly to the entity
+   * document, so it is read from there rather than the NRComposer answers.
+   */
+  private documentProp(key: string) {
+    const pathToProp = propRecord[key];
+    return pathToProp &&
+      isDocumentProp(pathToProp) &&
+      this.backstageDoc !== this.composerDoc
+      ? pathToProp
+      : undefined;
+  }
+
+  /** The prompts stored on the current document, if it is a multi-document kind. */
+  private get docPrompts() {
+    return MULTI_DOCUMENT_KINDS[String(this.backstageDoc.get('kind'))];
+  }
+
+  private getDocPrompt(name: string): unknown {
+    const { required, prompts } = this.docPrompts;
+    const value = this.backstageDoc.getIn(prompts[name]);
+    if (value === undefined && this.backstageDoc.hasIn(required)) {
+      return '';
+    }
+    return value;
+  }
+
+  private setDocPrompt(name: string, value: unknown) {
+    const path = this.docPrompts.prompts[name];
+    const trimmed = typeof value === 'string' ? value.trim() : value;
+    if (trimmed === null || trimmed === undefined || trimmed === '') {
+      if (this.backstageDoc.hasIn(path)) {
+        this.backstageDoc.deleteIn(path);
+      }
+    } else {
+      this.backstageDoc.setIn(path, trimmed);
+    }
+  }
+
+  /**
+   * The dedicated NRComposer document carrying this entity's composer
+   * bookkeeping (`spec.generators`, `spec.skipAutomatedScan`, `spec.answers`).
+   */
+  get composer(): Document {
+    return this.composerDoc;
   }
 
   /**
@@ -91,30 +279,72 @@ export class BackstageStorage {
   }
 
   getAnswers() {
-    return extractFromYaml(this.backstageDoc, pathToProps);
+    if (this.docPrompts) {
+      const answers: Record<string, unknown> = {};
+      for (const name of Object.keys(this.docPrompts.prompts)) {
+        const value = this.getDocPrompt(name);
+        if (value !== undefined) {
+          answers[name] = value;
+        }
+      }
+      return answers;
+    }
+    const answers: Record<string, unknown> = {};
+    const storedAnswers = this.composerDoc.getIn(NRCOMPOSER_ANSWERS_PATH);
+    if (isMap(storedAnswers)) {
+      Object.assign(answers, storedAnswers.toJSON());
+    }
+    const documentProps = pathToProps.filter((pathToProp) =>
+      this.documentProp(pathToProp.prop),
+    );
+    for (const pathToProp of documentProps) {
+      delete answers[pathToProp.prop];
+    }
+    return Object.assign(
+      answers,
+      extractFromYaml(this.backstageDoc, documentProps),
+    );
   }
 
   addGeneratorToDoc(generator: string) {
-    addGeneratorToDoc(this.backstageDoc, generator);
+    addGeneratorToDoc(this.composerDoc, generator);
   }
 
   hasGenerator(generator: string): boolean {
-    return hasGeneratorInDoc(this.backstageDoc, generator);
+    return hasGeneratorInDoc(this.composerDoc, generator);
   }
 
   save() {
     console.log(`Saving backstage document to ${this.path}`);
-    // Emit every held document, one per Backstage `kind`, joined with the
-    // standard YAML multi-document delimiter. Empty documents are dropped so a
-    // single-kind file stays a plain single document (byte-identical output).
+    // Emit every held document joined with the standard YAML multi-document
+    // delimiter. Empty documents and NRComposer documents without bookkeeping
+    // are dropped so an untouched single-entity file stays a plain single
+    // document.
     const output = this.backstageDocs
-      .filter((doc) => doc.contents)
-      .map((doc) => doc.toString())
+      .filter(
+        (doc) =>
+          doc.contents &&
+          (doc.get('kind') !== BACKSTAGE_KIND_NRCOMPOSER ||
+            hasNrcomposerContent(doc)),
+      )
+      .map((doc) => doc.toString({ directives: false }))
       .join('\n---\n');
     fs.writeFileSync(this.path, output);
   }
 
   getPath(path: string | string[], option = ''): unknown {
+    if (typeof path === 'string' && this.docPrompts) {
+      return this.docPrompts.prompts[path]
+        ? this.getDocPrompt(path)
+        : undefined;
+    }
+    if (
+      typeof path === 'string' &&
+      !this.documentProp(path) &&
+      this.composerDoc.hasIn([...NRCOMPOSER_ANSWERS_PATH, path])
+    ) {
+      return this.composerDoc.getIn([...NRCOMPOSER_ANSWERS_PATH, path]);
+    }
     const docPath = Array.isArray(path) ? path : propRecord[path]?.path;
     if (!docPath) {
       // Unmapped names (e.g. transient per-environment prompt keys such as
@@ -137,8 +367,17 @@ export class BackstageStorage {
     if (key === 'promptValues') {
       return this.getAnswers();
     }
-    // console.log(`Getting key "${key}"`);
-    const val = this.backstageDoc.getIn(propRecord[key].path);
+    if (
+      !this.documentProp(key) &&
+      this.composerDoc.hasIn([...NRCOMPOSER_ANSWERS_PATH, key])
+    ) {
+      return this.composerDoc.getIn([...NRCOMPOSER_ANSWERS_PATH, key]);
+    }
+    const path = propRecord[key]?.path;
+    if (!path) {
+      return undefined;
+    }
+    const val = this.backstageDoc.getIn(path);
     return val && isSeq(val) ? val.toJSON().join() : val;
   }
 
@@ -147,17 +386,48 @@ export class BackstageStorage {
     return this.backstageDoc.toJSON();
   }
 
-  set(key: string, value: string) {
+  set(key: string, value: unknown) {
+    if (key === 'promptValues') {
+      // Yeoman's prompt cache: keep every answer flat in the shared map.
+      for (const [name, answer] of Object.entries(
+        (value ?? {}) as Record<string, unknown>,
+      )) {
+        this.set(name, answer);
+      }
+      return;
+    }
+    if (this.docPrompts) {
+      if (this.docPrompts.prompts[key]) {
+        this.setDocPrompt(key, value);
+      }
+      return;
+    }
     console.log(`Setting key "${key}" to`, value);
+    const pathToProp = this.documentProp(key);
+    if (!pathToProp) {
+      this.composerDoc.setIn([...NRCOMPOSER_ANSWERS_PATH, key], value);
+      return;
+    }
     this.backstageDoc.setIn(
-      propRecord[key].path,
-      propRecord[key].csv ? value.split(',') : value,
+      pathToProp.path,
+      pathToProp.csv && typeof value === 'string' ? value.split(',') : value,
     );
+    if (this.composerDoc.hasIn([...NRCOMPOSER_ANSWERS_PATH, key])) {
+      this.composerDoc.deleteIn([...NRCOMPOSER_ANSWERS_PATH, key]);
+    }
   }
 
-  setPath(path: string | string[], value: string | null) {
+  setPath(path: string | string[], value: unknown) {
+    if (typeof path === 'string' && this.docPrompts) {
+      this.set(path, value);
+      return;
+    }
     if (value === null) {
       // Do not set null values
+      return;
+    }
+    if (typeof path === 'string' && propRecord[path]) {
+      this.set(path, value);
       return;
     }
     const resolvedPath = Array.isArray(path) ? path : propRecord[path]?.path;
@@ -166,12 +436,19 @@ export class BackstageStorage {
       // catalog fields; skip them rather than writing to an undefined path.
       return;
     }
-    const csv = propRecord[path as string]?.csv;
-    this.backstageDoc.setIn(resolvedPath, csv ? value.split(',') : value);
+    this.backstageDoc.setIn(resolvedPath, value);
   }
 
   delete(key: string | string[]) {
-    const path = Array.isArray(key) ? key : propRecord[key].path;
+    if (Array.isArray(key)) {
+      this.backstageDoc.deleteIn(key);
+      return;
+    }
+    this.composerDoc.deleteIn([...NRCOMPOSER_ANSWERS_PATH, key]);
+    const path = propRecord[key]?.path;
+    if (!path) {
+      return;
+    }
     this.backstageDoc.deleteIn(path);
   }
 
@@ -200,10 +477,25 @@ export class BackstageStorage {
     const removedProps: string[] = [];
     for (const pathToProp of pathToProps) {
       const path = pathToProp.path;
-      if (this.backstageDoc.hasIn(path) && pathToProp.deprecated) {
+      const hasLegacyValue = this.backstageDoc.hasIn(path);
+      const hasStoredValue = this.composerDoc.hasIn([
+        ...NRCOMPOSER_ANSWERS_PATH,
+        pathToProp.prop,
+      ]);
+      if ((hasLegacyValue || hasStoredValue) && pathToProp.deprecated) {
         removedProps.push(pathToProp.prop);
-        pathToProp.deprecated(this, this.backstageDoc.getIn(path));
+        const value = hasStoredValue
+          ? this.composerDoc.getIn([
+              ...NRCOMPOSER_ANSWERS_PATH,
+              pathToProp.prop,
+            ])
+          : this.backstageDoc.getIn(path);
+        pathToProp.deprecated(this, value);
         this.backstageDoc.deleteIn(path);
+        this.composerDoc.deleteIn([
+          ...NRCOMPOSER_ANSWERS_PATH,
+          pathToProp.prop,
+        ]);
       }
     }
     if (removedProps.length > 0) {
@@ -216,13 +508,20 @@ export class BackstageStorage {
     const assumedDefaultProps: string[] = [];
     for (const pathToProp of pathToProps) {
       const path = pathToProp.path;
-      if (!this.backstageDoc.hasIn(path) && pathToProp.assumeDefaultValue) {
+      if (
+        !this.backstageDoc.hasIn(path) &&
+        !this.composerDoc.hasIn([
+          ...NRCOMPOSER_ANSWERS_PATH,
+          pathToProp.prop,
+        ]) &&
+        pathToProp.assumeDefaultValue
+      ) {
         const defaultValue = questions.find(
           (question) => question.name === pathToProp.prop,
         )?.default;
         if (defaultValue !== null) {
           assumedDefaultProps.push(pathToProp.prop);
-          this.backstageDoc.setIn(path, defaultValue);
+          this.set(pathToProp.prop, defaultValue);
         }
       }
     }

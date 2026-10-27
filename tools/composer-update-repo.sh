@@ -40,6 +40,11 @@ if [[ ! "$ORG" =~ ^(bcgov|bcgov-nr|bcgov-c)$ ]]; then
 fi
 
 CONTAINER_IMAGE_REF="ghcr.io/bcgov/nr-repository-composer:latest"
+# Composer bookkeeping now lives on a dedicated NRComposer document (one per
+# entity) inside catalog-info.yaml, with generators as a YAML array under
+# spec.generators. The legacy form stored these as metadata.annotations on the
+# entity document, so reads prefer the NRComposer document and fall back to the
+# legacy annotation to keep scanning pre-migration repositories.
 ANNOTATION_KEY="composer.io.nrs.gov.bc.ca/generators"
 SKIP_KEY="composer.io.nrs.gov.bc.ca/skipAutomatedScan"
 GITHUB_LABEL_HEX_COLOUR="8de25a"
@@ -104,14 +109,15 @@ if [[ $? -ne 0 ]]; then
     continue
 fi
 
-# Check if kind is Location
-KIND=$(echo "$RESPONSE" | yq eval ".kind" -)
+# Check if kind is Location. The root catalog document is the first entity
+# (Component or Location); NRComposer composer documents are ignored here.
+KIND=$(echo "$RESPONSE" | yq -P 'select(.kind != "NRComposer") | .kind' -)
 TARGETS="catalog-info.yaml"
 
 if [[ "$KIND" == "Location" ]]; then
     echo "  catalog-info.yaml kind is 'Location'. Processing multiple targets..."
 
-    TARGETS=$(echo "$RESPONSE" | yq eval '.spec.targets[]' -)
+    TARGETS=$(echo "$RESPONSE" | yq -P 'select(.kind == "Location") | .spec.targets[]' -)
     echo "  Found targets: $TARGETS"
 fi
 
@@ -168,20 +174,39 @@ for TARGET_FILE in $TARGETS; do
         continue
     fi
 
-    TARGET_ANNOTATION=$(yq eval ".metadata.annotations.\"$ANNOTATION_KEY\"" "$TARGET_FILE")
-    TARGET_SERVICE=$(yq eval ".metadata.name" "$TARGET_FILE")
-    TARGET_SKIP=$(yq eval ".metadata.annotations.\"$SKIP_KEY\"" "$TARGET_FILE")
+    # Prefer the NRComposer document's spec.generators (new multi-document
+    # form); fall back to the legacy metadata.annotations list so pre-migration
+    # repositories keep working. The new form joins the YAML array into a
+    # comma-separated string, matching the legacy shape for the loop below.
+    TARGET_ANNOTATION=$(yq -P 'select(.kind == "NRComposer") | .spec.generators | join(",")' "$TARGET_FILE" 2>/dev/null)
+    TARGET_LEGACY=$(yq eval ".metadata.annotations.\"$ANNOTATION_KEY\"" "$TARGET_FILE" 2>/dev/null)
+    TARGET_SERVICE=$(yq -P 'select(.kind != "NRComposer") | .metadata.name' "$TARGET_FILE" 2>/dev/null)
 
-    if [[ -z "$TARGET_ANNOTATION" || "$TARGET_ANNOTATION" == "null" ]]; then
+    TARGET_SKIP=$(yq -P 'select(.kind == "NRComposer") | .spec.skipAutomatedScan' "$TARGET_FILE" 2>/dev/null)
+    TARGET_SKIP_LEGACY=$(yq eval ".metadata.annotations.\"$SKIP_KEY\"" "$TARGET_FILE" 2>/dev/null)
+
+    # Normalise empty / null to an empty string.
+    [[ "$TARGET_ANNOTATION" == "null" ]] && TARGET_ANNOTATION=""
+    [[ "$TARGET_LEGACY" == "null" ]] && TARGET_LEGACY=""
+    [[ "$TARGET_SKIP" == "null" ]] && TARGET_SKIP=""
+    [[ "$TARGET_SKIP_LEGACY" == "null" ]] && TARGET_SKIP_LEGACY=""
+
+    # Prefer the new form; fall back to the legacy annotation when absent.
+    [[ -z "$TARGET_ANNOTATION" && -n "$TARGET_LEGACY" ]] && TARGET_ANNOTATION="$TARGET_LEGACY"
+    [[ -z "$TARGET_SKIP" && -n "$TARGET_SKIP_LEGACY" ]] && TARGET_SKIP="$TARGET_SKIP_LEGACY"
+
+    if [[ -z "$TARGET_ANNOTATION" ]]; then
         echo "    ⚠️ Annotation not found in $TARGET_FILE"
         continue
-    elif [[ -n "$TARGET_SKIP" && "$TARGET_SKIP" == "true" ]]; then
+    elif [[ "$TARGET_SKIP" == "true" ]]; then
         echo "    ⚠️ Skip annotation found in $TARGET_FILE"
         continue
     fi
 
     IFS=',' read -ra VALUES <<< "$TARGET_ANNOTATION"
     for VALUE in "${VALUES[@]}"; do
+        VALUE=$(echo "$VALUE" | tr -d '[:space:]')
+        [[ -z "$VALUE" ]] && continue
         echo "    🎯 Running generator: $VALUE"
 
         git reset --hard > /dev/null

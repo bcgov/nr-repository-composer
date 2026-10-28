@@ -57,7 +57,8 @@ step for most components. It is run at the root of the component within the
 repository. If you have multiple components, each should be placed in a
 directory off the root. Otherwise, the root of a non-monorepo should contain the
 component catalog file. From this point, the developer runs additional
-generators as required in the folder for each component.
+generators as required in the folder for each component. Use `backstage-api` to
+add one or more API entities to a component's catalog file.
 
 ## Recommended setup
 

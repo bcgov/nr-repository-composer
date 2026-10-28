@@ -3,6 +3,7 @@ import {
   BACKSTAGE_FILENAME,
   BACKSTAGE_API_VERSION,
   BACKSTAGE_KIND_COMPONENT,
+  BACKSTAGE_KIND_API,
   BACKSTAGE_KIND_INSTANCE,
   BACKSTAGE_KIND_LOCATION,
   BACKSTAGE_KIND_NRCOMPOSER,
@@ -25,6 +26,7 @@ describe('yaml constants', () => {
     expect(BACKSTAGE_FILENAME).toBe('catalog-info.yaml');
     expect(BACKSTAGE_API_VERSION).toBe('backstage.io/v1alpha1');
     expect(BACKSTAGE_KIND_COMPONENT).toBe('Component');
+    expect(BACKSTAGE_KIND_API).toBe('API');
     expect(BACKSTAGE_KIND_LOCATION).toBe('Location');
     expect(BACKSTAGE_KIND_NRCOMPOSER).toBe('NRComposer');
   });
@@ -357,35 +359,38 @@ kind: ${BACKSTAGE_KIND_NRCOMPOSER}
     ).toThrow(/only one is supported/);
   });
 
-  it('keeps existing Instance documents over a legacy instances answer', () => {
-    const { docs } = parseCatalog(
+  it('migrates legacy instance JSON into metadata.links, including missing URLs', () => {
+    const { entities } = parseCatalog(
       `apiVersion: ${BACKSTAGE_API_VERSION}
 kind: ${BACKSTAGE_KIND_COMPONENT}
 metadata:
   name: my-service
+  annotations:
+    playbook.io.nrs.gov.bc.ca/instances: '[{"env":"production","url":"https://app.example"},{"env":"tools","name":"tools"}]'
 ---
 apiVersion: ${BACKSTAGE_API_VERSION}
 kind: ${BACKSTAGE_KIND_NRCOMPOSER}
 spec:
   answers:
-    instances: '[{"env":"tools"}]'
----
-apiVersion: ${BACKSTAGE_API_VERSION}
-kind: ${BACKSTAGE_KIND_INSTANCE}
-metadata:
-  name: my-service-test
-spec:
-  env: test
+    nodeVersion: "22"
 `,
     );
 
-    const instances = docs.filter(
-      (doc) => doc.get('kind') === BACKSTAGE_KIND_INSTANCE,
-    );
-    expect(instances.map((doc) => doc.getIn(['spec', 'env']))).toEqual([
-      'test',
+    expect(entities[0].doc.getIn(['metadata', 'links'])).toEqual([
+      {
+        type: 'production',
+        title: 'production',
+        url: 'https://app.example',
+      },
+      { type: 'tools', title: 'tools' },
     ]);
-    expect(docs[1].hasIn(['spec', 'answers'])).toBe(false);
+    expect(entities[0].doc.hasIn(['metadata', 'annotations'])).toBe(false);
+    expect(
+      entities[0].composerDoc.getIn(['spec', 'answers'])?.toJSON(),
+    ).toEqual({ nodeVersion: '22' });
+    expect(getGeneratorsFromDoc(entities[0].composerDoc)).toContain(
+      'backstage-instances',
+    );
   });
 
   it('pairs a lone entity with a lone NRComposer placed before it', () => {

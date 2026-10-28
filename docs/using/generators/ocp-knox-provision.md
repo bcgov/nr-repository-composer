@@ -19,7 +19,10 @@ environment-specific Helm values and a README with installation and monitoring
 guidance.
 
 This generator should be run at the root directory of your component (service),
-which should contain the `catalog-info.yaml` for it.
+which should contain the `catalog-info.yaml` for it. Run the
+[`backstage`](backstage.md) generator first: the project and service recorded in
+the Helm values are read from the catalog's Component (`spec.system` and
+`metadata.name`).
 
 After running the generator, see the generated
 [`ocp-knox-provision/README.md`](https://github.com/bcgov/nr-repository-composer/blob/main/src/ocp-knox-provision/templates/README.md)
@@ -35,7 +38,6 @@ for the provisioning pattern and installation details.
 
 | Prompt | Affects |
 | --- | --- |
-| **Project / Service** | Identifiers recorded in the generated Helm values. |
 | **Intention user** | Broker intention user that approves the provisioning. |
 | **Enable vault secret sync to OpenShift secrets** | When enabled, the sync prompts below appear. |
 | **Vault secret paths to sync** *(when sync enabled)* | Comma-separated Vault paths, expressed with the **dev** segment as the pattern; test/prod values are derived from it. |

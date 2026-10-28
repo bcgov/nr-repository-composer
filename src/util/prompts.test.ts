@@ -12,6 +12,9 @@ import {
   PROMPT_INSTANCE_ENV,
   PROMPT_INSTANCE_NAME,
   PROMPT_INSTANCE_URL,
+  PROMPT_API_DEFINITION,
+  PROMPT_API_OWNER,
+  PROMPT_API_TYPE,
   PROMPT_TO_USAGE,
   getPromptToUsage,
 } from './prompts.js';
@@ -63,6 +66,23 @@ describe('prompt definitions', () => {
     ]) {
       expect(PROMPT_TO_USAGE[prompt.name]).toBeDefined();
     }
+  });
+
+  it('requires an absolute URL for each deployed instance link', () => {
+    expect(PROMPT_INSTANCE_URL.validate('https://app.example.gov.bc.ca')).toBe(
+      true,
+    );
+    expect(PROMPT_INSTANCE_URL.validate('')).not.toBe(true);
+    expect(PROMPT_INSTANCE_URL.validate('/relative/path')).not.toBe(true);
+  });
+
+  it('requires API type, owner, and definition values', () => {
+    expect(PROMPT_API_TYPE.validate('openapi')).toBe(true);
+    expect(PROMPT_API_TYPE.validate('')).not.toBe(true);
+    expect(PROMPT_API_OWNER.validate('artist-relations-team')).toBe(true);
+    expect(PROMPT_API_OWNER.validate('')).not.toBe(true);
+    expect(PROMPT_API_DEFINITION.validate('openapi: "3.0.0"')).toBe(true);
+    expect(PROMPT_API_DEFINITION.validate('')).not.toBe(true);
   });
 });
 

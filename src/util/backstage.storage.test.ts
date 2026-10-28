@@ -3,8 +3,8 @@ import * as os from 'node:os';
 import * as path from 'node:path';
 import { BackstageStorage } from './backstage.storage.js';
 import {
+  BACKSTAGE_KIND_API,
   BACKSTAGE_KIND_COMPONENT,
-  BACKSTAGE_KIND_INSTANCE,
   BACKSTAGE_KIND_LOCATION,
   BACKSTAGE_KIND_NRCOMPOSER,
   getGeneratorsFromDoc,
@@ -13,10 +13,12 @@ import {
 describe('BackstageStorage', () => {
   let tmpDir: string;
   let configPath: string;
+  let composerPath: string;
 
   beforeEach(() => {
     tmpDir = fs.mkdtempSync(path.join(os.tmpdir(), 'backstage-storage-'));
     configPath = path.join(tmpDir, 'catalog-info.yaml');
+    composerPath = path.join(tmpDir, 'catalog-composer.yaml');
     jest.spyOn(console, 'log').mockImplementation(() => {});
   });
 
@@ -235,7 +237,7 @@ spec:
     expect(content).toContain('name: renamed-service');
   });
 
-  it('writes answers to NRComposer in a second YAML document', () => {
+  it('writes answers to NRComposer in the composer file', () => {
     const storage = new BackstageStorage(
       'my-service',
       BACKSTAGE_KIND_COMPONENT,
@@ -246,9 +248,10 @@ spec:
     storage.set('nodeVersion', '22');
     storage.save();
 
-    const content = fs.readFileSync(configPath, 'utf8');
-    expect(content).toContain('\n---\n');
+    expect(fs.readFileSync(configPath, 'utf8')).not.toContain('NRComposer');
+    const content = fs.readFileSync(composerPath, 'utf8');
     expect(content).toContain('kind: NRComposer');
+    expect(content).toContain('apiVersion: composer.io.nrs.gov.bc.ca/v1');
     expect(content).toContain('answers:');
     expect(content).toContain('nodeVersion: "22"');
     expect(content).not.toContain('serviceName:');
@@ -263,8 +266,11 @@ metadata:
   name: my-service
   tags:
     - website
----
-apiVersion: backstage.io/v1alpha1
+`,
+    );
+    fs.writeFileSync(
+      composerPath,
+      `apiVersion: backstage.io/v1alpha1
 kind: ${BACKSTAGE_KIND_NRCOMPOSER}
 spec:
   answers:
@@ -368,12 +374,13 @@ metadata:
 
     storage.save();
     const content = fs.readFileSync(configPath, 'utf8');
-    expect(content).toContain('---');
-    expect(content).toContain('kind: NRComposer');
-    expect(content).toContain('- gh-nodejs-build');
+    expect(content).not.toContain('NRComposer');
     expect(content).not.toContain('composer.io.nrs.gov.bc.ca/generators');
     expect(content).not.toContain('playbook.io.nrs.gov.bc.ca/nodeVersion');
     expect(content).toContain('github.com/project-slug: bcgov/my-service');
+    const composer = fs.readFileSync(composerPath, 'utf8');
+    expect(composer).toContain('kind: NRComposer');
+    expect(composer).toContain('- gh-nodejs-build');
   });
 
   it('migrates skipAutomatedScan into the NRComposer document on load', () => {
@@ -405,7 +412,7 @@ metadata:
     expect(storage.composer.getIn(['spec', 'skipAutomatedScan'])).toBe(true);
 
     storage.save();
-    const content = fs.readFileSync(configPath, 'utf8');
+    const content = fs.readFileSync(composerPath, 'utf8');
     expect(content).toContain('kind: NRComposer');
     expect(content).toContain('skipAutomatedScan: true');
   });
@@ -424,7 +431,6 @@ metadata:
   name: second-service
 `,
     );
-
     expect(
       () =>
         new BackstageStorage(
@@ -436,222 +442,59 @@ metadata:
     ).toThrow(/only one document per kind/);
   });
 
-  const instanceCatalog = `apiVersion: backstage.io/v1alpha1
-kind: ${BACKSTAGE_KIND_COMPONENT}
-metadata:
-  name: my-service
----
-apiVersion: backstage.io/v1alpha1
-kind: ${BACKSTAGE_KIND_INSTANCE}
-metadata:
-  name: my-service-test
-spec:
-  env: test
----
-apiVersion: backstage.io/v1alpha1
-kind: ${BACKSTAGE_KIND_INSTANCE}
-metadata:
-  name: my-service-production
-spec:
-  env: production
-  url: https://app.example.gov.bc.ca
-`;
-
-  it('allows several Instance documents without pairing them to NRComposers', () => {
-    fs.writeFileSync(configPath, instanceCatalog);
-
-    const storage = new BackstageStorage(
-      'my-service',
-      BACKSTAGE_KIND_COMPONENT,
-      undefined,
-      configPath,
-    );
-
-    expect(
-      storage
-        .kindDocs(BACKSTAGE_KIND_INSTANCE)
-        .map((doc) => doc.getIn(['spec', 'env'])),
-    ).toEqual(['test', 'production']);
-    expect(
-      storage.kindDoc(BACKSTAGE_KIND_INSTANCE, 1).getIn(['spec', 'url']),
-    ).toBe('https://app.example.gov.bc.ca');
-    expect(
-      storage.docs.filter((doc) => doc.get('kind') === 'NRComposer'),
-    ).toHaveLength(1);
-  });
-
-  it('adds the next Instance document after the last one and saves it', () => {
-    fs.writeFileSync(configPath, instanceCatalog);
-
-    const storage = new BackstageStorage(
-      'my-service',
-      BACKSTAGE_KIND_COMPONENT,
-      undefined,
-      configPath,
-    );
-    const added = storage.kindDoc(BACKSTAGE_KIND_INSTANCE, 2);
-    added.setIn(['spec', 'env'], 'tools');
-    storage.addGeneratorToDoc('backstage-instances');
-    storage.save();
-
-    const kinds = fs
-      .readFileSync(configPath, 'utf8')
-      .split('\n---\n')
-      .map((block) => block.match(/^kind: (\w+)/m)?.[1]);
-    expect(kinds).toEqual([
-      BACKSTAGE_KIND_COMPONENT,
-      'NRComposer',
-      BACKSTAGE_KIND_INSTANCE,
-      BACKSTAGE_KIND_INSTANCE,
-      BACKSTAGE_KIND_INSTANCE,
-    ]);
-    const reloaded = new BackstageStorage(
-      'my-service',
-      BACKSTAGE_KIND_COMPONENT,
-      undefined,
-      configPath,
-    );
-    expect(
-      reloaded.kindDoc(BACKSTAGE_KIND_INSTANCE, 2).getIn(['spec', 'env']),
-    ).toBe('tools');
-  });
-
-  it('reads Instance prompts from the selected document spec keys', () => {
-    fs.writeFileSync(configPath, instanceCatalog);
-    const storage = new BackstageStorage(
-      'my-service',
-      BACKSTAGE_KIND_COMPONENT,
-      undefined,
-      configPath,
-    );
-
-    expect(storage.selectKindDoc(BACKSTAGE_KIND_INSTANCE, 1)).toBe(storage.doc);
-    expect(storage.getPath('instanceEnv')).toBe('production');
-    // Optional values left blank count as answered once env is set.
-    expect(storage.getPath('instanceName')).toBe('');
-    expect(storage.getPath('serviceName')).toBeUndefined();
-    expect(storage.getAnswers()).toEqual({
-      instanceEnv: 'production',
-      instanceName: '',
-      instanceUrl: 'https://app.example.gov.bc.ca',
-    });
-  });
-
-  it('leaves every Instance prompt unanswered for a new document', () => {
-    fs.writeFileSync(configPath, instanceCatalog);
-    const storage = new BackstageStorage(
-      'my-service',
-      BACKSTAGE_KIND_COMPONENT,
-      undefined,
-      configPath,
-    );
-
-    storage.selectKindDoc(BACKSTAGE_KIND_INSTANCE, 2);
-    expect(storage.getPath('instanceEnv')).toBeUndefined();
-    expect(storage.getPath('instanceName')).toBeUndefined();
-    expect(storage.getAnswers()).toEqual({});
-  });
-
-  it('writes Instance prompts to the document, not the shared answers', () => {
-    fs.writeFileSync(configPath, instanceCatalog);
-    const storage = new BackstageStorage(
-      'my-service',
-      BACKSTAGE_KIND_COMPONENT,
-      undefined,
-      configPath,
-    );
-
-    const doc = storage.selectKindDoc(BACKSTAGE_KIND_INSTANCE, 1);
-    storage.setPath('instanceName', ' blue ');
-    storage.setPath('instanceUrl', '');
-    storage.setPath('unmapped', 'ignored');
-    storage.set('promptValues', { instanceEnv: 'test', other: 'ignored' });
-
-    expect(doc.toJSON().spec).toEqual({ env: 'test', name: 'blue' });
-    expect(storage.composer.toJSON().spec?.answers).toBeUndefined();
-  });
-
-  it('rejects an Instance index past the next new document', () => {
-    fs.writeFileSync(configPath, instanceCatalog);
-    const storage = new BackstageStorage(
-      'my-service',
-      BACKSTAGE_KIND_COMPONENT,
-      undefined,
-      configPath,
-    );
-
-    expect(() => storage.kindDoc(BACKSTAGE_KIND_INSTANCE, 3)).toThrow(
-      /out of range/,
-    );
-    expect(() => storage.kindDoc(BACKSTAGE_KIND_INSTANCE, -1)).toThrow(
-      /out of range/,
-    );
-  });
-
-  it('only selects index 0 of a single-document kind', () => {
-    fs.writeFileSync(configPath, instanceCatalog);
-    const storage = new BackstageStorage(
-      'my-service',
-      BACKSTAGE_KIND_COMPONENT,
-      undefined,
-      configPath,
-    );
-
-    expect(storage.kindDoc(BACKSTAGE_KIND_COMPONENT, 0)).toBe(storage.doc);
-    expect(() => storage.kindDoc(BACKSTAGE_KIND_COMPONENT, 1)).toThrow(
-      /out of range/,
-    );
-  });
-
-  it('migrates stored instances into Instance documents on load', () => {
+  it('stores multiple API documents independently', () => {
     fs.writeFileSync(
       configPath,
       `apiVersion: backstage.io/v1alpha1
-kind: ${BACKSTAGE_KIND_COMPONENT}
+kind: ${BACKSTAGE_KIND_API}
 metadata:
-  name: my-service
-  annotations:
-    playbook.io.nrs.gov.bc.ca/instances: '[{"env":"production","url":"https://app.example"},{"env":"production","name":"blue"}]'
+  name: artist-api
+spec:
+  type: openapi
+  lifecycle: production
+  owner: artist-team
+  definition: 'openapi: 3.0.0'
 ---
 apiVersion: backstage.io/v1alpha1
-kind: NRComposer
+kind: ${BACKSTAGE_KIND_API}
+metadata:
+  name: catalog-api
 spec:
-  answers:
-    instanceEnvs:
-      - production
-    instanceUrl:production: https://app.example
-    nodeVersion: "22"
+  type: graphql
+  lifecycle: experimental
+  definition: 'type Query { catalog: String }'
 `,
     );
 
     const storage = new BackstageStorage(
-      'my-service',
-      BACKSTAGE_KIND_COMPONENT,
+      'artist-api',
+      BACKSTAGE_KIND_API,
       undefined,
       configPath,
     );
+    expect(storage.kindDocs(BACKSTAGE_KIND_API)).toHaveLength(2);
 
+    storage.selectKindDoc(BACKSTAGE_KIND_API, 1);
+    expect(storage.getPath('apiName')).toBe('catalog-api');
+    expect(storage.getPath('apiType')).toBe('graphql');
+    expect(storage.getPath('apiOwner')).toBeUndefined();
+    expect(storage.getPath('apiSystem')).toBe('');
+    storage.setPath('apiOwner', 'new-owner');
+    storage.save();
+
+    const reloaded = new BackstageStorage(
+      'artist-api',
+      BACKSTAGE_KIND_API,
+      undefined,
+      configPath,
+    );
+    expect(reloaded.kindDocs(BACKSTAGE_KIND_API)).toHaveLength(2);
     expect(
-      storage.kindDocs(BACKSTAGE_KIND_INSTANCE).map((doc) => doc.toJSON()),
-    ).toEqual([
-      {
-        apiVersion: 'backstage.io/v1alpha1',
-        kind: BACKSTAGE_KIND_INSTANCE,
-        metadata: { name: 'my-service-production' },
-        spec: { env: 'production', url: 'https://app.example' },
-      },
-      {
-        apiVersion: 'backstage.io/v1alpha1',
-        kind: BACKSTAGE_KIND_INSTANCE,
-        metadata: { name: 'my-service-blue' },
-        spec: { env: 'production', name: 'blue' },
-      },
-    ]);
-    expect(storage.doc.hasIn(['metadata', 'annotations'])).toBe(false);
-    expect(storage.composer.getIn(['spec', 'answers'])?.toJSON()).toEqual({
-      nodeVersion: '22',
-    });
-    expect(storage.hasGenerator('backstage-instances')).toBe(true);
+      reloaded.kindDoc(BACKSTAGE_KIND_API, 0).getIn(['spec', 'owner']),
+    ).toBe('artist-team');
+    expect(
+      reloaded.kindDoc(BACKSTAGE_KIND_API, 1).getIn(['spec', 'owner']),
+    ).toBe('new-owner');
   });
 
   it('records a generator on the NRComposer document and emits it on save', () => {
@@ -675,8 +518,87 @@ spec:
     expect(getGeneratorsFromDoc(storage.composer)).toEqual(['gh-nodejs-build']);
 
     storage.save();
-    const content = fs.readFileSync(configPath, 'utf8');
+    const content = fs.readFileSync(composerPath, 'utf8');
     expect(content).toContain('kind: NRComposer');
     expect(content).toContain('- gh-nodejs-build');
+  });
+
+  it('prefers the composer file over a NRComposer in the catalog file without merging', () => {
+    fs.writeFileSync(
+      configPath,
+      `apiVersion: backstage.io/v1alpha1
+kind: Component
+metadata:
+  name: my-service
+---
+apiVersion: backstage.io/v1alpha1
+kind: NRComposer
+spec:
+  answers:
+    nodeVersion: "18"
+`,
+    );
+    fs.writeFileSync(
+      composerPath,
+      `apiVersion: backstage.io/v1alpha1
+kind: NRComposer
+spec:
+  answers:
+    other: x
+`,
+    );
+    const storage = new BackstageStorage(
+      'my-service',
+      BACKSTAGE_KIND_COMPONENT,
+      undefined,
+      configPath,
+    );
+    expect(storage.getPath('nodeVersion')).toBeUndefined();
+    expect(storage.getPath('other')).toBe('x');
+    storage.save();
+    expect(fs.readFileSync(configPath, 'utf8')).not.toContain('NRComposer');
+    expect(fs.readFileSync(composerPath, 'utf8')).toContain('other: x');
+  });
+
+  it('moves a NRComposer that only exists in the catalog file to the composer file', () => {
+    fs.writeFileSync(
+      configPath,
+      `apiVersion: backstage.io/v1alpha1
+kind: Component
+metadata:
+  name: my-service
+---
+apiVersion: backstage.io/v1alpha1
+kind: NRComposer
+spec:
+  answers:
+    nodeVersion: "18"
+`,
+    );
+    const storage = new BackstageStorage(
+      'my-service',
+      BACKSTAGE_KIND_COMPONENT,
+      undefined,
+      configPath,
+    );
+    expect(storage.getPath('nodeVersion')).toBe('18');
+    storage.save();
+    expect(fs.readFileSync(configPath, 'utf8')).not.toContain('NRComposer');
+    expect(fs.readFileSync(composerPath, 'utf8')).toContain('nodeVersion');
+  });
+
+  it('writes a placeholder catalog file when only composer data exists', () => {
+    const storage = new BackstageStorage(
+      'my-service',
+      BACKSTAGE_KIND_NRCOMPOSER,
+      undefined,
+      configPath,
+    );
+    storage.addGeneratorToDoc('gh-nodejs-build');
+    storage.save();
+    expect(fs.readFileSync(configPath, 'utf8')).toBe('');
+    expect(fs.readFileSync(composerPath, 'utf8')).toContain(
+      '- gh-nodejs-build',
+    );
   });
 });

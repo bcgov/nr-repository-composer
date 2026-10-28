@@ -1,12 +1,9 @@
-import type { Document } from 'yaml';
-
 /**
  * Deployed-instance catalog helpers.
  *
  * An "instance" describes a deployed environment for a component, e.g. its
  * `tools`, `development`, `test`, or `production` URL. Each instance is stored
- * in `catalog-info.yaml` as its own `kind: Instance` document with its values
- * under `spec.<key>` (`env`, optional `name`, optional `url`).
+ * as an entry in the Component's standard `metadata.links` array.
  */
 
 /** The well-known, standard environments offered through the prompts. */
@@ -17,13 +14,12 @@ export const STANDARD_ENVIRONMENTS = [
   'production',
 ] as const;
 
-/** A single deployed instance: an environment with an optional URL. */
+/** A deployed environment link. */
 export interface CatalogInstance {
   env: string;
   name?: string;
   url?: string;
 }
-
 /** Resolve an instance's name, defaulting it to its environment. */
 export function getInstanceName(instance: CatalogInstance): string {
   return instance.name?.trim() || instance.env;
@@ -81,9 +77,4 @@ export function parseInstances(raw: unknown): CatalogInstance[] {
       return instance;
     })
     .filter((item) => item.env.trim() !== '');
-}
-
-/** The instance described by an Instance document, if it has an environment. */
-export function instanceFromDoc(doc: Document): CatalogInstance | undefined {
-  return parseInstances([doc.toJSON()?.spec ?? {}])[0];
 }

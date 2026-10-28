@@ -7,17 +7,20 @@ import { TOOLS_DEFAULT_PROPERTIES } from './constants.js';
 import { getInstanceName, parseInstances } from './instances.js';
 
 export const BACKSTAGE_FILENAME = 'catalog-info.yaml';
+// The NRComposer document is kept in its own file beside the catalog file.
+export const COMPOSER_FILENAME = 'catalog-composer.yaml';
 export const BACKSTAGE_API_VERSION = 'backstage.io/v1alpha1';
 export const BACKSTAGE_KIND_COMPONENT = 'Component';
 export const BACKSTAGE_KIND_LOCATION = 'Location';
+export const BACKSTAGE_KIND_API = 'API';
 // A catalog file may also carry a `NRComposer` document that holds the
 // composer bookkeeping (the set of generators that produced it, plus scan
 // overrides). These fields used to live as `composer.io.nrs.gov.bc.ca/*`
 // annotations on the Backstage entity itself, which is off-spec for a
 // Backstage catalog entity; they have since moved to this dedicated document.
 export const BACKSTAGE_KIND_NRCOMPOSER = 'NRComposer';
-// Deployed instances of a component. Unlike other kinds, a catalog file may
-// hold several Instance documents; values live under `spec.<key>`.
+export const NRCOMPOSER_API_VERSION = 'composer.io.nrs.gov.bc.ca/v1';
+// Legacy kind retained so older Instance documents are not treated as entities.
 export const BACKSTAGE_KIND_INSTANCE = 'Instance';
 export const BACKSTAGE_GENERATOR_INSTANCES = 'backstage-instances';
 
@@ -41,16 +44,15 @@ export const NRCOMPOSER_GENERATOR_PATH = ['spec', 'generators'];
 export const NRCOMPOSER_SKIP_SCAN_PATH = ['spec', 'skipAutomatedScan'];
 export const NRCOMPOSER_ANSWERS_PATH = ['spec', 'answers'];
 
-// Legacy storage of deployed instances as a JSON array, retained only so it can
-// be migrated into Instance documents.
+// Legacy storage of deployed instances as a JSON array, migrated into links.
 export const LEGACY_INSTANCES_ANNOTATION_PATH = [
   'metadata',
   'annotations',
   'playbook.io.nrs.gov.bc.ca/instances',
 ];
-// Prompt answers from the former instance prompts on the backstage generator.
+// Prompt answers from the former instance prompts.
 const LEGACY_INSTANCE_ANSWER_PATTERN =
-  /^(instances|instanceEnvs|instancesCustom|instanceUrl:.*)$/;
+  /^(instances|instanceEnv|instanceName|instanceUrl|instanceEnvs|instancesCustom|instanceUrl:.*)$/;
 
 interface PathToProp {
   path: string[];
@@ -219,11 +221,6 @@ export const pathToProps: PathToProp[] = [
   {
     path: ['metadata', 'annotations', 'playbook.io.nrs.gov.bc.ca/javaVersion'],
     prop: 'javaVersion',
-    writeEmpty: false,
-  },
-  {
-    path: ['metadata', 'annotations', 'playbook.io.nrs.gov.bc.ca/deployType'],
-    prop: 'deployType',
     writeEmpty: false,
   },
   {
@@ -842,7 +839,7 @@ export function migrateAnswerAnnotations(
  */
 export function newNrcomposerDoc(): Document {
   const doc = new Document();
-  doc.setIn(['apiVersion'], BACKSTAGE_API_VERSION);
+  doc.setIn(['apiVersion'], NRCOMPOSER_API_VERSION);
   doc.setIn(['kind'], BACKSTAGE_KIND_NRCOMPOSER);
   return doc;
 }
@@ -875,41 +872,12 @@ function isPairedEntity(doc: Document): boolean {
   );
 }
 
-/** Create an Instance document for a component. */
-export function newInstanceDoc(): Document {
-  const doc = new Document();
-  doc.setIn(['apiVersion'], BACKSTAGE_API_VERSION);
-  doc.setIn(['kind'], BACKSTAGE_KIND_INSTANCE);
-  return doc;
-}
-
-/**
- * Name an Instance document `<service>-<instance name>`, where the instance
- * name defaults to its environment.
- */
-export function updateInstanceName(doc: Document, serviceName: string) {
-  const env = doc.getIn(['spec', 'env']);
-  if (typeof env !== 'string' || !env) {
-    return;
-  }
-  const name = doc.getIn(['spec', 'name']);
-  const instanceName = getInstanceName({
-    env,
-    name: typeof name === 'string' ? name : undefined,
-  });
-  doc.setIn(['metadata', 'name'], `${serviceName}-${instanceName}`);
-}
-
 /**
  * Convert instances stored as a JSON array (legacy annotation or NRComposer
- * answer) into Instance documents inserted after `afterDoc`. Leftover answers
- * from the former instance prompts are removed. Existing Instance documents
- * win: the stored array is only converted when the file has none.
+ * answer) into Component metadata.links. Existing links are preserved and
+ * exact duplicates are not added. Legacy entries without URLs are retained.
  */
-function migrateInstances(
-  docs: Document[],
-  { doc: entity, composerDoc }: CatalogEntity,
-) {
+function migrateInstances({ doc: entity, composerDoc }: CatalogEntity) {
   const legacy =
     composerDoc.getIn([...NRCOMPOSER_ANSWERS_PATH, 'instances']) ??
     entity.getIn(LEGACY_INSTANCES_ANNOTATION_PATH);
@@ -933,24 +901,35 @@ function migrateInstances(
   const instances = parseInstances(
     typeof legacy === 'string' ? legacy : isSeq(legacy) ? legacy.toJSON() : [],
   );
-  const hasInstanceDocs = docs.some(
-    (doc) => doc.get('kind') === BACKSTAGE_KIND_INSTANCE,
-  );
-  if (instances.length > 0 && !hasInstanceDocs) {
-    const serviceName = String(entity.getIn(['metadata', 'name']) ?? 'unknown');
-    const instanceDocs = instances.map((instance) => {
-      const doc = newInstanceDoc();
-      doc.setIn(['spec', 'env'], instance.env);
-      if (instance.name) {
-        doc.setIn(['spec', 'name'], instance.name);
-      }
+  if (instances.length > 0 && entity.get('kind') === BACKSTAGE_KIND_COMPONENT) {
+    const storedLinks = entity.getIn(['metadata', 'links']);
+    const links: Record<string, unknown>[] = isSeq(storedLinks)
+      ? storedLinks
+          .toJSON()
+          .filter(
+            (link): link is Record<string, unknown> =>
+              typeof link === 'object' && link !== null && !Array.isArray(link),
+          )
+      : [];
+    for (const instance of instances) {
+      const link: Record<string, unknown> = {
+        type: instance.env,
+        title: getInstanceName(instance),
+      };
       if (instance.url) {
-        doc.setIn(['spec', 'url'], instance.url);
+        link.url = instance.url;
       }
-      updateInstanceName(doc, serviceName);
-      return doc;
-    });
-    docs.splice(docs.indexOf(composerDoc) + 1, 0, ...instanceDocs);
+      const duplicate = links.some(
+        (existing) =>
+          existing.type === link.type &&
+          (existing.title ?? existing.type) === link.title &&
+          existing.url === link.url,
+      );
+      if (!duplicate) {
+        links.push(link);
+      }
+    }
+    entity.setIn(['metadata', 'links'], links);
     addGeneratorToDoc(composerDoc, BACKSTAGE_GENERATOR_INSTANCES);
   }
 }
@@ -959,8 +938,8 @@ function migrateInstances(
  * Pair every entity document in a catalog with the file's single NRComposer
  * document and migrate legacy annotations onto it, so later reads only need
  * to look at the pair. A NRComposer is created directly after the first
- * entity when the file has none. Instance documents are not paired; legacy
- * stored instances are converted into Instance documents.
+ * entity when the file has none. Legacy Instance documents are not paired;
+ * stored instance JSON is converted into Component metadata.links.
  *
  * @param docs Every document parsed from the catalog file (mutated in place).
  * @returns The entities in file order, each with the shared NRComposer.
@@ -990,7 +969,7 @@ export function pairCatalogDocs(docs: Document[]): CatalogEntity[] {
     migrateComposerAnnotations(composerDoc, entity);
     migrateAnswerAnnotations(composerDoc, entity);
     const pair = { doc: entity, composerDoc };
-    migrateInstances(docs, pair);
+    migrateInstances(pair);
     return pair;
   });
   dropDocumentAnswers(composerDoc, entities);
@@ -1006,6 +985,40 @@ export function parseCatalog(content: string): {
   entities: CatalogEntity[];
 } {
   const docs: Document[] = [...parseAllDocuments(content)];
+  return { docs, entities: pairCatalogDocs(docs) };
+}
+
+/** The composer file that sits beside a catalog file. */
+export function composerPathFor(catalogPath: string): string {
+  return path.join(path.dirname(catalogPath), COMPOSER_FILENAME);
+}
+
+/**
+ * Load a catalog file together with its sibling composer file. The NRComposer
+ * document of the composer file wins and is never merged with one in the
+ * catalog file; a NRComposer document found only in the catalog file is used
+ * as is.
+ */
+export function loadCatalogFiles(catalogPath: string): {
+  docs: Document[];
+  entities: CatalogEntity[];
+} {
+  const read = (file: string) =>
+    fs.existsSync(file) ? fs.readFileSync(file, 'utf8') : '';
+  const isComposer = (doc: Document) =>
+    doc.contents && doc.get('kind') === BACKSTAGE_KIND_NRCOMPOSER;
+  const catalogDocs = [...parseAllDocuments(read(catalogPath))];
+  const composerDocs = [
+    ...parseAllDocuments(read(composerPathFor(catalogPath))),
+  ].filter(isComposer);
+  const composerInCatalog =
+    composerDocs.length === 0 && catalogDocs.some(isComposer);
+  const docs: Document[] = [
+    ...(composerInCatalog
+      ? catalogDocs
+      : catalogDocs.filter((doc) => !isComposer(doc))),
+    ...composerDocs,
+  ];
   return { docs, entities: pairCatalogDocs(docs) };
 }
 
@@ -1044,8 +1057,8 @@ export function scanRepositoryForComponents(
   const loadCatalog = (catalogPath, parentPath?: string) => {
     let entities: CatalogEntity[];
     try {
-      const content = fs.readFileSync(catalogPath, 'utf8');
-      entities = parseCatalog(content).entities;
+      fs.accessSync(catalogPath);
+      entities = loadCatalogFiles(catalogPath).entities;
     } catch (err) {
       console.error(
         `Error loading catalog at ${catalogPath}: ${

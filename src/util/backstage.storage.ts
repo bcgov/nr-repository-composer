@@ -4,50 +4,56 @@ import { PromptQuestion } from 'yeoman-generator';
 import {
   BACKSTAGE_API_VERSION,
   BACKSTAGE_FILENAME,
+  BACKSTAGE_KIND_API,
   BACKSTAGE_KIND_COMPONENT,
-  BACKSTAGE_KIND_INSTANCE,
   BACKSTAGE_KIND_LOCATION,
   BACKSTAGE_KIND_NRCOMPOSER,
   NRCOMPOSER_ANSWERS_PATH,
+  NRCOMPOSER_API_VERSION,
   addGeneratorToDoc,
   hasGeneratorInDoc,
   hasNrcomposerContent,
   extractFromYaml,
   isDocumentProp,
   newNrcomposerDoc,
-  parseCatalog,
+  composerPathFor,
+  loadCatalogFiles,
   propRecord,
   pathToProps,
 } from './yaml.js';
-import {
-  PROMPT_INSTANCE_ENV,
-  PROMPT_INSTANCE_NAME,
-  PROMPT_INSTANCE_URL,
-} from './prompts.js';
 
-/**
- * Kinds that may appear more than once in a catalog file. The shared answers
- * map cannot tell their documents apart, so their prompt answers are stored on
- * the document itself (prompt name to document path). Blank answers are not
- * written, so once the `required` path is set a missing value was answered
- * blank.
- */
 const MULTI_DOCUMENT_KINDS: Record<
   string,
-  { required: string[]; prompts: Record<string, string[]> }
+  {
+    required: string[];
+    requiredPrompts: string[];
+    prompts: Record<string, string[]>;
+  }
 > = {
-  [BACKSTAGE_KIND_INSTANCE]: {
-    required: ['spec', 'env'],
+  [BACKSTAGE_KIND_API]: {
+    required: ['spec', 'definition'],
+    requiredPrompts: [
+      'apiName',
+      'apiType',
+      'apiLifecycle',
+      'apiOwner',
+      'apiDefinition',
+    ],
     prompts: {
-      [PROMPT_INSTANCE_ENV.name]: ['spec', 'env'],
-      [PROMPT_INSTANCE_NAME.name]: ['spec', 'name'],
-      [PROMPT_INSTANCE_URL.name]: ['spec', 'url'],
+      apiName: ['metadata', 'name'],
+      apiDescription: ['metadata', 'description'],
+      apiType: ['spec', 'type'],
+      apiLifecycle: ['spec', 'lifecycle'],
+      apiOwner: ['spec', 'owner'],
+      apiSystem: ['spec', 'system'],
+      apiDefinition: ['spec', 'definition'],
     },
   },
 };
 
 // The generator that creates each catalog entity kind.
 const KIND_GENERATORS: Record<string, string> = {
+  [BACKSTAGE_KIND_API]: 'backstage-api',
   [BACKSTAGE_KIND_COMPONENT]: 'backstage',
   [BACKSTAGE_KIND_LOCATION]: 'backstage-location',
 };
@@ -73,18 +79,17 @@ export class BackstageStorage {
     this.path = configPath;
     this.name = name;
 
-    const { docs, entities } = fs.existsSync(this.path)
-      ? parseCatalog(fs.readFileSync(this.path, 'utf8'))
-      : { docs: [], entities: [] };
+    const { docs, entities } = loadCatalogFiles(this.path);
     this.backstageDocs = docs;
 
-    // Only one document per kind is supported, except for multi-document
-    // kinds.
+    // API descriptors may appear more than once in a catalog file.
     const kinds = docs
       .filter((doc) => doc.contents)
-      .map((doc) => String(doc.get('kind')))
-      .filter((k) => !MULTI_DOCUMENT_KINDS[k]);
-    const duplicate = kinds.find((k, i) => kinds.indexOf(k) !== i);
+      .map((doc) => String(doc.get('kind')));
+    const duplicate = kinds.find(
+      (kind, index) =>
+        !MULTI_DOCUMENT_KINDS[kind] && kinds.indexOf(kind) !== index,
+    );
     if (duplicate) {
       throw new Error(
         `Backstage catalog ${this.path} has more than one "${duplicate}" document; only one document per kind is supported.`,
@@ -115,14 +120,28 @@ export class BackstageStorage {
     this.composerDoc = entity.composerDoc;
   }
 
-  /** Create and register a fresh document carrying the standard Backstage header. */
-  private appendDocument(kind: string, metadataName?: string): Document {
+  /** Build (without registering) a fresh document carrying the standard header. */
+  private newKindDoc(kind: string, metadataName?: string): Document {
     const doc = new Document();
-    doc.setIn(['apiVersion'], BACKSTAGE_API_VERSION);
+    doc.setIn(
+      ['apiVersion'],
+      kind === BACKSTAGE_KIND_NRCOMPOSER
+        ? NRCOMPOSER_API_VERSION
+        : BACKSTAGE_API_VERSION,
+    );
     doc.setIn(['kind'], kind);
     if (metadataName) {
       doc.setIn(['metadata', 'name'], metadataName);
     }
+    return doc;
+  }
+
+  /**
+   * Create and register a fresh document at the end of the catalog, carrying the
+   * standard Backstage header.
+   */
+  private appendDocument(kind: string, metadataName?: string): Document {
+    const doc = this.newKindDoc(kind, metadataName);
     this.backstageDocs.push(doc);
     return doc;
   }
@@ -135,9 +154,7 @@ export class BackstageStorage {
   }
 
   /**
-   * The nth (zero-based) document of a kind. An index equal to the current
-   * count creates and registers a new document of that kind after the last
-   * one. Kinds limited to one document per catalog only accept index 0.
+   * The document of a kind. An index equal to the current count creates it.
    */
   kindDoc(kind: string, index: number): Document {
     const docs = this.kindDocs(kind);
@@ -150,9 +167,8 @@ export class BackstageStorage {
     if (index < docs.length) {
       return docs[index];
     }
-    const doc = new Document();
-    doc.setIn(['apiVersion'], BACKSTAGE_API_VERSION);
-    doc.setIn(['kind'], kind);
+    // Insert after the last document of this kind (or the composer document).
+    const doc = this.newKindDoc(kind);
     const after = docs[docs.length - 1] ?? this.composerDoc;
     const position = this.backstageDocs.indexOf(after);
     this.backstageDocs.splice(
@@ -236,27 +252,38 @@ export class BackstageStorage {
       : undefined;
   }
 
-  /** The prompts stored on the current document, if it is a multi-document kind. */
+  /** Prompt fields stored on the selected repeated kind document. */
   private get docPrompts() {
-    return MULTI_DOCUMENT_KINDS[String(this.backstageDoc.get('kind'))];
+    return MULTI_DOCUMENT_KINDS[String(this.backstageDoc.get('kind'))]?.prompts;
   }
 
   private getDocPrompt(name: string): unknown {
-    const { required, prompts } = this.docPrompts;
-    const value = this.backstageDoc.getIn(prompts[name]);
-    if (value === undefined && this.backstageDoc.hasIn(required)) {
-      return '';
+    const config = MULTI_DOCUMENT_KINDS[String(this.backstageDoc.get('kind'))];
+    const path = config?.prompts[name];
+    if (!path) {
+      return undefined;
     }
-    return value;
+    const value = this.backstageDoc.getIn(path);
+    if (value !== undefined) {
+      return value;
+    }
+    if (config.requiredPrompts.includes(name)) {
+      return undefined;
+    }
+    return this.backstageDoc.hasIn(config.required) ? '' : undefined;
   }
 
   private setDocPrompt(name: string, value: unknown) {
-    const path = this.docPrompts.prompts[name];
     const trimmed = typeof value === 'string' ? value.trim() : value;
+    const path =
+      MULTI_DOCUMENT_KINDS[String(this.backstageDoc.get('kind'))]?.prompts[
+        name
+      ];
+    if (!path) {
+      return;
+    }
     if (trimmed === null || trimmed === undefined || trimmed === '') {
-      if (this.backstageDoc.hasIn(path)) {
-        this.backstageDoc.deleteIn(path);
-      }
+      this.backstageDoc.deleteIn(path);
     } else {
       this.backstageDoc.setIn(path, trimmed);
     }
@@ -281,7 +308,7 @@ export class BackstageStorage {
   getAnswers() {
     if (this.docPrompts) {
       const answers: Record<string, unknown> = {};
-      for (const name of Object.keys(this.docPrompts.prompts)) {
+      for (const name of Object.keys(this.docPrompts)) {
         const value = this.getDocPrompt(name);
         if (value !== undefined) {
           answers[name] = value;
@@ -316,27 +343,29 @@ export class BackstageStorage {
 
   save() {
     console.log(`Saving backstage document to ${this.path}`);
-    // Emit every held document joined with the standard YAML multi-document
-    // delimiter. Empty documents and NRComposer documents without bookkeeping
-    // are dropped so an untouched single-entity file stays a plain single
-    // document.
-    const output = this.backstageDocs
-      .filter(
-        (doc) =>
-          doc.contents &&
-          (doc.get('kind') !== BACKSTAGE_KIND_NRCOMPOSER ||
-            hasNrcomposerContent(doc)),
-      )
-      .map((doc) => doc.toString({ directives: false }))
-      .join('\n---\n');
-    fs.writeFileSync(this.path, output);
+    // Always split: entity documents go to catalog-info.yaml (written even
+    // when empty, as a placeholder) and the NRComposer document goes to
+    // catalog-composer.yaml.
+    const toYaml = (docs: Document[]) =>
+      docs.map((doc) => doc.toString({ directives: false })).join('\n---\n');
+    const populated = this.backstageDocs.filter((doc) => doc.contents);
+    const isComposer = (doc: Document) =>
+      doc.get('kind') === BACKSTAGE_KIND_NRCOMPOSER;
+    fs.writeFileSync(
+      this.path,
+      toYaml(populated.filter((d) => !isComposer(d))),
+    );
+    const composerDocs = populated.filter(
+      (doc) => isComposer(doc) && hasNrcomposerContent(doc),
+    );
+    if (composerDocs.length > 0) {
+      fs.writeFileSync(composerPathFor(this.path), toYaml(composerDocs));
+    }
   }
 
   getPath(path: string | string[], option = ''): unknown {
     if (typeof path === 'string' && this.docPrompts) {
-      return this.docPrompts.prompts[path]
-        ? this.getDocPrompt(path)
-        : undefined;
+      return this.docPrompts[path] ? this.getDocPrompt(path) : undefined;
     }
     if (
       typeof path === 'string' &&
@@ -352,9 +381,6 @@ export class BackstageStorage {
       // than throwing so the standard Yeoman prompt flow can round-trip them.
       return undefined;
     }
-    // console.log(
-    //   `Getting path "${docPath}: ${this.backstageDoc.getIn(docPath)}"`,
-    // );
     const val = this.backstageDoc.getIn(docPath);
     return val && isSeq(val)
       ? option === 'json'
@@ -397,7 +423,7 @@ export class BackstageStorage {
       return;
     }
     if (this.docPrompts) {
-      if (this.docPrompts.prompts[key]) {
+      if (this.docPrompts[key]) {
         this.setDocPrompt(key, value);
       }
       return;
@@ -452,26 +478,13 @@ export class BackstageStorage {
     this.backstageDoc.deleteIn(path);
   }
 
-  defaults(defaults: Record<string, unknown>) {
-    console.log(`Setting defaults`, defaults);
-    throw new Error('defaults not implemented');
-  }
-
-  merge(source: Record<string, unknown>) {
-    console.log(`Merging source`, source);
-    throw new Error('merge not implemented');
-  }
-
+  /**
+   * Yeoman's `Generator` constructor calls `createStorage()` on the config
+   * object to derive its generator/instance sub-stores; this storage ignores
+   * the request (the result is unused here), so it is a deliberate no-op.
+   */
   // eslint-disable-next-line no-unused-vars
-  createStorage(path: string) {
-    // Ignore
-    // console.log(`createStorage called with path: ${path}`);
-    // throw new Error('createStorage not implemented');
-  }
-
-  createProxy() {
-    throw new Error('createProxy not implemented');
-  }
+  createStorage(path: string) {}
 
   processDeprecated() {
     const removedProps: string[] = [];

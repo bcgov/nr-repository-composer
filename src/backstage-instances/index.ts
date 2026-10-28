@@ -1,28 +1,20 @@
 import chalk from 'chalk';
 import type { PromptQuestion } from 'yeoman-generator';
 import { BaseGenerator } from '../util/base-generator.js';
+import { BackstageInstancesStorage } from './storage.js';
+import { BACKSTAGE_FILENAME, BACKSTAGE_KIND_COMPONENT } from '../util/yaml.js';
 import {
   YEOMAN_CONFIG_NAMESPACE,
   YEOMAN_OPTION_ASK_ANSWERED,
 } from '../util/constants.js';
-import {
-  getInstanceName,
-  instanceFromDoc,
-  type CatalogInstance,
-} from '../util/instances.js';
+import { getInstanceName, type CatalogInstance } from '../util/instances.js';
 import { OPTION_HEADLESS } from '../util/options.js';
 import { bailOnUnansweredQuestions } from '../util/process.js';
 import {
   PROMPT_INSTANCE_ENV,
   PROMPT_INSTANCE_NAME,
   PROMPT_INSTANCE_URL,
-  PROMPT_SERVICE,
 } from '../util/prompts.js';
-import {
-  BACKSTAGE_KIND_COMPONENT,
-  BACKSTAGE_KIND_INSTANCE,
-  updateInstanceName,
-} from '../util/yaml.js';
 
 const questions = [
   PROMPT_INSTANCE_ENV,
@@ -35,7 +27,7 @@ const OPTION_INDEX = {
   type: Number,
   required: false,
   description:
-    'Zero-based Instance document to add or edit. Use the current instance count to add a new one.',
+    'Zero-based environment link to add or edit. Use the current instance count to add a new one.',
   default: 0,
 };
 
@@ -43,8 +35,7 @@ const instanceKey = (instance: CatalogInstance) =>
   JSON.stringify([instance.env, getInstanceName(instance)]);
 
 /**
- * Add or edit the deployed instances (`kind: Instance` documents) of a
- * component in its `catalog-info.yaml`.
+ * Add or edit a component's deployed-environment links in `catalog-info.yaml`.
  */
 export default class extends BaseGenerator {
   constructor(args, opts) {
@@ -64,29 +55,34 @@ export default class extends BaseGenerator {
     this._questions = questions;
   }
 
+  override _getStorage(): BackstageInstancesStorage {
+    return new BackstageInstancesStorage(
+      this.rootGeneratorName(),
+      BACKSTAGE_KIND_COMPONENT,
+      undefined,
+      this.destinationPath(BACKSTAGE_FILENAME),
+    );
+  }
+
+  protected override get backstageConfig(): BackstageInstancesStorage {
+    return this.config as unknown as BackstageInstancesStorage;
+  }
+
   async prompting() {
     const headless = this.options[OPTION_HEADLESS.name] === true;
     const askAnswered = this.options[YEOMAN_OPTION_ASK_ANSWERED] === true;
-    const { serviceName } = this.backstageConfig.extractPromptValues(
-      BACKSTAGE_KIND_COMPONENT,
-      PROMPT_SERVICE,
-    );
 
     this._printIntro();
 
     let index = Number(this.options[OPTION_INDEX.name] ?? 0);
     for (;;) {
-      const isNew =
-        index === this.backstageConfig.kindDocs(BACKSTAGE_KIND_INSTANCE).length;
-      // Prompts now read and write this Instance document.
       const storage = this.backstageConfig;
-      const doc = storage.selectKindDoc(BACKSTAGE_KIND_INSTANCE, index);
+      const instances = storage.getInstanceLinks();
+      const isNew = index === instances.length;
+      storage.selectInstanceLink(index);
       const otherKeys = new Set(
-        this.backstageConfig
-          .kindDocs(BACKSTAGE_KIND_INSTANCE)
-          .filter((other) => other !== doc)
-          .map(instanceFromDoc)
-          .filter((instance) => instance !== undefined)
+        instances
+          .filter((_, instanceIndex) => instanceIndex !== index)
           .map(instanceKey),
       );
 
@@ -137,15 +133,13 @@ export default class extends BaseGenerator {
         instanceQuestions,
         YEOMAN_CONFIG_NAMESPACE,
       );
-      updateInstanceName(doc, serviceName);
 
       if (headless) {
         return;
       }
       const nextIndex = index + 1;
       const nextExists =
-        nextIndex <
-        this.backstageConfig.kindDocs(BACKSTAGE_KIND_INSTANCE).length;
+        nextIndex < this.backstageConfig.getInstanceLinks().length;
       const { next } = await this.prompt([
         {
           type: 'confirm',

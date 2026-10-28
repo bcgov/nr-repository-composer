@@ -76,14 +76,67 @@ export const PROMPT_GITHUB_PROJECT_SLUG: PromptQuestion = {
   message: 'GitHub Slug (<organization or owner>/<repository>):',
   default: extractGitHubSlug(getGitRepoOriginUrl()) ?? '',
 };
+
+export const PROMPT_API_NAME: PromptQuestion = {
+  type: 'input',
+  name: 'apiName',
+  message: 'API name:',
+  validate: alphaDashValidate,
+};
+
+export const PROMPT_API_DESCRIPTION: PromptQuestion = {
+  type: 'input',
+  name: 'apiDescription',
+  message: 'API description (optional):',
+  default: '',
+};
+
+export const PROMPT_API_TYPE: PromptQuestion = {
+  type: 'input',
+  name: 'apiType',
+  message: 'API definition type (openapi, asyncapi, graphql, grpc):',
+  default: 'openapi',
+  validate: (input: string) => Boolean(input.trim()) || 'API type is required',
+};
+
+export const PROMPT_API_LIFECYCLE: PromptQuestion = {
+  type: 'select',
+  name: 'apiLifecycle',
+  message: 'API lifecycle:',
+  choices: ['experimental', 'production', 'deprecated'],
+  default: 'production',
+};
+
+export const PROMPT_API_OWNER: PromptQuestion = {
+  type: 'input',
+  name: 'apiOwner',
+  message: 'API owner:',
+  validate: (input: string) => Boolean(input.trim()) || 'API owner is required',
+};
+
+export const PROMPT_API_SYSTEM: PromptQuestion = {
+  type: 'input',
+  name: 'apiSystem',
+  message: 'API system (optional):',
+  default: '',
+};
+
+export const PROMPT_API_DEFINITION: PromptQuestion = {
+  type: 'input',
+  name: 'apiDefinition',
+  message: 'API definition (YAML/JSON text or path to a definition file):',
+  validate: (input: string) =>
+    Boolean(input.trim()) || 'API definition is required',
+};
+
 /**
- * Deployed-instance prompts used by the `backstage-instances` generator. Each
- * run edits one Instance document; answers are stored under its `spec`.
+ * Deployed-instance prompts used by the `backstage-instances` generator.
+ * Answers are stored on a Component metadata.links entry.
  */
 export const PROMPT_INSTANCE_ENV: PromptQuestion = {
   type: 'select',
   name: 'instanceEnv',
-  message: 'Instance environment:',
+  message: 'Instance environment (link type):',
   choices: [...STANDARD_ENVIRONMENTS],
   default: 'production',
 };
@@ -92,15 +145,23 @@ export const PROMPT_INSTANCE_NAME: PromptQuestion = {
   type: 'input',
   name: 'instanceName',
   message:
-    'Instance name (optional, defaults to the environment; set to distinguish multiple instances in one environment):',
+    'Instance title (optional, defaults to the environment; set to distinguish multiple instances in one environment):',
   default: '',
 };
 
 export const PROMPT_INSTANCE_URL: PromptQuestion = {
   type: 'input',
   name: 'instanceUrl',
-  message: 'Instance URL (optional):',
+  message: 'Instance URL (required):',
   default: '',
+  validate: (input: string) => {
+    try {
+      new URL(input.trim());
+      return true;
+    } catch {
+      return 'Enter a valid absolute URL';
+    }
+  },
 };
 
 export const PROMPT_CLIENT_ID: PromptQuestion = {
@@ -517,6 +578,35 @@ export const PROMPT_TO_USAGE: Record<
   type: {
     description: 'The type of service (e.g. service, website, library)',
   },
+  apiName: {
+    description: 'Unique Backstage name for the API entity',
+    example: 'artist-api',
+  },
+  apiDescription: {
+    description: 'Optional summary of the API',
+  },
+  apiType: {
+    description: 'Format of the API definition (e.g. openapi, asyncapi, grpc)',
+    example: 'openapi',
+  },
+  apiLifecycle: {
+    description: 'API lifecycle state (experimental, production, deprecated)',
+    example: 'production',
+  },
+  apiOwner: {
+    description:
+      'Entity reference for the team or person responsible for the API',
+    example: 'artist-relations-team',
+  },
+  apiSystem: {
+    description: 'Optional entity reference for the system containing the API',
+    example: 'artist-engagement-portal',
+  },
+  apiDefinition: {
+    description:
+      'Required YAML/JSON API definition, or a path to a definition file in the repository',
+    example: 'openapi: "3.0.0"',
+  },
   lifecycle: {
     description:
       'The lifecycle of the service (e.g. experimental, production, deprecated)',
@@ -543,16 +633,17 @@ export const PROMPT_TO_USAGE: Record<
     example: 'bcgov-c/edqa-war',
   },
   instanceEnv: {
-    description: `Deployed environment of the instance. One of ${STANDARD_ENVIRONMENTS.join(', ')}. Stored as spec.env on the Instance document.`,
+    description: `Deployed environment. One of ${STANDARD_ENVIRONMENTS.join(', ')}. Stored as metadata.links[].type.`,
     example: 'production',
   },
   instanceName: {
     description:
-      'Optional instance name; defaults to the environment. Use distinct names for multiple instances in one environment. Stored as spec.name.',
+      'Optional link title; defaults to the environment. Use distinct titles for multiple instances in one environment. Stored as metadata.links[].title.',
     example: 'blue',
   },
   instanceUrl: {
-    description: 'Optional URL of the instance. Stored as spec.url.',
+    description:
+      'Required absolute URL of the instance. Stored as metadata.links[].url.',
     example: 'https://app.example.gov.bc.ca',
   },
   clientId: {

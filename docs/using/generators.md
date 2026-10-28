@@ -19,6 +19,8 @@ rest of the workflow depends on.
 | --- | --- |
 | **[nr-repository-composer](using/generators/nr-repository-composer.md)** | Initializes the Composer tooling and repo support files. |
 | **[backstage](using/generators/backstage.md)** | Creates the service's Backstage component metadata. |
+| [backstage-api](using/generators/backstage-api.md) | Creates or edits a Backstage API entity. |
+| [backstage-instances](using/generators/backstage-instances.md) | Records deployed environments in the Component's `metadata.links`. |
 | [backstage-location](using/generators/backstage-location.md) | Adds the monorepo location record used to discover service components. |
 | **[ocp-knox-provision](using/generators/ocp-knox-provision.md)** | Prepares application access to Knox Vault through the AppRole secret provisioning flow. |
 
@@ -79,6 +81,8 @@ configurations) are documented on the [OCI Artifacts](oci-artifacts.md) page.
 | --- | --- | --- | --- |
 | [nr-repository-composer](using/generators/nr-repository-composer.md) | Tool setup | All | Podman, Docker |
 | [backstage](using/generators/backstage.md) | Catalog service | All | Backstage (kind: component) |
+| [backstage-api](using/generators/backstage-api.md) | Catalog API | All | Backstage (kind: API) |
+| [backstage-instances](using/generators/backstage-instances.md) | Catalog service instances | All | Backstage Component (`metadata.links`) |
 | [backstage-location](using/generators/backstage-location.md) | Catalog monorepo | All | Backstage (kind: location) |
 | [gh-common-mono-build](using/generators/gh-common-mono-build.md) | Pipeline orchestration | GitHub | GitHub Actions |
 | [gh-docs-deploy](using/generators/gh-docs-deploy.md) | Documentation | GitHub | GitHub Actions, GitHub Pages |

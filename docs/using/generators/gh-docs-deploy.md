@@ -20,9 +20,9 @@ This generator takes no prompts; it writes a single GitHub Pages workflow.
 - Set the Pages source to "GitHub Actions" in repository Settings > Pages
 - Create a `docs/` folder with your static documentation content
 
-If the repository has multiple components, pick one in which to run the
-generator. This workflow only uploads documentation from a single docs folder in
-the repository.
+Run the generator at the root of the repository; it exits with an error if run
+from a subdirectory. This workflow only uploads documentation from a single docs
+folder in the repository.
 
 ## Generator source
 

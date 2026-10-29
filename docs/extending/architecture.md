@@ -54,7 +54,7 @@ Subclasses set instance properties in their constructor:
 
 - `this._nrsayConfig` — `{ title, subtitle, links }`, or `null` to skip the banner
 - `this._questions` — array of prompt definitions (default: `[]`)
-- `this._storageOptions` — `{ kind, storageOptions }` for `BackstageStorage`
+- `this._storageOptions` — `{ kind }` for `BackstageStorage`
 - `writing*()` methods — actual file generation logic
 - `end()` — only if custom cleanup beyond reporting is needed
 

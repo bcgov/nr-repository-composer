@@ -1,15 +1,30 @@
-import { Document, parseDocument } from 'yaml';
+import { Document, isMap, isSeq, parseAllDocuments } from 'yaml';
 import * as fs from 'node:fs';
 import path from 'path';
 
 import { destinationGitPath } from './git.js';
 import { TOOLS_DEFAULT_PROPERTIES } from './constants.js';
+import { getInstanceName, parseInstances } from './instances.js';
 
 export const BACKSTAGE_FILENAME = 'catalog-info.yaml';
+// The NRComposer document is kept in its own file beside the catalog file.
+export const COMPOSER_FILENAME = 'catalog-composer.yaml';
 export const BACKSTAGE_API_VERSION = 'backstage.io/v1alpha1';
 export const BACKSTAGE_KIND_COMPONENT = 'Component';
 export const BACKSTAGE_KIND_LOCATION = 'Location';
+export const BACKSTAGE_KIND_API = 'API';
+// A catalog file may also carry a `NRComposer` document that holds the
+// composer bookkeeping (the set of generators that produced it, plus scan
+// overrides). These fields used to live as `composer.io.nrs.gov.bc.ca/*`
+// annotations on the Backstage entity itself, which is off-spec for a
+// Backstage catalog entity; they have since moved to this dedicated document.
+export const BACKSTAGE_KIND_NRCOMPOSER = 'NRComposer';
+export const NRCOMPOSER_API_VERSION = 'composer.io.nrs.gov.bc.ca/v1';
+// Legacy kind retained so older Instance documents are not treated as entities.
+export const BACKSTAGE_KIND_INSTANCE = 'Instance';
+export const BACKSTAGE_GENERATOR_INSTANCES = 'backstage-instances';
 
+// Legacy annotation paths, retained only for migration and read-time fallback.
 export const BACKSTAGE_GENERATOR_PATH = [
   'metadata',
   'annotations',
@@ -21,6 +36,23 @@ export const BACKSTAGE_SKIP_SCAN_PATH = [
   'annotations',
   'composer.io.nrs.gov.bc.ca/skipAutomatedScan',
 ];
+
+// Composer bookkeeping lives on the NRComposer document, not on the entity.
+// `generators` is a YAML sequence (an array of generator names); the legacy
+// form was a single comma-separated annotation string.
+export const NRCOMPOSER_GENERATOR_PATH = ['spec', 'generators'];
+export const NRCOMPOSER_SKIP_SCAN_PATH = ['spec', 'skipAutomatedScan'];
+export const NRCOMPOSER_ANSWERS_PATH = ['spec', 'answers'];
+
+// Legacy storage of deployed instances as a JSON array, migrated into links.
+export const LEGACY_INSTANCES_ANNOTATION_PATH = [
+  'metadata',
+  'annotations',
+  'playbook.io.nrs.gov.bc.ca/instances',
+];
+// Prompt answers from the former instance prompts.
+const LEGACY_INSTANCE_ANSWER_PATTERN =
+  /^(instances|instanceEnv|instanceName|instanceUrl|instanceEnvs|instancesCustom|instanceUrl:.*)$/;
 
 interface PathToProp {
   path: string[];
@@ -37,7 +69,6 @@ interface PathToProp {
 export const pathToProps: PathToProp[] = [
   { path: ['spec', 'system'], prop: 'projectName', writeEmpty: false },
   { path: ['metadata', 'name'], prop: 'serviceName', writeEmpty: false },
-  { path: ['metadata', 'name'], prop: 'locationName', writeEmpty: false },
   { path: ['metadata', 'description'], prop: 'description', writeEmpty: true },
   { path: ['metadata', 'title'], prop: 'title', writeEmpty: false },
   {
@@ -52,12 +83,6 @@ export const pathToProps: PathToProp[] = [
   {
     path: ['metadata', 'annotations', 'playbook.io.nrs.gov.bc.ca/ociArtifacts'],
     prop: 'ociArtifacts',
-    writeEmpty: true,
-  },
-  // Deployed instances (environments and their optional URLs)
-  {
-    path: ['metadata', 'annotations', 'playbook.io.nrs.gov.bc.ca/instances'],
-    prop: 'instances',
     writeEmpty: true,
   },
   {
@@ -196,11 +221,6 @@ export const pathToProps: PathToProp[] = [
   {
     path: ['metadata', 'annotations', 'playbook.io.nrs.gov.bc.ca/javaVersion'],
     prop: 'javaVersion',
-    writeEmpty: false,
-  },
-  {
-    path: ['metadata', 'annotations', 'playbook.io.nrs.gov.bc.ca/deployType'],
-    prop: 'deployType',
     writeEmpty: false,
   },
   {
@@ -585,30 +605,421 @@ export function extractFromYaml(
   return answers;
 }
 
-export function addGeneratorToDoc(doc: Document, generator: string) {
-  if (doc.hasIn(BACKSTAGE_GENERATOR_PATH)) {
-    const generators = (doc.getIn(BACKSTAGE_GENERATOR_PATH) as string).split(
-      ',',
-    );
-    // console.log(generators);
-    // console.log(generators.indexOf(generator));
-    if (generators.indexOf(generator) === -1) {
-      generators.push(generator);
-      doc.setIn(BACKSTAGE_GENERATOR_PATH, generators.join(','));
+/**
+ * Coerce a stored generator value (a YAML sequence, a comma-separated string,
+ * or a single string) into a de-duplicated list of generator names.
+ */
+function toGeneratorList(value: unknown): string[] {
+  const toArray = (v: unknown): string[] => {
+    // ParsedNode (ArrayNode) exposes toJSON() -> string[]
+    if (
+      v &&
+      typeof v === 'object' &&
+      typeof (v as { toJSON?: unknown }).toJSON === 'function'
+    ) {
+      const json = (v as { toJSON: () => unknown }).toJSON();
+      return toArray(json);
     }
-  } else {
-    doc.setIn(BACKSTAGE_GENERATOR_PATH, generator);
+    if (Array.isArray(v)) {
+      return v.flatMap((item) => toArray(item));
+    }
+    if (typeof v === 'string') {
+      return v
+        .split(',')
+        .map((item) => item.trim())
+        .filter(Boolean);
+    }
+    if (v === undefined || v === null || v === '') {
+      return [];
+    }
+    return [String(v)];
+  };
+  const seen = new Set<string>();
+  const out: string[] = [];
+  for (const item of toArray(value)) {
+    if (!seen.has(item)) {
+      seen.add(item);
+      out.push(item);
+    }
+  }
+  return out;
+}
+
+/**
+ * Read the recorded generators from a composer (NRComposer) document, reading
+ * the new `spec.generators` sequence first and falling back to the legacy
+ * `composer.io.nrs.gov.bc.ca/generators` annotation string.
+ *
+ * @param doc A NRComposer document (or, for read-only fallback, any document).
+ */
+export function getGeneratorsFromDoc(doc: Document | undefined): string[] {
+  if (!doc) {
+    return [];
+  }
+  const modern = doc.getIn(NRCOMPOSER_GENERATOR_PATH);
+  if (modern !== undefined) {
+    const list = toGeneratorList(modern);
+    if (list.length > 0) {
+      return list;
+    }
+  }
+  return toGeneratorList(doc.getIn(BACKSTAGE_GENERATOR_PATH));
+}
+
+/**
+ * Add a generator to a composer (NRComposer) document's `spec.generators`
+ * sequence, de-duplicating. The new storage form is a YAML array; a legacy
+ * comma-separated annotation (if present) is normalised into the array.
+ *
+ * @param doc A NRComposer document.
+ */
+export function addGeneratorToDoc(doc: Document, generator: string) {
+  const existing = toGeneratorList(doc.getIn(NRCOMPOSER_GENERATOR_PATH));
+  const legacy = toGeneratorList(doc.getIn(BACKSTAGE_GENERATOR_PATH));
+  const combined = Array.from(new Set([...legacy, ...existing]));
+  if (!combined.includes(generator)) {
+    combined.push(generator);
+  }
+  doc.setIn(NRCOMPOSER_GENERATOR_PATH, combined);
+  // Drop the legacy annotation now that the sequence is authoritative.
+  if (doc.hasIn(BACKSTAGE_GENERATOR_PATH)) {
+    doc.deleteIn(BACKSTAGE_GENERATOR_PATH);
   }
 }
 
-export function hasGeneratorInDoc(doc: Document, generator: string): boolean {
-  if (doc.hasIn(BACKSTAGE_GENERATOR_PATH)) {
-    const generators = (doc.getIn(BACKSTAGE_GENERATOR_PATH) as string).split(
-      ',',
-    );
-    return generators.indexOf(generator) !== -1;
+export function hasGeneratorInDoc(
+  doc: Document | undefined,
+  generator: string,
+): boolean {
+  return getGeneratorsFromDoc(doc).includes(generator);
+}
+
+/**
+ * Migrate the legacy `composer.io.nrs.gov.bc.ca/*` annotations off a Backstage
+ * entity document and onto a dedicated NRComposer document. The migration is
+ * idempotent: it only moves a field when the NRComposer document does not yet
+ * carry it, and it removes the legacy annotation from the entity so the catalog
+ * stays off-spec-free after a single pass.
+ *
+ * @param composerDoc The NRComposer document that receives the composer data.
+ * @param entityDoc The entity (Component/Location) document to migrate away from.
+ * @returns `true` if any field was migrated.
+ */
+export function migrateComposerAnnotations(
+  composerDoc: Document,
+  entityDoc: Document,
+): boolean {
+  let migrated = false;
+
+  // generators: csv string -> YAML sequence.
+  if (entityDoc.hasIn(BACKSTAGE_GENERATOR_PATH)) {
+    const legacy = toGeneratorList(entityDoc.getIn(BACKSTAGE_GENERATOR_PATH));
+    if (!composerDoc.hasIn(NRCOMPOSER_GENERATOR_PATH)) {
+      composerDoc.setIn(NRCOMPOSER_GENERATOR_PATH, legacy);
+    } else if (legacy.length > 0) {
+      // Union any extra names from the legacy annotation with the sequence.
+      const merged = toGeneratorList(
+        composerDoc.getIn(NRCOMPOSER_GENERATOR_PATH),
+      );
+      for (const name of legacy) {
+        if (!merged.includes(name)) {
+          merged.push(name);
+        }
+      }
+      composerDoc.setIn(NRCOMPOSER_GENERATOR_PATH, merged);
+    }
+    entityDoc.deleteIn(BACKSTAGE_GENERATOR_PATH);
+    migrated = true;
   }
-  return false;
+
+  // skipAutomatedScan: boolean flag.
+  if (entityDoc.hasIn(BACKSTAGE_SKIP_SCAN_PATH)) {
+    if (!composerDoc.hasIn(NRCOMPOSER_SKIP_SCAN_PATH)) {
+      composerDoc.setIn(
+        NRCOMPOSER_SKIP_SCAN_PATH,
+        entityDoc.getIn(BACKSTAGE_SKIP_SCAN_PATH),
+      );
+    }
+    entityDoc.deleteIn(BACKSTAGE_SKIP_SCAN_PATH);
+    migrated = true;
+  }
+
+  dropEmptyAnnotations(entityDoc);
+
+  return migrated;
+}
+
+/** Drop a now-empty annotations map so the entity document stays clean. */
+function dropEmptyAnnotations(entityDoc: Document) {
+  const annotations = entityDoc.getIn(['metadata', 'annotations']);
+  if (isMap(annotations) && annotations.items.length === 0) {
+    entityDoc.deleteIn(['metadata', 'annotations']);
+  }
+}
+
+/** Whether a prop path is a composer-owned `*nrs.gov.bc.ca/*` annotation. */
+export function isNrsAnnotationPath(path: string[]): boolean {
+  return (
+    path[0] === 'metadata' &&
+    path[1] === 'annotations' &&
+    path[2]?.includes('nrs.gov.bc.ca/') === true
+  );
+}
+
+/**
+ * Whether a prompt's value is written directly to the entity document. Such
+ * values are read back from the document; only the remaining values (e.g.
+ * those used for templating) are kept in the NRComposer answers.
+ */
+export function isDocumentProp(pathToProp: PathToProp): boolean {
+  return !isNrsAnnotationPath(pathToProp.path);
+}
+
+/**
+ * Remove NRComposer answers duplicating a value an entity document holds.
+ *
+ * @returns `true` if any answer was removed.
+ */
+export function dropDocumentAnswers(
+  composerDoc: Document,
+  entityDocs: Document[],
+): boolean {
+  let dropped = false;
+  for (const pathToProp of pathToProps.filter(isDocumentProp)) {
+    const answerPath = [...NRCOMPOSER_ANSWERS_PATH, pathToProp.prop];
+    if (
+      composerDoc.hasIn(answerPath) &&
+      entityDocs.some((doc) => doc.hasIn(pathToProp.path))
+    ) {
+      composerDoc.deleteIn(answerPath);
+      dropped = true;
+    }
+  }
+  const answers = composerDoc.getIn(NRCOMPOSER_ANSWERS_PATH);
+  if (dropped && isMap(answers) && answers.items.length === 0) {
+    composerDoc.deleteIn(NRCOMPOSER_ANSWERS_PATH);
+  }
+  return dropped;
+}
+
+/**
+ * Move prompt answers stored as legacy `*nrs.gov.bc.ca/*` annotations on an
+ * entity into the NRComposer document's `spec.answers`. Existing answers win.
+ *
+ * @param composerDoc The NRComposer document that receives the answers.
+ * @param entityDoc The entity (Component/Location) document to migrate away from.
+ * @returns `true` if any answer was migrated.
+ */
+export function migrateAnswerAnnotations(
+  composerDoc: Document,
+  entityDoc: Document,
+): boolean {
+  let migrated = false;
+  for (const pathToProp of pathToProps) {
+    if (
+      !isNrsAnnotationPath(pathToProp.path) ||
+      !entityDoc.hasIn(pathToProp.path)
+    ) {
+      continue;
+    }
+    const answerPath = [...NRCOMPOSER_ANSWERS_PATH, pathToProp.prop];
+    if (!composerDoc.hasIn(answerPath)) {
+      composerDoc.setIn(answerPath, entityDoc.getIn(pathToProp.path));
+    }
+    entityDoc.deleteIn(pathToProp.path);
+    migrated = true;
+  }
+  dropEmptyAnnotations(entityDoc);
+  return migrated;
+}
+
+/**
+ * Create a NRComposer document. It only carries `apiVersion`, `kind` and
+ * `spec`; a catalog file has exactly one, shared by all of its entities.
+ */
+export function newNrcomposerDoc(): Document {
+  const doc = new Document();
+  doc.setIn(['apiVersion'], NRCOMPOSER_API_VERSION);
+  doc.setIn(['kind'], BACKSTAGE_KIND_NRCOMPOSER);
+  return doc;
+}
+
+/**
+ * Whether a NRComposer document carries any composer bookkeeping. Documents
+ * without any are not worth writing out.
+ */
+export function hasNrcomposerContent(doc: Document): boolean {
+  return [
+    NRCOMPOSER_GENERATOR_PATH,
+    NRCOMPOSER_SKIP_SCAN_PATH,
+    NRCOMPOSER_ANSWERS_PATH,
+  ].some((path) => doc.getIn(path) !== undefined);
+}
+
+/** An entity document paired with the NRComposer document carrying its bookkeeping. */
+export interface CatalogEntity {
+  doc: Document;
+  composerDoc: Document;
+}
+
+/** Whether a document is an entity that is paired with a NRComposer document. */
+function isPairedEntity(doc: Document): boolean {
+  const kind = doc.get('kind');
+  return (
+    !!doc.contents &&
+    kind !== BACKSTAGE_KIND_NRCOMPOSER &&
+    kind !== BACKSTAGE_KIND_INSTANCE
+  );
+}
+
+/**
+ * Convert instances stored as a JSON array (legacy annotation or NRComposer
+ * answer) into Component metadata.links. Existing links are preserved and
+ * exact duplicates are not added. Legacy entries without URLs are retained.
+ */
+function migrateInstances({ doc: entity, composerDoc }: CatalogEntity) {
+  const legacy =
+    composerDoc.getIn([...NRCOMPOSER_ANSWERS_PATH, 'instances']) ??
+    entity.getIn(LEGACY_INSTANCES_ANNOTATION_PATH);
+  if (entity.hasIn(LEGACY_INSTANCES_ANNOTATION_PATH)) {
+    entity.deleteIn(LEGACY_INSTANCES_ANNOTATION_PATH);
+    dropEmptyAnnotations(entity);
+  }
+
+  const answers = composerDoc.getIn(NRCOMPOSER_ANSWERS_PATH);
+  if (isMap(answers)) {
+    for (const key of Object.keys(answers.toJSON())) {
+      if (LEGACY_INSTANCE_ANSWER_PATTERN.test(key)) {
+        answers.delete(key);
+      }
+    }
+    if (answers.items.length === 0) {
+      composerDoc.deleteIn(NRCOMPOSER_ANSWERS_PATH);
+    }
+  }
+
+  const instances = parseInstances(
+    typeof legacy === 'string' ? legacy : isSeq(legacy) ? legacy.toJSON() : [],
+  );
+  if (instances.length > 0 && entity.get('kind') === BACKSTAGE_KIND_COMPONENT) {
+    const storedLinks = entity.getIn(['metadata', 'links']);
+    const links: Record<string, unknown>[] = isSeq(storedLinks)
+      ? storedLinks
+          .toJSON()
+          .filter(
+            (link): link is Record<string, unknown> =>
+              typeof link === 'object' && link !== null && !Array.isArray(link),
+          )
+      : [];
+    for (const instance of instances) {
+      const link: Record<string, unknown> = {
+        type: instance.env,
+        title: getInstanceName(instance),
+      };
+      if (instance.url) {
+        link.url = instance.url;
+      }
+      const duplicate = links.some(
+        (existing) =>
+          existing.type === link.type &&
+          (existing.title ?? existing.type) === link.title &&
+          existing.url === link.url,
+      );
+      if (!duplicate) {
+        links.push(link);
+      }
+    }
+    entity.setIn(['metadata', 'links'], links);
+    addGeneratorToDoc(composerDoc, BACKSTAGE_GENERATOR_INSTANCES);
+  }
+}
+
+/**
+ * Pair every entity document in a catalog with the file's single NRComposer
+ * document and migrate legacy annotations onto it, so later reads only need
+ * to look at the pair. A NRComposer is created directly after the first
+ * entity when the file has none. Legacy Instance documents are not paired;
+ * stored instance JSON is converted into Component metadata.links.
+ *
+ * @param docs Every document parsed from the catalog file (mutated in place).
+ * @returns The entities in file order, each with the shared NRComposer.
+ * @throws When the catalog holds more than one NRComposer document.
+ */
+export function pairCatalogDocs(docs: Document[]): CatalogEntity[] {
+  const populated = docs.filter((doc) => doc.contents);
+  const entities = populated.filter(isPairedEntity);
+  const composers = populated.filter(
+    (doc) => doc.get('kind') === BACKSTAGE_KIND_NRCOMPOSER,
+  );
+  if (composers.length > 1) {
+    throw new Error(
+      `Catalog has ${composers.length} "${BACKSTAGE_KIND_NRCOMPOSER}" documents; only one is supported.`,
+    );
+  }
+  if (entities.length === 0) {
+    return [];
+  }
+
+  let composerDoc = composers[0];
+  if (!composerDoc) {
+    composerDoc = newNrcomposerDoc();
+    docs.splice(docs.indexOf(entities[0]) + 1, 0, composerDoc);
+  }
+  const pairs = entities.map((entity) => {
+    migrateComposerAnnotations(composerDoc, entity);
+    migrateAnswerAnnotations(composerDoc, entity);
+    const pair = { doc: entity, composerDoc };
+    migrateInstances(pair);
+    return pair;
+  });
+  dropDocumentAnswers(composerDoc, entities);
+  return pairs;
+}
+
+/**
+ * Parse a (possibly multi-document) catalog file and pair each entity with its
+ * NRComposer document. See {@link pairCatalogDocs}.
+ */
+export function parseCatalog(content: string): {
+  docs: Document[];
+  entities: CatalogEntity[];
+} {
+  const docs: Document[] = [...parseAllDocuments(content)];
+  return { docs, entities: pairCatalogDocs(docs) };
+}
+
+/** The composer file that sits beside a catalog file. */
+export function composerPathFor(catalogPath: string): string {
+  return path.join(path.dirname(catalogPath), COMPOSER_FILENAME);
+}
+
+/**
+ * Load a catalog file together with its sibling composer file. The NRComposer
+ * document of the composer file wins and is never merged with one in the
+ * catalog file; a NRComposer document found only in the catalog file is used
+ * as is.
+ */
+export function loadCatalogFiles(catalogPath: string): {
+  docs: Document[];
+  entities: CatalogEntity[];
+} {
+  const read = (file: string) =>
+    fs.existsSync(file) ? fs.readFileSync(file, 'utf8') : '';
+  const isComposer = (doc: Document) =>
+    doc.contents && doc.get('kind') === BACKSTAGE_KIND_NRCOMPOSER;
+  const catalogDocs = [...parseAllDocuments(read(catalogPath))];
+  const composerDocs = [
+    ...parseAllDocuments(read(composerPathFor(catalogPath))),
+  ].filter(isComposer);
+  const composerInCatalog =
+    composerDocs.length === 0 && catalogDocs.some(isComposer);
+  const docs: Document[] = [
+    ...(composerInCatalog
+      ? catalogDocs
+      : catalogDocs.filter((doc) => !isComposer(doc))),
+    ...composerDocs,
+  ];
+  return { docs, entities: pairCatalogDocs(docs) };
 }
 
 /**
@@ -637,18 +1048,36 @@ export function scanRepositoryForComponents(
 ) {
   const initCatalogPath = destinationGitPath(rootCatalogPath);
   const gitRoot = destinationGitPath('.');
-  const components: {
-    doc: Document;
+  const components: (CatalogEntity & {
     path: string;
     name: string;
     parentPath?: string;
-  }[] = [];
+  })[] = [];
+
+  // Guard against the same catalog file being loaded more than once. This
+  // happens when a catalog holds both a Component and a Location whose targets
+  // point back at the same file, which otherwise yields duplicate records.
+  const visited = new Set<string>();
 
   const loadCatalog = (catalogPath, parentPath?: string) => {
-    let doc;
+    if (visited.has(catalogPath)) {
+      return;
+    }
+    visited.add(catalogPath);
+    let entities: CatalogEntity[];
     try {
-      const content = fs.readFileSync(catalogPath, 'utf8');
-      doc = parseDocument(content);
+      fs.accessSync(catalogPath);
+      entities = loadCatalogFiles(catalogPath).entities;
+    } catch (err) {
+      console.error(
+        `Error loading catalog at ${catalogPath}: ${
+          err instanceof Error ? err.message : String(err)
+        }`,
+      );
+      return;
+    }
+
+    for (const { doc, composerDoc } of entities) {
       const kind = doc.get('kind');
       const relativePath = path.relative(gitRoot, catalogPath);
 
@@ -656,8 +1085,14 @@ export function scanRepositoryForComponents(
         kind === BACKSTAGE_KIND_COMPONENT ||
         (includeLocations && kind === BACKSTAGE_KIND_LOCATION)
       ) {
-        const name = doc.getIn(['metadata', 'name']) || 'unknown';
-        components.push({ doc, path: relativePath, name, parentPath });
+        const name = String(doc.getIn(['metadata', 'name']) || 'unknown');
+        components.push({
+          doc,
+          composerDoc,
+          path: relativePath,
+          name,
+          parentPath,
+        });
       }
 
       if (kind === BACKSTAGE_KIND_LOCATION) {
@@ -665,7 +1100,7 @@ export function scanRepositoryForComponents(
         // Handle both plain arrays and YAML sequence nodes
         const targetArray = Array.isArray(targets)
           ? targets
-          : targets && targets.toJSON
+          : isSeq(targets)
             ? targets.toJSON()
             : null;
         if (targetArray && Array.isArray(targetArray)) {
@@ -681,12 +1116,6 @@ export function scanRepositoryForComponents(
           }
         }
       }
-    } catch (err) {
-      console.error(
-        `Error loading catalog at ${catalogPath}: ${
-          err instanceof Error ? err.message : String(err)
-        }`,
-      );
     }
   };
 

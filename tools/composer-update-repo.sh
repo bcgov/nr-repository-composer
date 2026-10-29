@@ -40,6 +40,13 @@ if [[ ! "$ORG" =~ ^(bcgov|bcgov-nr|bcgov-c)$ ]]; then
 fi
 
 CONTAINER_IMAGE_REF="ghcr.io/bcgov/nr-repository-composer:latest"
+# Composer bookkeeping now lives on a dedicated NRComposer document written to a
+# sibling `catalog-composer.yaml` (one per entity), with generators as a YAML
+# array under spec.generators. The legacy form stored these as
+# metadata.annotations on the entity document, so reads prefer the
+# `catalog-composer.yaml` NRComposer document, then an inline NRComposer in
+# `catalog-info.yaml`, and finally the legacy annotation — keeping pre-migration
+# repositories scannable.
 ANNOTATION_KEY="composer.io.nrs.gov.bc.ca/generators"
 SKIP_KEY="composer.io.nrs.gov.bc.ca/skipAutomatedScan"
 GITHUB_LABEL_HEX_COLOUR="8de25a"
@@ -97,23 +104,43 @@ fi
 
 FILE_URL="https://raw.githubusercontent.com/$ORG/$REPO/main/catalog-info.yaml"
 
-# Fetch the catalog-info.yaml file with authentication
+# Fetch the catalog-info.yaml file with authentication. A 404 here means the
+# repository has no root catalog at all (the 404 body is empty), so treat it as
+# "no catalog-info.yaml".
 RESPONSE=$(curl -s -f -H "Authorization: token $TOKEN" "$FILE_URL")
 if [[ $? -ne 0 ]]; then
     echo "  No catalog-info.yaml found in $REPO"
     continue
 fi
 
-# Check if kind is Location
-KIND=$(echo "$RESPONSE" | yq eval ".kind" -)
+# Check if kind is Location. The root catalog document is the first entity
+# (Component or Location); any inline NRComposer composer document is ignored here
+# — the authoritative bookkeeping lives in the sibling catalog-composer.yaml.
+KIND=$(echo "$RESPONSE" | yq -P 'select(.kind != "NRComposer") | .kind' -)
 TARGETS="catalog-info.yaml"
 
 if [[ "$KIND" == "Location" ]]; then
     echo "  catalog-info.yaml kind is 'Location'. Processing multiple targets..."
 
-    TARGETS=$(echo "$RESPONSE" | yq eval '.spec.targets[]' -)
+    TARGETS=$(echo "$RESPONSE" | yq -P 'select(.kind == "Location") | .spec.targets[]' -)
     echo "  Found targets: $TARGETS"
 fi
+
+# The dedicated NRComposer document that carries a target's composer bookkeeping
+# (`spec.generators`, `spec.skipAutomatedScan`). Prefers this sibling file over
+# an inline NRComposer document in catalog-info.yaml (pre-migration form), then
+# the legacy metadata.annotations. Kept per-target so each Location target reads
+# its own sibling composer file.
+COMPOSER_FILE=""
+composeFileFor() {
+    local tf="$1"
+    # Prefer a dedicated composer file, fall back to an inline NRComposer.
+    if [[ -f "$(dirname "${tf}")/catalog-composer.yaml" ]]; then
+        echo "$(dirname "${tf}")/catalog-composer.yaml"
+    else
+        echo "${tf}"
+    fi
+}
 
 echo "  Cloning repository: $REPO"
 
@@ -168,20 +195,44 @@ for TARGET_FILE in $TARGETS; do
         continue
     fi
 
-    TARGET_ANNOTATION=$(yq eval ".metadata.annotations.\"$ANNOTATION_KEY\"" "$TARGET_FILE")
-    TARGET_SERVICE=$(yq eval ".metadata.name" "$TARGET_FILE")
-    TARGET_SKIP=$(yq eval ".metadata.annotations.\"$SKIP_KEY\"" "$TARGET_FILE")
+    # Prefer the dedicated NRComposer document's spec.generators/skipAutomatedScan
+    # (new form, written to a sibling catalog-composer.yaml), then an inline
+    # NRComposer in the catalog file, then the legacy metadata.annotations list
+    # so pre-migration repositories keep working. The new form joins the YAML
+    # array into a comma-separated string, matching the legacy shape for the loop
+    # below.
+    COMPOSER_FILE=$(composeFileFor "$TARGET_FILE")
+    TARGET_ANNOTATION=$(yq -P 'select(.kind == "NRComposer") | .spec.generators | join(",")' "$COMPOSER_FILE" 2>/dev/null)
+    [[ -z "$TARGET_ANNOTATION" ]] && TARGET_ANNOTATION=$(yq -P 'select(.kind == "NRComposer") | .spec.generators | join(",")' "$TARGET_FILE" 2>/dev/null)
+    TARGET_LEGACY=$(yq eval ".metadata.annotations.\"$ANNOTATION_KEY\"" "$TARGET_FILE" 2>/dev/null)
+    TARGET_SERVICE=$(yq -P 'select(.kind != "NRComposer") | .metadata.name' "$TARGET_FILE" 2>/dev/null)
 
-    if [[ -z "$TARGET_ANNOTATION" || "$TARGET_ANNOTATION" == "null" ]]; then
+    TARGET_SKIP=$(yq -P 'select(.kind == "NRComposer") | .spec.skipAutomatedScan' "$COMPOSER_FILE" 2>/dev/null)
+    [[ -z "$TARGET_SKIP" ]] && TARGET_SKIP=$(yq -P 'select(.kind == "NRComposer") | .spec.skipAutomatedScan' "$TARGET_FILE" 2>/dev/null)
+    TARGET_SKIP_LEGACY=$(yq eval ".metadata.annotations.\"$SKIP_KEY\"" "$TARGET_FILE" 2>/dev/null)
+
+    # Normalise empty / null to an empty string.
+    [[ "$TARGET_ANNOTATION" == "null" ]] && TARGET_ANNOTATION=""
+    [[ "$TARGET_LEGACY" == "null" ]] && TARGET_LEGACY=""
+    [[ "$TARGET_SKIP" == "null" ]] && TARGET_SKIP=""
+    [[ "$TARGET_SKIP_LEGACY" == "null" ]] && TARGET_SKIP_LEGACY=""
+
+    # Prefer the new form; fall back to the legacy annotation when absent.
+    [[ -z "$TARGET_ANNOTATION" && -n "$TARGET_LEGACY" ]] && TARGET_ANNOTATION="$TARGET_LEGACY"
+    [[ -z "$TARGET_SKIP" && -n "$TARGET_SKIP_LEGACY" ]] && TARGET_SKIP="$TARGET_SKIP_LEGACY"
+
+    if [[ -z "$TARGET_ANNOTATION" ]]; then
         echo "    ⚠️ Annotation not found in $TARGET_FILE"
         continue
-    elif [[ -n "$TARGET_SKIP" && "$TARGET_SKIP" == "true" ]]; then
+    elif [[ "$TARGET_SKIP" == "true" ]]; then
         echo "    ⚠️ Skip annotation found in $TARGET_FILE"
         continue
     fi
 
     IFS=',' read -ra VALUES <<< "$TARGET_ANNOTATION"
     for VALUE in "${VALUES[@]}"; do
+        VALUE=$(echo "$VALUE" | tr -d '[:space:]')
+        [[ -z "$VALUE" ]] && continue
         echo "    🎯 Running generator: $VALUE"
 
         git reset --hard > /dev/null

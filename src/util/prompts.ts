@@ -2,15 +2,8 @@ import chalk from 'chalk';
 import { extractGitHubSlug, getGitRepoOriginUrl } from '../util/git.js';
 import { alphaDashValidate } from '../util/github.js';
 import { TOOLS_DEFAULT_PROPERTIES } from './constants.js';
-import { STANDARD_ENVIRONMENTS, type CatalogInstance } from './instances.js';
+import { STANDARD_ENVIRONMENTS } from './instances.js';
 import { PromptQuestion } from 'yeoman-generator';
-
-export const PROMPT_LOCATION_NAME: PromptQuestion = {
-  type: 'input',
-  name: 'locationName',
-  message: 'Name:',
-  default: 'components',
-};
 
 export const PROMPT_LOCATION_TARGETS: PromptQuestion = {
   type: 'input',
@@ -83,73 +76,94 @@ export const PROMPT_GITHUB_PROJECT_SLUG: PromptQuestion = {
   message: 'GitHub Slug (<organization or owner>/<repository>):',
   default: extractGitHubSlug(getGitRepoOriginUrl()) ?? '',
 };
-/**
- * Deployed-instance prompts.
- *
- * `PROMPT_INSTANCES_ENVS` selects from the standard environments; one
- * `PROMPT_INSTANCE_URL` prompt per selected environment captures its optional
- * URL. Custom, non-standard environments are supplied via
- * `PROMPT_INSTANCES_CUSTOM` as a JSON array of `{ env, name?, url? }`.
- */
-export const PROMPT_INSTANCES_ENVS: PromptQuestion = {
-  type: 'checkbox',
-  name: 'instanceEnvs',
-  message: `Deployed environments (${STANDARD_ENVIRONMENTS.join(', ')}):`,
-  choices: STANDARD_ENVIRONMENTS,
-  default: [],
+
+export const PROMPT_API_NAME: PromptQuestion = {
+  type: 'input',
+  name: 'apiName',
+  message: 'API name:',
+  validate: alphaDashValidate,
+};
+
+export const PROMPT_API_DESCRIPTION: PromptQuestion = {
+  type: 'input',
+  name: 'apiDescription',
+  message: 'API description (optional):',
+  default: '',
+};
+
+export const PROMPT_API_TYPE: PromptQuestion = {
+  type: 'input',
+  name: 'apiType',
+  message: 'API definition type (openapi, asyncapi, graphql, grpc):',
+  default: 'openapi',
+  validate: (input: string) => Boolean(input.trim()) || 'API type is required',
+};
+
+export const PROMPT_API_LIFECYCLE: PromptQuestion = {
+  type: 'select',
+  name: 'apiLifecycle',
+  message: 'API lifecycle:',
+  choices: ['experimental', 'production', 'deprecated'],
+  default: 'production',
+};
+
+export const PROMPT_API_OWNER: PromptQuestion = {
+  type: 'input',
+  name: 'apiOwner',
+  message: 'API owner:',
+  validate: (input: string) => Boolean(input.trim()) || 'API owner is required',
+};
+
+export const PROMPT_API_SYSTEM: PromptQuestion = {
+  type: 'input',
+  name: 'apiSystem',
+  message: 'API system (optional):',
+  default: '',
+};
+
+export const PROMPT_API_DEFINITION: PromptQuestion = {
+  type: 'input',
+  name: 'apiDefinition',
+  message: 'API definition (YAML/JSON text or path to a definition file):',
+  validate: (input: string) =>
+    Boolean(input.trim()) || 'API definition is required',
 };
 
 /**
- * Build the per-environment URL prompt for a single environment. The prompt
- * only appears (`when`) when its environment is selected, and pre-fills the
- * stored URL on re-runs so existing values are preserved.
- *
- * @param env - The environment key (e.g. `tools`, `production`).
- * @returns The prompt for that environment's URL.
+ * Deployed-instance prompts used by the `backstage-instances` generator.
+ * Answers are stored on a Component metadata.links entry.
  */
-export const PROMPT_INSTANCE_URL = (env: string): PromptQuestion => ({
-  type: 'input',
-  name: `instanceUrl:${env}`,
-  message: `URL for ${env} (optional):`,
-  default: '',
-  when: (answers: Record<string, unknown>) =>
-    Array.isArray(answers.instanceEnvs) &&
-    (answers.instanceEnvs as string[]).includes(env),
-});
+export const PROMPT_INSTANCE_ENV: PromptQuestion = {
+  type: 'select',
+  name: 'instanceEnv',
+  message: 'Instance environment (link type):',
+  choices: [...STANDARD_ENVIRONMENTS],
+  default: 'production',
+};
 
-export const PROMPT_INSTANCES_CUSTOM: PromptQuestion = {
+export const PROMPT_INSTANCE_NAME: PromptQuestion = {
   type: 'input',
-  name: 'instancesCustom',
+  name: 'instanceName',
   message:
-    'Additional instances [{"env":"production","name":"blue","url":"https://blue.example.gov.bc.ca"}]:',
+    'Instance title (optional, defaults to the environment; set to distinguish multiple instances in one environment):',
   default: '',
-  validate: (input) => {
-    if (!input.trim()) {
-      return true;
-    }
+};
+
+export const PROMPT_INSTANCE_URL: PromptQuestion = {
+  type: 'input',
+  name: 'instanceUrl',
+  message: 'Instance URL (required):',
+  default: '',
+  validate: (input: string) => {
     try {
-      const parsed = JSON.parse(input);
-      if (!Array.isArray(parsed)) {
-        return 'Additional instances must be a JSON array';
-      }
-      for (const item of parsed as CatalogInstance[]) {
-        if (
-          !item ||
-          typeof item.env !== 'string' ||
-          item.env.trim() === '' ||
-          (item.name !== undefined && typeof item.name !== 'string') ||
-          (item.url !== undefined && typeof item.url !== 'string')
-        ) {
-          return 'Each instance must have a non-empty string "env" and optional string "name" and "url" fields';
-        }
-      }
+      new URL(input.trim());
       return true;
-      // eslint-disable-next-line no-unused-vars
-    } catch (e) {
-      return 'Invalid JSON format for additional instances';
+    } catch {
+      return 'Enter a valid absolute URL';
     }
   },
 };
+
 export const PROMPT_CLIENT_ID: PromptQuestion = {
   type: 'input',
   name: 'clientId',
@@ -330,7 +344,7 @@ export const PROMPT_ARTIFACT_REPOSITORY_PATH: PromptQuestion = {
   },
 };
 export const PROMPT_DEPLOY_TYPE: PromptQuestion = {
-  type: 'list',
+  type: 'select',
   name: 'deployType',
   message: 'Deployment type',
   description: 'Select the type of application being deployed',
@@ -539,11 +553,6 @@ export const PROMPT_TO_USAGE: Record<
   string,
   { description: string; example?: string }
 > = {
-  locationName: {
-    description:
-      'The name of the location file. This is used to group services together in the Backstage catalog.',
-    example: 'components',
-  },
   locationTargets: {
     description:
       'A comma-separated list of paths that this location file points to.',
@@ -568,6 +577,35 @@ export const PROMPT_TO_USAGE: Record<
   },
   type: {
     description: 'The type of service (e.g. service, website, library)',
+  },
+  apiName: {
+    description: 'Unique Backstage name for the API entity',
+    example: 'artist-api',
+  },
+  apiDescription: {
+    description: 'Optional summary of the API',
+  },
+  apiType: {
+    description: 'Format of the API definition (e.g. openapi, asyncapi, grpc)',
+    example: 'openapi',
+  },
+  apiLifecycle: {
+    description: 'API lifecycle state (experimental, production, deprecated)',
+    example: 'production',
+  },
+  apiOwner: {
+    description:
+      'Entity reference for the team or person responsible for the API',
+    example: 'artist-relations-team',
+  },
+  apiSystem: {
+    description: 'Optional entity reference for the system containing the API',
+    example: 'artist-engagement-portal',
+  },
+  apiDefinition: {
+    description:
+      'Required YAML/JSON API definition, or a path to a definition file in the repository',
+    example: 'openapi: "3.0.0"',
   },
   lifecycle: {
     description:
@@ -594,27 +632,19 @@ export const PROMPT_TO_USAGE: Record<
       'The GitHub slug of the service. If not provided, will be auto-detected from the git remote URL',
     example: 'bcgov-c/edqa-war',
   },
-  instanceEnvs: {
+  instanceEnv: {
+    description: `Deployed environment. One of ${STANDARD_ENVIRONMENTS.join(', ')}. Stored as metadata.links[].type.`,
+    example: 'production',
+  },
+  instanceName: {
     description:
-      'Standard deployed environments to include in the catalog. Select any of tools, development, test, or production.',
+      'Optional link title; defaults to the environment. Use distinct titles for multiple instances in one environment. Stored as metadata.links[].title.',
+    example: 'blue',
   },
-  instancesCustom: {
+  instanceUrl: {
     description:
-      'Additional deployed instances as a JSON array. Name defaults to env; use different names for multiple instances in one environment.',
-    example:
-      '[{"env":"production","name":"blue","url":"https://blue.example.gov.bc.ca"}]',
-  },
-  'instanceUrl:tools': {
-    description: 'Optional URL for the tools environment.',
-  },
-  'instanceUrl:development': {
-    description: 'Optional URL for the development environment.',
-  },
-  'instanceUrl:test': {
-    description: 'Optional URL for the test environment.',
-  },
-  'instanceUrl:production': {
-    description: 'Optional URL for the production environment.',
+      'Required absolute URL of the instance. Stored as metadata.links[].url.',
+    example: 'https://app.example.gov.bc.ca',
   },
   clientId: {
     description:

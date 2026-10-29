@@ -32,7 +32,7 @@ import { outputReport } from './report.js';
  * Subclasses set instance properties in their constructor:
  * - this._nrsayConfig — { title, subtitle, links } or null to skip the banner
  * - this._questions — array of prompt definitions (default: [])
- * - this._storageOptions — { kind, storageOptions } for BackstageStorage
+ * - this._storageOptions — { kind } for BackstageStorage
  * - writing*() methods — actual file generation logic
  * - end() — only if custom cleanup beyond reporting is needed
  */
@@ -60,17 +60,17 @@ export class BaseGenerator extends Generator {
 
   // Called by Yeoman during its own constructor — must be a virtual method,
   // not a constructor property, because it runs before subclass constructors.
-  _getStorageOptions(): { kind: string; storageOptions: Record<string, any> } {
-    return { kind: BACKSTAGE_KIND_COMPONENT, storageOptions: {} };
+  _getStorageOptions(): { kind: string; metadataName?: string } {
+    return { kind: BACKSTAGE_KIND_COMPONENT };
   }
 
   override _getStorage(): any {
-    const { kind, storageOptions } = this._getStorageOptions();
+    const { kind, metadataName } = this._getStorageOptions();
     return new BackstageStorage(
       this.rootGeneratorName(),
       kind,
+      metadataName,
       this.destinationPath(BACKSTAGE_FILENAME),
-      storageOptions,
     );
   }
 
@@ -104,16 +104,12 @@ export class BaseGenerator extends Generator {
     return namespace.replace('nr-repository-composer:', '');
   }
 
-  async prompting() {
-    const headless = this.options[OPTION_HEADLESS.name];
-    const askAnswered = this.options[YEOMAN_OPTION_ASK_ANSWERED];
-    const helpPrompts = this.options[OPTION_HELP_PROMPTS.name];
-    this.answers = this.backstageConfig.getAnswers();
-
-    // Pre-prompt hook (e.g., process deprecated properties)
-    this._prePrompt();
-
-    if (!headless && this._nrsayConfig) {
+  /**
+   * Print the nrsay banner (unless headless) and, with --help-prompts, the
+   * usage of each prompt in `this._questions`.
+   */
+  _printIntro() {
+    if (!this.options[OPTION_HEADLESS.name] && this._nrsayConfig) {
       this.log(
         nrsay(
           this._nrsayConfig.title,
@@ -123,7 +119,7 @@ export class BaseGenerator extends Generator {
       );
     }
 
-    if (helpPrompts) {
+    if (this.options[OPTION_HELP_PROMPTS.name]) {
       this.log(chalk.bold('Prompts\n'));
       for (const question of this._questions) {
         this.log(getPromptToUsage(question));
@@ -132,6 +128,17 @@ export class BaseGenerator extends Generator {
         `${chalk.bold.underline('                                       ')}\n`,
       );
     }
+  }
+
+  async prompting() {
+    const headless = this.options[OPTION_HEADLESS.name];
+    const askAnswered = this.options[YEOMAN_OPTION_ASK_ANSWERED];
+    this.answers = this.backstageConfig.getAnswers();
+
+    // Pre-prompt hook (e.g., process deprecated properties)
+    this._prePrompt();
+
+    this._printIntro();
 
     bailOnUnansweredQuestions(
       this._questions,

@@ -21,6 +21,8 @@ repository root.
 **Suggested Next Steps:**
 
 - [`backstage`](backstage.md) — Create Backstage component catalog file
+- [`backstage-api`](backstage-api.md) — Create Backstage API entity documents
+- [`backstage-instances`](backstage-instances.md) — Add deployed environment links to a component catalog file
 - [`backstage-location`](backstage-location.md) — Create Backstage location catalog for monorepos
 - [`gh-maven-build`](gh-maven-build.md), [`gh-nodejs-build`](gh-nodejs-build.md) — Set up build pipeline
 

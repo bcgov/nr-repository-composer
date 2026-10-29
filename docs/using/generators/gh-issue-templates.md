@@ -36,10 +36,11 @@ This generator takes no prompts; it copies the bundled templates as-is.
 ## Skipping the catalog write
 
 By default the generator also records that it ran by adding itself to the
-`composer.io.nrs.gov.bc.ca/generators` annotation in `catalog-info.yaml`. This
-generator has no prompts, so that annotation is the only thing being persisted.
+`spec.generators` sequence of the `NRComposer` document (in the sibling
+`catalog-composer.yaml` file). This generator has no prompts, so that sequence
+is the only thing being persisted.
 
-The composer scan (`tools/composer-update-repo.sh`) reads that annotation to
+The composer scan (`tools/composer-update-repo.sh`) reads that sequence to
 decide which generators to re-run against a repository. If a template is
 recorded there, a later automated refresh will regenerate it from the default and
 **overwrite any hand edits** you made.

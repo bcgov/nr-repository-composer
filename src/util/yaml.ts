@@ -1054,7 +1054,16 @@ export function scanRepositoryForComponents(
     parentPath?: string;
   })[] = [];
 
+  // Guard against the same catalog file being loaded more than once. This
+  // happens when a catalog holds both a Component and a Location whose targets
+  // point back at the same file, which otherwise yields duplicate records.
+  const visited = new Set<string>();
+
   const loadCatalog = (catalogPath, parentPath?: string) => {
+    if (visited.has(catalogPath)) {
+      return;
+    }
+    visited.add(catalogPath);
     let entities: CatalogEntity[];
     try {
       fs.accessSync(catalogPath);

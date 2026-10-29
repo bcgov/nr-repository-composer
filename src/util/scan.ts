@@ -64,14 +64,29 @@ export function toScanRecord(
  * including Location catalogs.
  */
 export function scanRepository(): ScanRecord[] {
-  return scanRepositoryForComponents(undefined, true).map((component) =>
-    toScanRecord(
-      component.doc,
-      component.path,
-      component.parentPath,
-      component.composerDoc,
-    ),
-  );
+  // A single catalog file can hold more than one entity — for example a
+  // Component and a Location that targets that very file. Because a catalog has
+  // exactly one NRComposer shared by all of its entities, those entities report
+  // the same generators, so counting them separately double-counts the work
+  // `--all` would run. Collapse to one record per catalog file, keeping the
+  // first entity in file order.
+  const seen = new Set<string>();
+  const records: ScanRecord[] = [];
+  for (const component of scanRepositoryForComponents(undefined, true)) {
+    if (seen.has(component.path)) {
+      continue;
+    }
+    seen.add(component.path);
+    records.push(
+      toScanRecord(
+        component.doc,
+        component.path,
+        component.parentPath,
+        component.composerDoc,
+      ),
+    );
+  }
+  return records;
 }
 
 /**

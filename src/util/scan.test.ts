@@ -1,10 +1,15 @@
+import * as fs from 'fs';
+import * as os from 'os';
+import * as path from 'path';
 import { parseDocument } from 'yaml';
 import {
   formatScanRecordsHeadless,
   formatScanRecordsHuman,
+  scanRepository,
   toScanRecord,
   type ScanRecord,
 } from './scan.js';
+import { scanRepositoryForComponents } from './yaml.js';
 
 const doc = (yaml: string) => parseDocument(yaml);
 
@@ -171,5 +176,96 @@ describe('formatScanRecordsHuman', () => {
 
   it('reports when no components are found', () => {
     expect(formatScanRecordsHuman([])).toContain('No catalog-info.yaml files');
+  });
+});
+
+describe('scanRepositoryForComponents', () => {
+  let repoDir: string;
+  let previousCwd: string;
+
+  beforeEach(() => {
+    previousCwd = process.cwd();
+    repoDir = fs.mkdtempSync(path.join(os.tmpdir(), 'scan-'));
+    fs.mkdirSync(path.join(repoDir, '.git'), { recursive: true });
+    fs.writeFileSync(
+      path.join(repoDir, '.git', 'config'),
+      '[core]\n\trepositoryformatversion = 0\n',
+    );
+  });
+
+  afterEach(() => {
+    process.chdir(previousCwd);
+    fs.rmSync(repoDir, { recursive: true, force: true });
+  });
+
+  it('does not loop when a catalog Location targets its own file', () => {
+    fs.writeFileSync(
+      path.join(repoDir, 'catalog-info.yaml'),
+      [
+        'apiVersion: backstage.io/v1alpha1',
+        'kind: Component',
+        'metadata:',
+        '  name: nr-bqs-knox',
+        '  annotations:',
+        '    composer.io.nrs.gov.bc.ca/generators: backstage,gh-docker-build',
+        '---',
+        'apiVersion: backstage.io/v1alpha1',
+        'kind: Location',
+        'metadata:',
+        '  name: locations',
+        'spec:',
+        '  targets:',
+        '    - ./catalog-info.yaml',
+        '  type: path',
+        '',
+      ].join('\n'),
+    );
+
+    process.chdir(repoDir);
+    const components = scanRepositoryForComponents(undefined, true);
+
+    // The self-targeting Location is skipped, so the root catalog is loaded
+    // once and yields exactly its two entities — no re-entrant loop.
+    expect(components.map((c) => c.path)).toEqual([
+      'catalog-info.yaml',
+      'catalog-info.yaml',
+    ]);
+    expect(components.map((c) => c.doc.get('kind'))).toEqual([
+      'Component',
+      'Location',
+    ]);
+  });
+
+  it('does not double count a single catalog with a Component and Location', () => {
+    fs.writeFileSync(
+      path.join(repoDir, 'catalog-info.yaml'),
+      [
+        'apiVersion: backstage.io/v1alpha1',
+        'kind: Component',
+        'metadata:',
+        '  name: nr-bqs-knox',
+        '  annotations:',
+        '    composer.io.nrs.gov.bc.ca/generators: backstage,gh-docker-build',
+        '---',
+        'apiVersion: backstage.io/v1alpha1',
+        'kind: Location',
+        'metadata:',
+        '  name: locations',
+        'spec:',
+        '  targets:',
+        '    - ./catalog-info.yaml',
+        '  type: path',
+        '',
+      ].join('\n'),
+    );
+
+    process.chdir(repoDir);
+    const output = formatScanRecordsHuman(scanRepository());
+
+    // One record per catalog file, so the tally counts each generator once.
+    expect(output).toContain('Found 1 catalog-info.yaml file');
+    expect(output).toContain('backstage (1)');
+    expect(output).toContain('gh-docker-build (1)');
+    expect(output).toContain('--all would run 2 generator invocations.');
   });
 });

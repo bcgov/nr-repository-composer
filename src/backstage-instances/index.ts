@@ -95,8 +95,12 @@ export default class extends BaseGenerator {
       const answered = this._questions.every(
         (q) => storage.getPath(q.name) !== undefined,
       );
-      if (answered && !askAnswered) {
-        // Already set up: nothing to ask, so do not offer to continue either.
+      if (headless || (answered && !askAnswered)) {
+        // Nothing to ask for this instance; check the remaining ones.
+        index += 1;
+        if (index < instances.length) {
+          continue;
+        }
         return;
       }
       if (!headless) {
@@ -134,26 +138,24 @@ export default class extends BaseGenerator {
         YEOMAN_CONFIG_NAMESPACE,
       );
 
-      if (headless) {
-        return;
-      }
       const nextIndex = index + 1;
       const nextExists =
         nextIndex < this.backstageConfig.getInstanceLinks().length;
+      index = nextIndex;
+      if (nextExists) {
+        continue;
+      }
       const { next } = await this.prompt([
         {
           type: 'confirm',
           name: 'next',
-          message: nextExists
-            ? `Edit the next instance (--index ${nextIndex})?`
-            : 'Add another instance?',
+          message: 'Add another instance?',
           default: false,
         },
       ]);
       if (!next) {
         return;
       }
-      index = nextIndex;
     }
   }
 

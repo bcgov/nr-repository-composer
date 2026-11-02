@@ -82,7 +82,12 @@ export default class extends BaseGenerator {
       const answered = this._questions.every(
         (question) => storage.getPath(question.name) !== undefined,
       );
-      if (answered && !askAnswered) {
+      if (headless || (answered && !askAnswered)) {
+        // Nothing to ask for this API; check the remaining ones.
+        index += 1;
+        if (index < apiCount) {
+          continue;
+        }
         return;
       }
 
@@ -102,26 +107,24 @@ export default class extends BaseGenerator {
       this.answers = await this.prompt(apiQuestions, YEOMAN_CONFIG_NAMESPACE);
       this._postPrompt();
 
-      if (headless) {
-        return;
-      }
       const nextIndex = index + 1;
       const nextExists =
         nextIndex < storage.kindDocs(BACKSTAGE_KIND_API).length;
+      index = nextIndex;
+      if (nextExists) {
+        continue;
+      }
       const { next } = await this.prompt([
         {
           type: 'confirm',
           name: 'next',
-          message: nextExists
-            ? `Edit the next API (--index ${nextIndex})?`
-            : 'Add another API?',
+          message: 'Add another API?',
           default: false,
         },
       ]);
       if (!next) {
         return;
       }
-      index = nextIndex;
     }
   }
 

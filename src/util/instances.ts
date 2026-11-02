@@ -3,8 +3,13 @@
  *
  * An "instance" describes a deployed environment for a component, e.g. its
  * `tools`, `development`, `test`, or `production` URL. Each instance is stored
- * as an entry in the Component's standard `metadata.links` array.
+ * as an entry in the Component's standard `metadata.links` array. The entry
+ * uses a fixed link `type` of `instance` and carries the environment in a
+ * custom `env` field (with an optional `title` and `url`).
  */
+
+/** The link `type` written for every deployed-instance link. */
+export const INSTANCE_LINK_TYPE = 'instance';
 
 /** The well-known, standard environments offered through the prompts. */
 export const STANDARD_ENVIRONMENTS = [

@@ -2,12 +2,11 @@
 
 This adds one or more entries to the Component's standard `metadata.links`
 array in `./catalog-info.yaml`. Each link records one deployed instance of the
-service: the environment as `type`, an optional display name as `title`, and a
-required `url`.
+service: a fixed `type` of `instance`, the environment in a custom `env` field, an
+optional display name as `title`, and a required `url`.
 
 Run the [`backstage`](backstage.md) generator first. This generator edits only
-links whose `type` is one of the supported environments; other catalog links
-are preserved.
+links whose `type` is `instance`; other catalog links are preserved and untouched.
 
 ## Usage
 
@@ -33,7 +32,7 @@ straight to another instance. In `--headless` mode only the instance at
 
 | Prompt | Affects |
 | --- | --- |
-| **Environment** | Required. One of `tools`, `development`, `test` or `production` (default); custom environments are not supported. Written to `metadata.links[].type`. |
+| **Environment** | Required. One of `tools`, `development`, `test` or `production` (default); custom environments are not supported. Written to `metadata.links[].env` on an entry whose `type` is `instance`. |
 | **Title** | Optional. Distinguishes multiple instances in one environment (for example `blue`). Defaults to the environment. Each environment and title pair must be unique. Written to `metadata.links[].title`. |
 | **URL** | Required absolute URL for the instance. Written to `metadata.links[].url`. |
 
@@ -45,10 +44,12 @@ kind: Component
 metadata:
   name: artist-web
   links:
-    - type: production
+    - type: instance
+      env: production
       title: production
       url: https://artist.example.gov.bc.ca
-    - type: production
+    - type: instance
+      env: production
       title: blue
       url: https://blue.artist.example.gov.bc.ca
 spec:
@@ -59,9 +60,10 @@ spec:
 
 Instances used to be stored as JSON in the component's
 `playbook.io.nrs.gov.bc.ca/instances` annotation. When that annotation is read,
-it is removed and converted to `metadata.links` entries. Legacy entries without
-a URL are retained; add a valid URL by rerunning this generator. The
-`backstage-instances` generator is recorded in the component's generator list.
+it is removed and converted to `metadata.links` entries of the current form
+(`type: instance` with a custom `env` field). Legacy entries without a URL are
+retained; add a valid URL by rerunning this generator. The `backstage-instances`
+generator is recorded in the component's generator list.
 
 ## Generator source
 

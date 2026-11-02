@@ -1,9 +1,6 @@
 import { isSeq } from 'yaml';
 import { BackstageStorage } from '../util/backstage.storage.js';
-import {
-  STANDARD_ENVIRONMENTS,
-  type CatalogInstance,
-} from '../util/instances.js';
+import { INSTANCE_LINK_TYPE, type CatalogInstance } from '../util/instances.js';
 import {
   PROMPT_INSTANCE_ENV,
   PROMPT_INSTANCE_NAME,
@@ -11,7 +8,7 @@ import {
 } from '../util/prompts.js';
 
 const INSTANCE_LINK_FIELDS: Record<string, string> = {
-  [PROMPT_INSTANCE_ENV.name]: 'type',
+  [PROMPT_INSTANCE_ENV.name]: 'env',
   [PROMPT_INSTANCE_NAME.name]: 'title',
   [PROMPT_INSTANCE_URL.name]: 'url',
 };
@@ -24,7 +21,9 @@ export class BackstageInstancesStorage extends BackstageStorage {
     const links = this.readLinks();
     return this.instanceLinkIndexes(links).map((index) => {
       const link = links[index];
-      const instance: CatalogInstance = { env: String(link.type) };
+      const instance: CatalogInstance = {
+        env: typeof link.env === 'string' ? link.env : '',
+      };
       if (typeof link.title === 'string') {
         instance.name = link.title;
       }
@@ -103,6 +102,9 @@ export class BackstageInstancesStorage extends BackstageStorage {
     if (!link) {
       return undefined;
     }
+    if (name === PROMPT_INSTANCE_ENV.name) {
+      return typeof link.env === 'string' && link.env ? link.env : undefined;
+    }
     const value = link[INSTANCE_LINK_FIELDS[name]];
     if (value !== undefined) {
       return value;
@@ -118,15 +120,18 @@ export class BackstageInstancesStorage extends BackstageStorage {
     const actualIndex = linkIndexes[this.instanceLinkIndex!];
     const targetIndex = actualIndex ?? links.length;
     const link = links[targetIndex] ?? {};
+    const env = typeof link.env === 'string' ? link.env : '';
     if (trimmed === null || trimmed === undefined || trimmed === '') {
-      if (field === 'title' && typeof link.type === 'string') {
-        link.title = link.type;
+      if (field === 'title' && env) {
+        link.title = env;
       } else {
         delete link[field];
       }
     } else {
       link[field] = trimmed;
     }
+    // Every deployed-instance link uses a fixed type with a custom env field.
+    link.type = INSTANCE_LINK_TYPE;
     links[targetIndex] = link;
     this.doc.setIn(['metadata', 'links'], links);
   }
@@ -144,10 +149,7 @@ export class BackstageInstancesStorage extends BackstageStorage {
 
   private instanceLinkIndexes(links = this.readLinks()): number[] {
     return links.flatMap((link, index) =>
-      typeof link.type === 'string' &&
-      (STANDARD_ENVIRONMENTS as readonly string[]).includes(link.type)
-        ? [index]
-        : [],
+      link.type === INSTANCE_LINK_TYPE ? [index] : [],
     );
   }
 

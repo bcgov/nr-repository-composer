@@ -136,7 +136,7 @@ export const PROMPT_API_DEFINITION: PromptQuestion = {
 export const PROMPT_INSTANCE_ENV: PromptQuestion = {
   type: 'select',
   name: 'instanceEnv',
-  message: 'Instance environment (link type):',
+  message: 'Instance environment (custom link env field):',
   choices: [...STANDARD_ENVIRONMENTS],
   default: 'production',
 };
@@ -633,7 +633,7 @@ export const PROMPT_TO_USAGE: Record<
     example: 'bcgov-c/edqa-war',
   },
   instanceEnv: {
-    description: `Deployed environment. One of ${STANDARD_ENVIRONMENTS.join(', ')}. Stored as metadata.links[].type.`,
+    description: `Deployed environment. One of ${STANDARD_ENVIRONMENTS.join(', ')}. Stored as metadata.links[].env on an entry whose type is "instance".`,
     example: 'production',
   },
   instanceName: {

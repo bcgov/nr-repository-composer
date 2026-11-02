@@ -378,11 +378,12 @@ spec:
 
     expect(entities[0].doc.getIn(['metadata', 'links'])).toEqual([
       {
-        type: 'production',
+        type: 'instance',
+        env: 'production',
         title: 'production',
         url: 'https://app.example',
       },
-      { type: 'tools', title: 'tools' },
+      { type: 'instance', env: 'tools', title: 'tools' },
     ]);
     expect(entities[0].doc.hasIn(['metadata', 'annotations'])).toBe(false);
     expect(

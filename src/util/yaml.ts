@@ -4,7 +4,11 @@ import path from 'path';
 
 import { destinationGitPath } from './git.js';
 import { TOOLS_DEFAULT_PROPERTIES } from './constants.js';
-import { getInstanceName, parseInstances } from './instances.js';
+import {
+  getInstanceName,
+  INSTANCE_LINK_TYPE,
+  parseInstances,
+} from './instances.js';
 
 export const BACKSTAGE_FILENAME = 'catalog-info.yaml';
 // The NRComposer document is kept in its own file beside the catalog file.
@@ -913,7 +917,8 @@ function migrateInstances({ doc: entity, composerDoc }: CatalogEntity) {
       : [];
     for (const instance of instances) {
       const link: Record<string, unknown> = {
-        type: instance.env,
+        type: INSTANCE_LINK_TYPE,
+        env: instance.env,
         title: getInstanceName(instance),
       };
       if (instance.url) {
@@ -921,8 +926,8 @@ function migrateInstances({ doc: entity, composerDoc }: CatalogEntity) {
       }
       const duplicate = links.some(
         (existing) =>
-          existing.type === link.type &&
-          (existing.title ?? existing.type) === link.title &&
+          existing.env === instance.env &&
+          (existing.title ?? existing.env ?? existing.type) === link.title &&
           existing.url === link.url,
       );
       if (!duplicate) {

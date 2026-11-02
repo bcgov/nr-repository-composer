@@ -26,7 +26,8 @@ metadata:
   links:
     - title: Documentation
       url: https://docs.example.gov.bc.ca
-    - type: development
+    - type: instance
+      env: development
       title: Development
       url: https://dev.example.gov.bc.ca
 `;
@@ -73,12 +74,14 @@ metadata:
     expect(storage.doc.getIn(['metadata', 'links'])).toEqual([
       { title: 'Documentation', url: 'https://docs.example.gov.bc.ca' },
       {
-        type: 'development',
+        type: 'instance',
+        env: 'development',
         title: 'Development',
         url: 'https://dev.example.gov.bc.ca',
       },
       {
-        type: 'tools',
+        type: 'instance',
+        env: 'tools',
         title: 'tools',
         url: 'https://tools.example.gov.bc.ca',
       },
@@ -94,7 +97,8 @@ kind: ${BACKSTAGE_KIND_COMPONENT}
 metadata:
   name: my-service
   links:
-    - type: test
+    - type: instance
+      env: test
       title: Test
 `,
     );

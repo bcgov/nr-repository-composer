@@ -122,11 +122,35 @@ export default class extends BaseGenerator {
         );
       }
 
-      const apiQuestions: PromptQuestion[] = this._questions.map((question) =>
-        typeof question === 'object' && question !== null
-          ? { ...question }
-          : question,
-      );
+      const apiQuestions: PromptQuestion[] = this._questions.map((question) => {
+        if (typeof question !== 'object' || question === null) {
+          return question;
+        }
+        const apiQuestion = { ...question };
+        if (apiQuestion.name === PROMPT_API_NAME.name) {
+          apiQuestion.validate = (input: string) => {
+            const syntaxValidation = PROMPT_API_NAME.validate?.(input);
+            if (syntaxValidation !== true) {
+              return syntaxValidation;
+            }
+            const namespace =
+              storage.doc.getIn(['metadata', 'namespace']) ?? 'default';
+            const duplicate = storage
+              .kindDocs(BACKSTAGE_KIND_API)
+              .some(
+                (doc, docIndex) =>
+                  docIndex !== index &&
+                  doc.getIn(['metadata', 'name']) === input &&
+                  (doc.getIn(['metadata', 'namespace']) ?? 'default') ===
+                    namespace,
+              );
+            return duplicate
+              ? `An API named "${input}" already exists in namespace "${namespace}".`
+              : true;
+          };
+        }
+        return apiQuestion;
+      });
       this.answers = await this.prompt(apiQuestions, YEOMAN_CONFIG_NAMESPACE);
       this._postPrompt();
 

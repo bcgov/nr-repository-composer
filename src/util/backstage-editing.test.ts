@@ -179,6 +179,47 @@ describe.each(['API', 'instances'])('%s index editing', (kind) => {
     },
   );
 
+  if (kind === 'API') {
+    it('rejects API names already used in the selected namespace', async () => {
+      const storage = createStorage(3);
+      const docs = storage.kindDocs(BACKSTAGE_KIND_API);
+      docs[0].setIn(['metadata', 'namespace'], 'team-a');
+      docs[1].setIn(['metadata', 'namespace'], 'team-a');
+      docs[2].setIn(['metadata', 'namespace'], 'team-b');
+
+      const { completion, prompt } = run(storage, {
+        index: 0,
+        'ask-answered': true,
+      });
+      await completion;
+
+      const apiNameQuestion = prompt.mock.calls[0][0].find(
+        (question) =>
+          typeof question === 'object' && question.name === 'apiName',
+      );
+      expect(apiNameQuestion?.validate?.('entry-1')).toBe(
+        'An API named "entry-1" already exists in namespace "team-a".',
+      );
+      expect(apiNameQuestion?.validate?.('entry-0')).toBe(true);
+      expect(apiNameQuestion?.validate?.('entry-2')).toBe(true);
+      expect(apiNameQuestion?.validate?.('new-name')).toBe(true);
+    });
+
+    it('uses the default namespace when checking API names', async () => {
+      const storage = createStorage(2);
+      const { completion, prompt } = run(storage, { index: -1 });
+      await completion;
+
+      const apiNameQuestion = prompt.mock.calls[0][0].find(
+        (question) =>
+          typeof question === 'object' && question.name === 'apiName',
+      );
+      expect(apiNameQuestion?.validate?.('entry-0')).toBe(
+        'An API named "entry-0" already exists in namespace "default".',
+      );
+    });
+  }
+
   it.each([
     { index: 0 },
     { index: 1 },

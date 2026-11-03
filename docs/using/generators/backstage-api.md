@@ -36,6 +36,8 @@ In `--headless` mode all existing APIs are processed; `--index` is not supported
 
 The API type accepts values such as `openapi`, `asyncapi`, `graphql`, and
 `grpc`. Lifecycle options are `experimental`, `production`, and `deprecated`.
+API names must be unique among APIs in the same namespace. APIs without an
+explicit namespace are treated as belonging to the `default` namespace.
 For the API definition, enter YAML/JSON text or a path to a definition file in
 the repository. When a file path is provided, its contents are stored in the
 descriptor.

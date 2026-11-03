@@ -175,6 +175,20 @@ gh_create_label_idempotent () {
     fi
 }
 
+# Run a yq expression over a (possibly multi-document) catalog, drop any null or
+# empty results, and join the remaining values into one comma-separated string.
+# -N suppresses the "---" document separators so the filtered values rejoin
+# cleanly; this is what lets a multi-document catalog that carries no value for a
+# field resolve to an empty string instead of a run of "null" tokens (which the
+# shell loop below would otherwise treat as a generator named "null").
+# $1: yq expression, $2: catalog or composer file
+yq_aggregate_csv() {
+    local expr="$1" f="$2" out
+    [[ -f "$f" ]] || return 0
+    out=$(yq -N -P "$expr" "$f" 2>/dev/null | grep -vxE 'null' | paste -sd, -)
+    printf '%s' "$out"
+}
+
 for TARGET_FILE in $TARGETS; do
     echo "  ➤ Processing target: $TARGET_FILE"
 
@@ -198,24 +212,20 @@ for TARGET_FILE in $TARGETS; do
     # Prefer the dedicated NRComposer document's spec.generators/skipAutomatedScan
     # (new form, written to a sibling catalog-composer.yaml), then an inline
     # NRComposer in the catalog file, then the legacy metadata.annotations list
-    # so pre-migration repositories keep working. The new form joins the YAML
-    # array into a comma-separated string, matching the legacy shape for the loop
-    # below.
+    # so pre-migration repositories keep working. Each source is filtered for
+    # absent/null values and aggregated into a single comma-separated string, so
+    # a multi-document catalog that carries no generator annotations resolves to
+    # empty instead of a stream of "null" tokens the loop below would otherwise
+    # try to run as generators.
     COMPOSER_FILE=$(composeFileFor "$TARGET_FILE")
-    TARGET_ANNOTATION=$(yq -P 'select(.kind == "NRComposer") | .spec.generators | join(",")' "$COMPOSER_FILE" 2>/dev/null)
-    [[ -z "$TARGET_ANNOTATION" ]] && TARGET_ANNOTATION=$(yq -P 'select(.kind == "NRComposer") | .spec.generators | join(",")' "$TARGET_FILE" 2>/dev/null)
-    TARGET_LEGACY=$(yq eval ".metadata.annotations.\"$ANNOTATION_KEY\"" "$TARGET_FILE" 2>/dev/null)
-    TARGET_SERVICE=$(yq -P 'select(.kind != "NRComposer") | .metadata.name' "$TARGET_FILE" 2>/dev/null)
+    TARGET_ANNOTATION=$(yq_aggregate_csv 'select(.kind == "NRComposer") | .spec.generators // [] | .[]' "$COMPOSER_FILE")
+    [[ -z "$TARGET_ANNOTATION" ]] && TARGET_ANNOTATION=$(yq_aggregate_csv 'select(.kind == "NRComposer") | .spec.generators // [] | .[]' "$TARGET_FILE")
+    TARGET_LEGACY=$(yq_aggregate_csv ".metadata.annotations[\"$ANNOTATION_KEY\"]" "$TARGET_FILE")
+    TARGET_SERVICE=$(yq -N -P 'select(.kind != "NRComposer") | .metadata.name' "$TARGET_FILE" 2>/dev/null | head -n 1)
 
-    TARGET_SKIP=$(yq -P 'select(.kind == "NRComposer") | .spec.skipAutomatedScan' "$COMPOSER_FILE" 2>/dev/null)
-    [[ -z "$TARGET_SKIP" ]] && TARGET_SKIP=$(yq -P 'select(.kind == "NRComposer") | .spec.skipAutomatedScan' "$TARGET_FILE" 2>/dev/null)
-    TARGET_SKIP_LEGACY=$(yq eval ".metadata.annotations.\"$SKIP_KEY\"" "$TARGET_FILE" 2>/dev/null)
-
-    # Normalise empty / null to an empty string.
-    [[ "$TARGET_ANNOTATION" == "null" ]] && TARGET_ANNOTATION=""
-    [[ "$TARGET_LEGACY" == "null" ]] && TARGET_LEGACY=""
-    [[ "$TARGET_SKIP" == "null" ]] && TARGET_SKIP=""
-    [[ "$TARGET_SKIP_LEGACY" == "null" ]] && TARGET_SKIP_LEGACY=""
+    TARGET_SKIP=$(yq_aggregate_csv 'select(.kind == "NRComposer") | .spec.skipAutomatedScan' "$COMPOSER_FILE")
+    [[ -z "$TARGET_SKIP" ]] && TARGET_SKIP=$(yq_aggregate_csv 'select(.kind == "NRComposer") | .spec.skipAutomatedScan' "$TARGET_FILE")
+    TARGET_SKIP_LEGACY=$(yq_aggregate_csv ".metadata.annotations[\"$SKIP_KEY\"]" "$TARGET_FILE")
 
     # Prefer the new form; fall back to the legacy annotation when absent.
     [[ -z "$TARGET_ANNOTATION" && -n "$TARGET_LEGACY" ]] && TARGET_ANNOTATION="$TARGET_LEGACY"

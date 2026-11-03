@@ -882,6 +882,9 @@ function isPairedEntity(doc: Document): boolean {
  * exact duplicates are not added. Legacy entries without URLs are retained.
  */
 function migrateInstances({ doc: entity, composerDoc }: CatalogEntity) {
+  if (entity.get('kind') !== BACKSTAGE_KIND_COMPONENT) {
+    return;
+  }
   const legacy =
     composerDoc.getIn([...NRCOMPOSER_ANSWERS_PATH, 'instances']) ??
     entity.getIn(LEGACY_INSTANCES_ANNOTATION_PATH);

@@ -71,7 +71,7 @@ metadata:
       instanceUrl: 'https://tools.example.gov.bc.ca',
     });
 
-    expect(storage.doc.getIn(['metadata', 'links'])).toEqual([
+    expect(storage.doc.toJSON().metadata.links).toEqual([
       { title: 'Documentation', url: 'https://docs.example.gov.bc.ca' },
       {
         type: 'instance',

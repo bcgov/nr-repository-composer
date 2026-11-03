@@ -27,8 +27,7 @@ const OPTION_INDEX = {
   type: Number,
   required: false,
   description:
-    'Zero-based environment link to add or edit. Use the current instance count to add a new one.',
-  default: 0,
+    'Zero-based environment link to edit (default 0). Use the instance count or -1 to add. Not supported with --headless.',
 };
 
 const instanceKey = (instance: CatalogInstance) =>
@@ -75,7 +74,20 @@ export default class extends BaseGenerator {
     this.backstageConfig.ensureKindExists(BACKSTAGE_KIND_COMPONENT);
     this._printIntro();
 
-    let index = Number(this.options[OPTION_INDEX.name] ?? 0);
+    const requestedIndex = this.options[OPTION_INDEX.name];
+    if (headless && requestedIndex !== undefined) {
+      throw new Error('--index cannot be used with --headless.');
+    }
+    const instanceCount = this.backstageConfig.getInstanceLinks().length;
+    let index = Number(requestedIndex ?? 0);
+    if (index === -1) {
+      index = instanceCount;
+    }
+    if (!Number.isInteger(index) || index < 0 || index > instanceCount) {
+      throw new Error(
+        `Instance index ${index} is out of range: ${instanceCount} instance link(s) exist. Use -1 to add a new instance.`,
+      );
+    }
     for (;;) {
       const storage = this.backstageConfig;
       const instances = storage.getInstanceLinks();
@@ -97,10 +109,11 @@ export default class extends BaseGenerator {
         (q) => storage.getPath(q.name) !== undefined,
       );
       if (headless || (answered && !askAnswered)) {
-        // Nothing to ask for this instance; check the remaining ones.
-        index += 1;
-        if (index < instances.length) {
-          continue;
+        if (headless) {
+          index += 1;
+          if (index < instances.length) {
+            continue;
+          }
         }
         return;
       }
@@ -139,6 +152,9 @@ export default class extends BaseGenerator {
         YEOMAN_CONFIG_NAMESPACE,
       );
 
+      if (!isNew && !(askAnswered && requestedIndex === undefined)) {
+        return;
+      }
       const nextIndex = index + 1;
       const nextExists =
         nextIndex < this.backstageConfig.getInstanceLinks().length;

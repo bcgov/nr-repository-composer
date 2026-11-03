@@ -34,8 +34,8 @@ const OPTION_INDEX = {
   name: 'index',
   type: Number,
   required: false,
-  description: 'Zero-based API document to add or edit.',
-  default: 0,
+  description:
+    'Zero-based API document to edit (default 0). Use the API count or -1 to add. Not supported with --headless.',
 };
 
 export default class extends BaseGenerator {
@@ -62,15 +62,37 @@ export default class extends BaseGenerator {
   async prompting() {
     const headless = this.options[OPTION_HEADLESS.name] === true;
     const askAnswered = this.options[YEOMAN_OPTION_ASK_ANSWERED] === true;
-    let index = Number(this.options[OPTION_INDEX.name] ?? 0);
+    const requestedIndex = this.options[OPTION_INDEX.name];
+    if (headless && requestedIndex !== undefined) {
+      throw new Error('--index cannot be used with --headless.');
+    }
+    const apiDocs = this.backstageConfig.kindDocs(BACKSTAGE_KIND_API);
+    // Storage creates a header for the first API before prompting.
+    const initialCount =
+      apiDocs.length === 1 &&
+      !apiDocs[0].has('metadata') &&
+      !apiDocs[0].has('spec')
+        ? 0
+        : apiDocs.length;
+    let index = Number(requestedIndex ?? 0);
+    if (index === -1) {
+      index = initialCount;
+    }
+    if (!Number.isInteger(index) || index < 0 || index > initialCount) {
+      throw new Error(
+        `API index ${index} is out of range: ${initialCount} API document(s) exist. Use -1 to add a new API.`,
+      );
+    }
 
     this._printIntro();
 
     for (;;) {
       const storage = this.backstageConfig;
       const apiCount = storage.kindDocs(BACKSTAGE_KIND_API).length;
-      const isNew = index === apiCount;
       storage.selectKindDoc(BACKSTAGE_KIND_API, index);
+      // Storage initializes an unnamed header when creating the first API.
+      const isNew =
+        index === apiCount || !storage.doc.getIn(['metadata', 'name']);
 
       const answers = storage.getAnswers();
       bailOnUnansweredQuestions(
@@ -83,10 +105,11 @@ export default class extends BaseGenerator {
         (question) => storage.getPath(question.name) !== undefined,
       );
       if (headless || (answered && !askAnswered)) {
-        // Nothing to ask for this API; check the remaining ones.
-        index += 1;
-        if (index < apiCount) {
-          continue;
+        if (headless) {
+          index += 1;
+          if (index < apiCount) {
+            continue;
+          }
         }
         return;
       }
@@ -107,6 +130,9 @@ export default class extends BaseGenerator {
       this.answers = await this.prompt(apiQuestions, YEOMAN_CONFIG_NAMESPACE);
       this._postPrompt();
 
+      if (!isNew && !(askAnswered && requestedIndex === undefined)) {
+        return;
+      }
       const nextIndex = index + 1;
       const nextExists =
         nextIndex < storage.kindDocs(BACKSTAGE_KIND_API).length;

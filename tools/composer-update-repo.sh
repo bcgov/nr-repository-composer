@@ -116,7 +116,7 @@ fi
 # Check if kind is Location. The root catalog document is the first entity
 # (Component or Location); any inline NRComposer composer document is ignored here
 # — the authoritative bookkeeping lives in the sibling catalog-composer.yaml.
-KIND=$(echo "$RESPONSE" | yq -P 'select(.kind != "NRComposer") | .kind' -)
+ KIND=$(echo "$RESPONSE" | yq -N -P 'select(.kind == "Location") | .kind' -)
 TARGETS="catalog-info.yaml"
 
 if [[ "$KIND" == "Location" ]]; then

@@ -10,7 +10,13 @@ Run the generator from the component directory:
 ```
 
 Use the zero-based `--index` option to edit an existing API or add another one.
-An index equal to the current API count creates a new API document.
+An index equal to the current API count, or `-1`, creates a new API document.
+Other indexes must be integers between `0` and the API count, inclusive.
+Editing an existing API processes only that index, without advancing to later
+APIs. After creating a new API, you are asked whether to add another one.
+With `--ask-answered` and no `--index`, all existing APIs are edited starting
+at index `0`, followed by the option to add another API.
+In `--headless` mode all existing APIs are processed; `--index` is not supported.
 
 ```bash
 ./nr-repository-composer.sh . backstage-api --index 1

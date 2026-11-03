@@ -18,15 +18,18 @@ links whose `type` is `instance`; other catalog links are preserved and untouche
 ./nr-repository-composer.sh . backstage-instances --index 1 --ask-answered
 ```
 
-The generator starts at the instance given by `--index` (default `0`). If that
-instance does not exist yet, a new one is created. Once its prompts are
-answered, you are asked whether to continue to the next instance, which is
-edited if it exists or added if it does not.
+The generator processes the instance given by `--index` (default `0`). Editing
+an existing instance stops after that instance; later instances are not processed.
+An index equal to the current instance count, or `-1`, adds a new instance.
+Other indexes must be integers between `0` and the instance count, inclusive.
+After adding, you are asked whether to add another instance.
 
 An instance that is already set up is skipped without prompting, including the
 offer to continue; pass `--ask-answered` to re-edit it, or `--index` to go
-straight to another instance. In `--headless` mode only the instance at
-`--index` is processed.
+straight to another instance. With `--ask-answered` and no `--index`, all existing
+instances are edited starting at index `0`, followed by the option to add another
+instance. In `--headless` mode all existing instances are
+processed; `--index` is not supported.
 
 ## Key prompts
 

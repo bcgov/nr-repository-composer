@@ -72,6 +72,7 @@ export default class extends BaseGenerator {
     const headless = this.options[OPTION_HEADLESS.name] === true;
     const askAnswered = this.options[YEOMAN_OPTION_ASK_ANSWERED] === true;
 
+    this.backstageConfig.ensureKindExists(BACKSTAGE_KIND_COMPONENT);
     this._printIntro();
 
     let index = Number(this.options[OPTION_INDEX.name] ?? 0);

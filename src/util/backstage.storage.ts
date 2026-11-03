@@ -97,24 +97,20 @@ export class BackstageStorage {
     }
 
     if (kind === BACKSTAGE_KIND_NRCOMPOSER) {
-      // This instance *is* the composer document.
-      this.backstageDoc =
-        docs.find((doc) => doc.contents && doc.get('kind') === kind) ??
-        this.appendDocument(kind);
-      this.composerDoc = this.backstageDoc;
+      // This instance *is* the file's single, shared composer document.
+      this.backstageDoc = this.composerDoc = this.getOrCreateComposer();
       return;
     }
 
     let entity = entities.find((e) => e.doc.get('kind') === kind);
     if (!entity) {
-      const doc = this.appendDocument(kind, metadataName);
-      // The file's NRComposer is shared by all of its entities.
-      let composerDoc = entities[0]?.composerDoc;
-      if (!composerDoc) {
-        composerDoc = newNrcomposerDoc();
-        this.backstageDocs.push(composerDoc);
-      }
-      entity = { doc, composerDoc };
+      // The NRComposer is shared by all of the file's entities; reuse the
+      // existing one and create it only when the catalog has none yet, so a
+      // catalog can never gain a duplicate NRComposer document.
+      entity = {
+        doc: this.appendDocument(kind, metadataName),
+        composerDoc: this.getOrCreateComposer(),
+      };
     }
     this.backstageDoc = entity.doc;
     this.composerDoc = entity.composerDoc;
@@ -144,6 +140,23 @@ export class BackstageStorage {
     const doc = this.newKindDoc(kind, metadataName);
     this.backstageDocs.push(doc);
     return doc;
+  }
+
+  /**
+   * The file's single, shared NRComposer document, created (and registered at
+   * the end of the catalog) when the catalog has none yet. Reusing the
+   * existing document means a catalog can never gain a duplicate.
+   */
+  private getOrCreateComposer(): Document {
+    const existing = this.backstageDocs.find(
+      (doc) => doc.contents && doc.get('kind') === BACKSTAGE_KIND_NRCOMPOSER,
+    );
+    if (existing) {
+      return existing;
+    }
+    const composerDoc = newNrcomposerDoc();
+    this.backstageDocs.push(composerDoc);
+    return composerDoc;
   }
 
   /** The documents of a kind held in this catalog file, in file order. */

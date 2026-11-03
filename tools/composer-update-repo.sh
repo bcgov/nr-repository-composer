@@ -122,7 +122,7 @@ TARGETS="catalog-info.yaml"
 if [[ "$KIND" == "Location" ]]; then
     echo "  catalog-info.yaml kind is 'Location'. Processing multiple targets..."
 
-    TARGETS=$(echo "$RESPONSE" | yq -P 'select(.kind == "Location") | .spec.targets[]' -)
+    TARGETS=$({ printf '%s\n' 'catalog-info.yaml'; echo "$RESPONSE" | yq -N -P 'select(.kind == "Location") | .spec.targets[]' -; } | awk '{sub(/^\.\//, ""); if (NF && !seen[$0]++) print}')
     echo "  Found targets: $TARGETS"
 fi
 

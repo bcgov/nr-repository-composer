@@ -376,7 +376,7 @@ spec:
 `,
     );
 
-    expect(entities[0].doc.getIn(['metadata', 'links'])).toEqual([
+    expect(entities[0].doc.toJSON().metadata.links).toEqual([
       {
         type: 'instance',
         env: 'production',

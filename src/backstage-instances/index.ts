@@ -88,6 +88,13 @@ export default class extends BaseGenerator {
         `Instance index ${index} is out of range: ${instanceCount} instance link(s) exist. Use -1 to add a new instance.`,
       );
     }
+    const scanExistingInstances =
+      headless || (requestedIndex === undefined && !askAnswered);
+    const advanceToNextInstance = (storage: BackstageInstancesStorage) => {
+      index += 1;
+      return index < storage.getInstanceLinks().length;
+    };
+
     for (;;) {
       const storage = this.backstageConfig;
       const instances = storage.getInstanceLinks();
@@ -109,11 +116,8 @@ export default class extends BaseGenerator {
         (q) => storage.getPath(q.name) !== undefined,
       );
       if (headless || (answered && !askAnswered)) {
-        if (headless) {
-          index += 1;
-          if (index < instances.length) {
-            continue;
-          }
+        if (scanExistingInstances && advanceToNextInstance(storage)) {
+          continue;
         }
         return;
       }
@@ -151,6 +155,13 @@ export default class extends BaseGenerator {
         instanceQuestions,
         YEOMAN_CONFIG_NAMESPACE,
       );
+
+      if (scanExistingInstances && !headless && !isNew) {
+        if (advanceToNextInstance(storage)) {
+          continue;
+        }
+        return;
+      }
 
       if (!isNew && !(askAnswered && requestedIndex === undefined)) {
         return;

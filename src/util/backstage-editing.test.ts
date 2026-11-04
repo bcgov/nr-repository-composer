@@ -262,6 +262,43 @@ describe.each(['API', 'instances'])('%s index editing', (kind) => {
     }
   });
 
+  if (kind === 'instances') {
+    it('prompts for missing values in later instances on an unindexed rerun', async () => {
+      const storage = createStorage(3) as BackstageInstancesStorage;
+      const links = storage.doc.toJSON().metadata.links;
+      delete links[1].url;
+      storage.doc.setIn(['metadata', 'links'], links);
+      const select = jest.spyOn(storage, 'selectInstanceLink');
+      const { completion, prompt } = run(storage, {});
+
+      await completion;
+
+      expect(select.mock.calls).toEqual([[0], [1], [2]]);
+      expect(prompt).toHaveBeenCalledTimes(1);
+      expect(storage.getInstanceLinks()[1].url).toBe(
+        'https://new-1.example.gov.bc.ca',
+      );
+    });
+  } else {
+    it('prompts for missing values in later APIs on an unindexed rerun', async () => {
+      const storage = createStorage(3);
+      const docs = storage.kindDocs(BACKSTAGE_KIND_API);
+      docs[1].deleteIn(['spec', 'owner']);
+      const select = jest.spyOn(storage, 'selectKindDoc');
+      const { completion, prompt } = run(storage, {});
+
+      await completion;
+
+      expect(select.mock.calls).toEqual([
+        [BACKSTAGE_KIND_API, 0],
+        [BACKSTAGE_KIND_API, 1],
+        [BACKSTAGE_KIND_API, 2],
+      ]);
+      expect(prompt).toHaveBeenCalledTimes(1);
+      expect(docs[1].getIn(['spec', 'owner'])).toBe('my-team');
+    });
+  }
+
   it.each([
     { count: 0, index: 0 },
     { count: 0, index: -1 },

@@ -3,6 +3,7 @@ import path from 'node:path';
 import chalk from 'chalk';
 import type { PromptQuestion } from 'yeoman-generator';
 import { BaseGenerator } from '../util/base-generator.js';
+import { BackstageStorage } from '../util/backstage.storage.js';
 import { BACKSTAGE_KIND_API } from '../util/yaml.js';
 import {
   YEOMAN_CONFIG_NAMESPACE,
@@ -83,6 +84,12 @@ export default class extends BaseGenerator {
         `API index ${index} is out of range: ${initialCount} API document(s) exist. Use -1 to add a new API.`,
       );
     }
+    const scanExistingApis =
+      headless || (requestedIndex === undefined && !askAnswered);
+    const advanceToNextApi = (storage: BackstageStorage) => {
+      index += 1;
+      return index < storage.kindDocs(BACKSTAGE_KIND_API).length;
+    };
 
     this._printIntro();
 
@@ -105,11 +112,8 @@ export default class extends BaseGenerator {
         (question) => storage.getPath(question.name) !== undefined,
       );
       if (headless || (answered && !askAnswered)) {
-        if (headless) {
-          index += 1;
-          if (index < apiCount) {
-            continue;
-          }
+        if (scanExistingApis && advanceToNextApi(storage)) {
+          continue;
         }
         return;
       }
@@ -153,6 +157,13 @@ export default class extends BaseGenerator {
       });
       this.answers = await this.prompt(apiQuestions, YEOMAN_CONFIG_NAMESPACE);
       this._postPrompt();
+
+      if (scanExistingApis && !headless && !isNew) {
+        if (advanceToNextApi(storage)) {
+          continue;
+        }
+        return;
+      }
 
       if (!isNew && !(askAnswered && requestedIndex === undefined)) {
         return;

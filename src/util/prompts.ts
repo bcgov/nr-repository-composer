@@ -4,6 +4,7 @@ import { alphaDashValidate } from '../util/github.js';
 import { TOOLS_DEFAULT_PROPERTIES } from './constants.js';
 import { STANDARD_ENVIRONMENTS } from './instances.js';
 import { PromptQuestion } from 'yeoman-generator';
+import { isDocumentProp, propRecord } from './yaml.js';
 
 export const PROMPT_LOCATION_TARGETS: PromptQuestion = {
   type: 'input',
@@ -39,9 +40,11 @@ export const PROMPT_TITLE: PromptQuestion = {
 };
 
 export const PROMPT_TYPE: PromptQuestion = {
-  type: 'input',
+  type: 'select',
   name: 'type',
-  message: 'Type (service, website, library):',
+  message: 'Type:',
+  choices: ['documentation', 'service', 'website', 'library', 'other'],
+  description: 'spec.type',
 };
 
 export const PROMPT_LIFECYCLE: PromptQuestion = {
@@ -840,12 +843,29 @@ export const PROMPT_TO_USAGE: Record<
   },
 };
 
+function nle(str: string, type: string): string {
+  return '\n  ' + chalk.dim(type + ': ' + str);
+}
+
 export function getPromptToUsage(question: PromptQuestion): string {
   const usage = PROMPT_TO_USAGE[question.name];
+  const path = propRecord[question.name];
   return (
     `${chalk.bold(question.message)} (key: ${question.name})
     Description: ${usage?.description ?? 'unknown'}` +
+    (path && isDocumentProp(path)
+      ? `\n    Backstage: ${path.path.join('.')}`
+      : '') +
     (usage?.example ? `\n    Example: ${usage?.example}` : '') +
     '\n'
+  );
+}
+
+export function getPromptToLongMessage(question: PromptQuestion): string {
+  const path = propRecord[question.name];
+  return (
+    chalk.bold(question.message) +
+    (isDocumentProp(path) ? nle(path.path.join('.'), 'Backstage') : '') +
+    '\n❯'
   );
 }

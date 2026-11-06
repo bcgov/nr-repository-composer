@@ -18,7 +18,7 @@ import {
 import { bailOnUnansweredQuestions } from './process.js';
 import { BackstageStorage } from './backstage.storage.js';
 import { BACKSTAGE_FILENAME, BACKSTAGE_KIND_COMPONENT } from './yaml.js';
-import { getPromptToUsage } from './prompts.js';
+import { getPromptToLongMessage, getPromptToUsage } from './prompts.js';
 import { outputReport } from './report.js';
 
 /**
@@ -111,11 +111,10 @@ export class BaseGenerator extends Generator {
   _printIntro() {
     if (!this.options[OPTION_HEADLESS.name] && this._nrsayConfig) {
       this.log(
-        nrsay(
-          this._nrsayConfig.title,
-          this._nrsayConfig.subtitle,
-          this._nrsayConfig.links,
-        ),
+        nrsay(this._nrsayConfig.title, this._nrsayConfig.subtitle, [
+          ...this._nrsayConfig.links,
+          ['Backstage Kind', this._getStorageOptions().kind],
+        ]),
       );
     }
 
@@ -146,7 +145,13 @@ export class BaseGenerator extends Generator {
       headless,
       askAnswered,
     );
-    this.answers = await this.prompt(this._questions, YEOMAN_CONFIG_NAMESPACE);
+    this.answers = await this.prompt(
+      this._questions.map((question) => ({
+        ...question,
+        message: getPromptToLongMessage(question),
+      })),
+      YEOMAN_CONFIG_NAMESPACE,
+    );
 
     // Post-prompt hook (e.g., validation, abort checks)
     this._postPrompt();

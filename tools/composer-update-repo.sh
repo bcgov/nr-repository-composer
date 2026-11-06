@@ -40,6 +40,13 @@ if [[ ! "$ORG" =~ ^(bcgov|bcgov-nr|bcgov-c)$ ]]; then
 fi
 
 CONTAINER_IMAGE_REF="ghcr.io/bcgov/nr-repository-composer:latest"
+# Composer bookkeeping now lives on a dedicated NRComposer document written to a
+# sibling `catalog-composer.yaml` (one per entity), with generators as a YAML
+# array under spec.generators. The legacy form stored these as
+# metadata.annotations on the entity document, so reads prefer the
+# `catalog-composer.yaml` NRComposer document, then an inline NRComposer in
+# `catalog-info.yaml`, and finally the legacy annotation — keeping pre-migration
+# repositories scannable.
 ANNOTATION_KEY="composer.io.nrs.gov.bc.ca/generators"
 SKIP_KEY="composer.io.nrs.gov.bc.ca/skipAutomatedScan"
 GITHUB_LABEL_HEX_COLOUR="8de25a"
@@ -97,23 +104,43 @@ fi
 
 FILE_URL="https://raw.githubusercontent.com/$ORG/$REPO/main/catalog-info.yaml"
 
-# Fetch the catalog-info.yaml file with authentication
+# Fetch the catalog-info.yaml file with authentication. A 404 here means the
+# repository has no root catalog at all (the 404 body is empty), so treat it as
+# "no catalog-info.yaml".
 RESPONSE=$(curl -s -f -H "Authorization: token $TOKEN" "$FILE_URL")
 if [[ $? -ne 0 ]]; then
     echo "  No catalog-info.yaml found in $REPO"
     continue
 fi
 
-# Check if kind is Location
-KIND=$(echo "$RESPONSE" | yq eval ".kind" -)
+# Check if kind is Location. The root catalog document is the first entity
+# (Component or Location); any inline NRComposer composer document is ignored here
+# — the authoritative bookkeeping lives in the sibling catalog-composer.yaml.
+ KIND=$(echo "$RESPONSE" | yq -N -P 'select(.kind == "Location") | .kind' -)
 TARGETS="catalog-info.yaml"
 
 if [[ "$KIND" == "Location" ]]; then
     echo "  catalog-info.yaml kind is 'Location'. Processing multiple targets..."
 
-    TARGETS=$(echo "$RESPONSE" | yq eval '.spec.targets[]' -)
+    TARGETS=$({ printf '%s\n' 'catalog-info.yaml'; echo "$RESPONSE" | yq -N -P 'select(.kind == "Location") | .spec.targets[]' -; } | awk '{sub(/^\.\//, ""); if (NF && !seen[$0]++) print}')
     echo "  Found targets: $TARGETS"
 fi
+
+# The dedicated NRComposer document that carries a target's composer bookkeeping
+# (`spec.generators`, `spec.skipAutomatedScan`). Prefers this sibling file over
+# an inline NRComposer document in catalog-info.yaml (pre-migration form), then
+# the legacy metadata.annotations. Kept per-target so each Location target reads
+# its own sibling composer file.
+COMPOSER_FILE=""
+composeFileFor() {
+    local tf="$1"
+    # Prefer a dedicated composer file, fall back to an inline NRComposer.
+    if [[ -f "$(dirname "${tf}")/catalog-composer.yaml" ]]; then
+        echo "$(dirname "${tf}")/catalog-composer.yaml"
+    else
+        echo "${tf}"
+    fi
+}
 
 echo "  Cloning repository: $REPO"
 
@@ -148,6 +175,20 @@ gh_create_label_idempotent () {
     fi
 }
 
+# Run a yq expression over a (possibly multi-document) catalog, drop any null or
+# empty results, and join the remaining values into one comma-separated string.
+# -N suppresses the "---" document separators so the filtered values rejoin
+# cleanly; this is what lets a multi-document catalog that carries no value for a
+# field resolve to an empty string instead of a run of "null" tokens (which the
+# shell loop below would otherwise treat as a generator named "null").
+# $1: yq expression, $2: catalog or composer file
+yq_aggregate_csv() {
+    local expr="$1" f="$2" out
+    [[ -f "$f" ]] || return 0
+    out=$(yq -N -P "$expr" "$f" 2>/dev/null | grep -vxE 'null' | paste -sd, -)
+    printf '%s' "$out"
+}
+
 for TARGET_FILE in $TARGETS; do
     echo "  ➤ Processing target: $TARGET_FILE"
 
@@ -168,20 +209,40 @@ for TARGET_FILE in $TARGETS; do
         continue
     fi
 
-    TARGET_ANNOTATION=$(yq eval ".metadata.annotations.\"$ANNOTATION_KEY\"" "$TARGET_FILE")
-    TARGET_SERVICE=$(yq eval ".metadata.name" "$TARGET_FILE")
-    TARGET_SKIP=$(yq eval ".metadata.annotations.\"$SKIP_KEY\"" "$TARGET_FILE")
+    # Prefer the dedicated NRComposer document's spec.generators/skipAutomatedScan
+    # (new form, written to a sibling catalog-composer.yaml), then an inline
+    # NRComposer in the catalog file, then the legacy metadata.annotations list
+    # so pre-migration repositories keep working. Each source is filtered for
+    # absent/null values and aggregated into a single comma-separated string, so
+    # a multi-document catalog that carries no generator annotations resolves to
+    # empty instead of a stream of "null" tokens the loop below would otherwise
+    # try to run as generators.
+    COMPOSER_FILE=$(composeFileFor "$TARGET_FILE")
+    TARGET_ANNOTATION=$(yq_aggregate_csv 'select(.kind == "NRComposer") | .spec.generators // [] | .[]' "$COMPOSER_FILE")
+    [[ -z "$TARGET_ANNOTATION" ]] && TARGET_ANNOTATION=$(yq_aggregate_csv 'select(.kind == "NRComposer") | .spec.generators // [] | .[]' "$TARGET_FILE")
+    TARGET_LEGACY=$(yq_aggregate_csv ".metadata.annotations[\"$ANNOTATION_KEY\"]" "$TARGET_FILE")
+    TARGET_SERVICE=$(yq -N -P 'select(.kind != "NRComposer") | .metadata.name' "$TARGET_FILE" 2>/dev/null | head -n 1)
 
-    if [[ -z "$TARGET_ANNOTATION" || "$TARGET_ANNOTATION" == "null" ]]; then
+    TARGET_SKIP=$(yq_aggregate_csv 'select(.kind == "NRComposer") | .spec.skipAutomatedScan' "$COMPOSER_FILE")
+    [[ -z "$TARGET_SKIP" ]] && TARGET_SKIP=$(yq_aggregate_csv 'select(.kind == "NRComposer") | .spec.skipAutomatedScan' "$TARGET_FILE")
+    TARGET_SKIP_LEGACY=$(yq_aggregate_csv ".metadata.annotations[\"$SKIP_KEY\"]" "$TARGET_FILE")
+
+    # Prefer the new form; fall back to the legacy annotation when absent.
+    [[ -z "$TARGET_ANNOTATION" && -n "$TARGET_LEGACY" ]] && TARGET_ANNOTATION="$TARGET_LEGACY"
+    [[ -z "$TARGET_SKIP" && -n "$TARGET_SKIP_LEGACY" ]] && TARGET_SKIP="$TARGET_SKIP_LEGACY"
+
+    if [[ -z "$TARGET_ANNOTATION" ]]; then
         echo "    ⚠️ Annotation not found in $TARGET_FILE"
         continue
-    elif [[ -n "$TARGET_SKIP" && "$TARGET_SKIP" == "true" ]]; then
+    elif [[ "$TARGET_SKIP" == "true" ]]; then
         echo "    ⚠️ Skip annotation found in $TARGET_FILE"
         continue
     fi
 
     IFS=',' read -ra VALUES <<< "$TARGET_ANNOTATION"
     for VALUE in "${VALUES[@]}"; do
+        VALUE=$(echo "$VALUE" | tr -d '[:space:]')
+        [[ -z "$VALUE" ]] && continue
         echo "    🎯 Running generator: $VALUE"
 
         git reset --hard > /dev/null

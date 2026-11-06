@@ -21,7 +21,8 @@ headless-first, agent-assisted execution without manually copying guidance files
 ```
 
 This generator takes no prompts; it copies the guidance pack into the repository
-as-is.
+as-is. Run it at the root of the repository; it exits with an error if run from
+a subdirectory.
 
 **Suggested Next Steps:**
 

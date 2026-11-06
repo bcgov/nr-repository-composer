@@ -31,7 +31,6 @@ Remember to use the flag `--ask-answered` if you are adding additional targets.
 
 | Prompt | Affects |
 | --- | --- |
-| **Name** | Name of the location entity (default `components`). |
 | **Targets** | Comma-separated relative paths to each component's `catalog-info.yaml`. You can give a bare directory (for example `frontend,backend`) and the generator appends `catalog-info.yaml` for you, or include the filename (for example `./frontend/catalog-info.yaml,./backend/catalog-info.yaml`). These become `spec.targets` and are what `gh-common-mono-build` discovers. If a target's catalog file does not exist on disk, the generator prints a warning. Add more later by rerunning with `--ask-answered`. |
 
 **Suggested Next Steps:**

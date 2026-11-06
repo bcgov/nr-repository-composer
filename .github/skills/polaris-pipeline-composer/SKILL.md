@@ -21,7 +21,7 @@ Use this skill for staff-supervised updates that apply the latest Polaris Pipeli
 Before running generators, check whether the target repository is already onboarded for the Polaris composer agent.
 
 A repository is onboarded if all of the following are true:
-- `catalog-info.yaml` exists and includes `gh-polaris-composer-agent` in the `composer.io.nrs.gov.bc.ca/generators` annotation.
+- `catalog-info.yaml` exists and the catalog's `NRComposer` document records `gh-polaris-composer-agent` in its `spec.generators` sequence (in the sibling `catalog-composer.yaml`); the legacy `composer.io.nrs.gov.bc.ca/generators` annotation on `catalog-info.yaml` is still honoured as a fallback.
 - `nr-repository-composer.sh` exists and is executable.
 - `.github/skills/polaris-pipeline-composer/SKILL.md` exists.
 

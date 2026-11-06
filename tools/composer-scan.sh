@@ -40,6 +40,11 @@ if [[ ! "$ORG" =~ ^(bcgov|bcgov-nr|bcgov-c)$ ]]; then
     exit 1
 fi
 
+# Composer bookkeeping now lives on a dedicated NRComposer document (one per
+# entity) in a sibling `catalog-composer.yaml`, with generators as a YAML array
+# under `spec.generators`. The legacy form was the `metadata.annotations`
+# `composer.io.nrs.gov.bc.ca/generators` annotation on the entity, which is
+# still honoured as a fallback for pre-migration repositories.
 ANNOTATION_KEY="composer.io.nrs.gov.bc.ca/generators"
 
 # Check if already logged in
@@ -57,7 +62,7 @@ TOKEN=$(gh auth token)
 # Get all repositories in the organization
 REPOS=$(gh api orgs/$ORG/repos --paginate --jq 'map(select(.archived == false)) | .[].name')
 
-echo "Scanning repositories for catalog-info.yaml files with the annotation $ANNOTATION_KEY..."
+echo "Scanning repositories for composer bookkeeping (NRComposer spec.generators, legacy annotation $ANNOTATION_KEY)..."
 
 for REPO in $REPOS; do
     # Skip repositories that do not start with "nr"

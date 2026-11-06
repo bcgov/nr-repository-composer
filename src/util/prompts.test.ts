@@ -9,9 +9,12 @@ import {
   PROMPT_ARTIFACT_REPOSITORY_PATH,
   PROMPT_TOOLS_LOCAL_BUILD_SECRETS,
   PROMPT_AUTO_DEPLOY_EPHEMERAL,
-  PROMPT_INSTANCES_ENVS,
+  PROMPT_INSTANCE_ENV,
+  PROMPT_INSTANCE_NAME,
   PROMPT_INSTANCE_URL,
-  PROMPT_INSTANCES_CUSTOM,
+  PROMPT_API_DEFINITION,
+  PROMPT_API_OWNER,
+  PROMPT_API_TYPE,
   PROMPT_TO_USAGE,
   getPromptToUsage,
 } from './prompts.js';
@@ -52,28 +55,34 @@ describe('prompt definitions', () => {
     expect(defaultFn({ toolsBuildSecrets: 'FOO,BAR' })).toBe('FOO,BAR');
   });
 
-  it('offers the standard instance environments and gates their URL prompts', () => {
-    expect(PROMPT_INSTANCES_ENVS.choices).toEqual(STANDARD_ENVIRONMENTS);
+  it('limits the instance environment to the standard environments and documents each instance prompt', () => {
+    expect(PROMPT_INSTANCE_ENV.type).toBe('select');
+    expect(PROMPT_INSTANCE_ENV.choices).toEqual([...STANDARD_ENVIRONMENTS]);
 
-    const urlPrompt = PROMPT_INSTANCE_URL('tools');
-    expect(urlPrompt.when?.({ instanceEnvs: ['tools'] })).toBe(true);
-    expect(urlPrompt.when?.({ instanceEnvs: ['production'] })).toBe(false);
+    for (const prompt of [
+      PROMPT_INSTANCE_ENV,
+      PROMPT_INSTANCE_NAME,
+      PROMPT_INSTANCE_URL,
+    ]) {
+      expect(PROMPT_TO_USAGE[prompt.name]).toBeDefined();
+    }
   });
 
-  it('validates custom instances as an array of environment names and optional URLs', () => {
-    const validate = PROMPT_INSTANCES_CUSTOM.validate as (
-      _input: string,
-    ) => true | string;
-
-    expect(validate('')).toBe(true);
-    expect(validate('[{"env":"staging"}]')).toBe(true);
-    expect(validate('[{"env":"staging","url":"https://stage.example"}]')).toBe(
+  it('requires an absolute URL for each deployed instance link', () => {
+    expect(PROMPT_INSTANCE_URL.validate('https://app.example.gov.bc.ca')).toBe(
       true,
     );
-    expect(validate('[{"url":"https://stage.example"}]')).toEqual(
-      expect.any(String),
-    );
-    expect(validate('{invalid')).toEqual(expect.any(String));
+    expect(PROMPT_INSTANCE_URL.validate('')).not.toBe(true);
+    expect(PROMPT_INSTANCE_URL.validate('/relative/path')).not.toBe(true);
+  });
+
+  it('requires API type, owner, and definition values', () => {
+    expect(PROMPT_API_TYPE.validate('openapi')).toBe(true);
+    expect(PROMPT_API_TYPE.validate('')).not.toBe(true);
+    expect(PROMPT_API_OWNER.validate('artist-relations-team')).toBe(true);
+    expect(PROMPT_API_OWNER.validate('')).not.toBe(true);
+    expect(PROMPT_API_DEFINITION.validate('openapi: "3.0.0"')).toBe(true);
+    expect(PROMPT_API_DEFINITION.validate('')).not.toBe(true);
   });
 });
 

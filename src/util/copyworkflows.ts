@@ -191,10 +191,10 @@ export function copyCommonDeploymentConfigWorkflow(
   const allPaths = new Set(additionalPaths);
   allPaths.add('catalog-info.yaml'); // Always include root catalog-info.yaml for scanning
   for (const service of services) {
-    const configPaths = service.doc.getIn([
-      'metadata',
-      'annotations',
-      'playbook.io.nrs.gov.bc.ca/deploymentConfigPaths',
+    const configPaths = service.composerDoc.getIn([
+      'spec',
+      'answers',
+      'deploymentConfigPaths',
     ]);
     if (configPaths) {
       const serviceDir = path.dirname(service.path);
@@ -350,7 +350,7 @@ export function updateReadmeWithPipelineGuide(generator) {
 
   const templateData = {
     hasMavenBuild: services.some((s) =>
-      hasGeneratorInDoc(s.doc, 'gh-maven-build'),
+      hasGeneratorInDoc(s.composerDoc, 'gh-maven-build'),
     ),
     services,
     isMonorepo: services.length > 1,

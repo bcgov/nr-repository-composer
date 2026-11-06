@@ -65,10 +65,9 @@ if [[ ! -f "$CATALOG_FILE" ]]; then
   return 1 2>/dev/null || exit 1
 fi
 
-# Check if kind is Component
-KIND=$(grep "^kind:" "$CATALOG_FILE" | head -1 | sed 's/\w*kind: *//; s/ *#.*//')
-if [[ "$KIND" != "Component" ]]; then
-  echo "Error: catalog-info.yaml kind is '${KIND}', expected 'Component'" >&2
+# Check that the catalog contains a Component document
+if ! grep -qE "^kind: *Component *(#.*)?$" "$CATALOG_FILE"; then
+  echo "Error: catalog-info.yaml has no document of kind 'Component'" >&2
   return 1 2>/dev/null || exit 1
 fi
 

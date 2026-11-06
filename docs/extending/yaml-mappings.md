@@ -4,6 +4,24 @@ The `pathToProps` array in `src/util/yaml.ts` controls how prompt answers map to
 `catalog-info.yaml`. Each entry describes where a prompt value is written and how
 it is transformed.
 
+## Where answers are stored
+
+- A prompt mapped to an entity path (any path except a
+  `metadata.annotations.*nrs.gov.bc.ca/*` annotation) is written to the entity
+  document and read back from it. It is not kept in the NRComposer answers.
+- Every other prompt answer, such as values used only for templating, is stored
+  in the flat `spec.answers` map of the single `NRComposer` document.
+  Prompts mapped to `*nrs.gov.bc.ca/*` annotations are stored there too.
+- The `NRComposer` document lives in its own `catalog-composer.yaml`, beside
+  `catalog-info.yaml`. Both files are loaded. If `catalog-composer.yaml` has one, it is used
+  as is and any `NRComposer` in `catalog-info.yaml` is ignored (not merged) and
+  dropped on save. One found only in `catalog-info.yaml` is used. Saving always splits the files, so
+  `NRComposer` never remains in `catalog-info.yaml`.
+  `catalog-info.yaml` is always written, even when empty, as a placeholder.
+
+Answers duplicating a value already on an entity document are removed from
+`spec.answers` when the catalog is loaded.
+
 ## The `PathToProp` shape
 
 ```ts

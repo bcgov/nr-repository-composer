@@ -113,12 +113,14 @@ building and testing a new image from this repository.
 
 **Running every recorded generator (`--all`):**
 
-Pass `--all` to re-run every generator recorded in the repository's
-`catalog-info.yaml` — the same `composer.io.nrs.gov.bc.ca/generators` annotation
-the automated scan (`tools/composer-update-repo.sh`) reads — instead of naming a
-single generator. A `Location` catalog is processed along with each
-`spec.targets[]` entry in the directory that owns it. Catalog files without the
-annotation are skipped.
+Pass `--all` to re-run every generator recorded in the repository's catalog —
+the `spec.generators` sequence of the `NRComposer` document in
+`catalog-composer.yaml`, the same value the automated scan
+(`tools/composer-update-repo.sh`) reads (the legacy
+`composer.io.nrs.gov.bc.ca/generators` annotation is still honoured as a
+fallback) — instead of naming a single generator. A `Location` catalog is
+processed along with each `spec.targets[]` entry in the directory that owns it.
+Catalog files without the `generators` sequence are skipped.
 
 Unlike the automated scan, `--all` performs **no git or GitHub side effects**: it
 does not branch, commit, push, or open pull requests. Use it to refresh a

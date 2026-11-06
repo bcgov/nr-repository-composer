@@ -83,9 +83,9 @@ jobs:
           echo "Checking release: $VERSION"
           BROKER_URL="${{ inputs.url }}"
           CATALOG_FILE="${{ inputs.catalog_info }}"
-          # Parse project (spec.system) and service (metadata.name) from the Backstage catalog-info YAML using yq
-          PROJECT_NAME="$(yq e '.spec.system // ""' "$CATALOG_FILE" | tr -d '\r')"
-          SERVICE_NAME="$(yq e '.metadata.name // ""' "$CATALOG_FILE" | tr -d '\r')"
+          # Parse project (spec.system) and service (metadata.name) from the Component document in the Backstage catalog-info YAML using yq
+          PROJECT_NAME="$(yq e 'select(.kind == "Component") | .spec.system // ""' "$CATALOG_FILE" | head -1 | tr -d '\r')"
+          SERVICE_NAME="$(yq e 'select(.kind == "Component") | .metadata.name // ""' "$CATALOG_FILE" | head -1 | tr -d '\r')"
 
           if [ -z "$PROJECT_NAME" ] || [ -z "$SERVICE_NAME" ]; then
             echo "Failed to parse project or service name from $CATALOG_FILE (spec.system=${PROJECT_NAME:-<empty>}, metadata.name=${SERVICE_NAME:-<empty>})"

@@ -20,8 +20,6 @@ import {
 } from '../util/prompts.js';
 
 const questions = [
-  PROMPT_PROJECT,
-  PROMPT_SERVICE,
   PROMPT_INTENTION_USER,
   PROMPT_OCP_KNOX_CRON_SCHEDULE,
   PROMPT_OCP_KNOX_SOURCE_SECRET_NAME,
@@ -147,21 +145,22 @@ export default class extends BaseGenerator {
   }
 
   async prompting() {
+    // Project and service identify the component; they are not prompted for.
+    this.backstageConfig.ensureKindExists(BACKSTAGE_KIND_COMPONENT);
     return super.prompting();
-  }
-
-  _getStorageOptions() {
-    return {
-      kind: BACKSTAGE_KIND_COMPONENT,
-      storageOptions: { ignoreKindMismatch: true },
-    };
   }
 
   // Generate the common and per-environment Helm values files.
   writingWorkflow() {
+    // Project and service live on the Component document, not as prompt
+    // answers, so read them by the prompts that map to their catalog paths.
+    const { serviceName, projectName } =
+      this.backstageConfig.extractPromptValues(
+        BACKSTAGE_KIND_COMPONENT,
+        PROMPT_SERVICE,
+        PROMPT_PROJECT,
+      );
     const {
-      projectName,
-      serviceName,
       intentionUser,
       syncSecretEnabled,
       syncVaultPaths,

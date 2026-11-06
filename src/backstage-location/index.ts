@@ -1,16 +1,14 @@
 import * as fs from 'fs';
 import chalk from 'chalk';
 import { BaseGenerator } from '../util/base-generator.js';
-import { destinationGitPath } from '../util/git.js';
 import { BACKSTAGE_KIND_LOCATION } from '../util/yaml.js';
 import { normalizeCatalogTargets } from '../util/backstage.js';
 import { OPTION_SKIP_WRITE } from '../util/options.js';
-import {
-  PROMPT_LOCATION_NAME,
-  PROMPT_LOCATION_TARGETS,
-} from '../util/prompts.js';
+import { PROMPT_LOCATION_TARGETS } from '../util/prompts.js';
 
-const questions = [PROMPT_LOCATION_NAME, PROMPT_LOCATION_TARGETS];
+const questions = [PROMPT_LOCATION_TARGETS];
+
+const DEFAULT_LOCATION_NAME = 'locations';
 
 /**
  * Generate a basic backstage location file
@@ -48,7 +46,10 @@ export default class extends BaseGenerator {
   }
 
   _getStorageOptions() {
-    return { kind: BACKSTAGE_KIND_LOCATION, storageOptions: {} };
+    return {
+      kind: BACKSTAGE_KIND_LOCATION,
+      metadataName: DEFAULT_LOCATION_NAME,
+    };
   }
 
   writingBackstage() {
@@ -62,13 +63,16 @@ export default class extends BaseGenerator {
 
   end() {
     super.end();
+    // The stored answer is a comma-separated string; spec.targets is the list.
     const locationTargets = this.backstageConfig.getPath(
-      PROMPT_LOCATION_TARGETS.name,
+      ['spec', 'targets'],
+      'json',
     );
 
     if (Array.isArray(locationTargets)) {
       for (const normalized of locationTargets) {
-        if (!fs.existsSync(destinationGitPath(normalized))) {
+        // Targets are relative to this Location's catalog file.
+        if (!fs.existsSync(this.destinationPath(String(normalized)))) {
           this.log(
             chalk.yellow(
               `Warning: catalog file for target "${normalized}" not found.`,

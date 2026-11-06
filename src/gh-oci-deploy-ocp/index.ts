@@ -12,6 +12,8 @@ import {
   PROMPT_ARTIFACT_SRC,
   PROMPT_DEPLOY_TYPE,
   PROMPT_AUTO_DEPLOY_EPHEMERAL,
+  PROMPT_CUSTOM_RUNNER,
+  PROMPT_LICENSE,
 } from '../util/prompts.js';
 import { copyCommonDeployWorkflows } from '../util/copyworkflows.js';
 import { makeWorkflowDeployPath } from '../util/github.js';
@@ -19,6 +21,7 @@ import { makeWorkflowDeployPath } from '../util/github.js';
 const questions = [
   PROMPT_PROJECT,
   PROMPT_SERVICE,
+  PROMPT_LICENSE,
   PROMPT_CLIENT_ID,
   PROMPT_POST_DEPLOY_TESTS_PATH,
   PROMPT_GITHUB_PROJECT_SLUG,
@@ -27,6 +30,7 @@ const questions = [
   PROMPT_ARTIFACT_SRC,
   PROMPT_DEPLOYMENT_CONFIG_PATHS,
   PROMPT_AUTO_DEPLOY_EPHEMERAL,
+  PROMPT_CUSTOM_RUNNER,
 ];
 
 /**

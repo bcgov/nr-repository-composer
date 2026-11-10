@@ -26,6 +26,7 @@ import {
   PROMPT_JASPER_SOURCE_PATH,
   PROMPT_JASPER_ADDITIONAL_DATA_SOURCES,
   PROMPT_JASPER_SERVER_INSTANCE,
+  PROMPT_CUSTOM_RUNNER,
 } from '../util/prompts.js';
 import { copyCommonDeployWorkflows } from '../util/copyworkflows.js';
 import {
@@ -46,6 +47,7 @@ const questions = [
   PROMPT_DEPLOYMENT_CONFIG_PATHS,
   PROMPT_TOMCAT_CONTEXT,
   PROMPT_USE_ALT_APP_DIR_NAME,
+  PROMPT_CUSTOM_RUNNER,
   {
     ...PROMPT_ALT_APP_DIR_NAME,
     when: (answers) => answers.useAltAppDirName,
@@ -159,6 +161,7 @@ export default class extends BaseGenerator {
         jasperPauseSeconds: this.answers.jasperPauseSeconds,
         jasperAdditionalDataSources: this.answers.jasperAdditionalDataSources,
         brokerJwt: brokerJwt,
+        customRunner: this.answers.customRunner,
       });
     }
   }

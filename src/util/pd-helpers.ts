@@ -160,6 +160,7 @@ export function writeJasperReportsFiles(
       projectName: options.projectName,
       serviceName: options.serviceName,
       brokerJwt: options.brokerJwt,
+      customRunner: options.customRunner,
     },
   );
   generator.fs.copyTpl(

@@ -20,7 +20,12 @@ env:
 jobs:
   submit-deployment-job:
     name: Submit deployment job
-    runs-on: ubuntu-latest
+<% if (customRunner.startsWith('group:')) { -%>
+    runs-on:
+      <%= customRunner %>
+<% } else { -%>
+    runs-on: <%= customRunner %>
+<% } -%>
     environment: ${{ inputs.environment }}
     permissions:
       contents: read

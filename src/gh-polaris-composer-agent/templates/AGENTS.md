@@ -21,7 +21,7 @@ Use this file when running Polaris Pipeline composer updates in this repository.
 
 ## Command Guidance
 
-- Use the `/refresh-polaris-pipeline` chat prompt in this repository when you want a chat-driven run.
+- Use the `/refresh-polaris-pipeline` skill in this repository when you want a chat-driven run.
 - Default mode assumes required prompt values are already present.
 - Use `--headless --force` for non-interactive composer runs.
 - If headless mode fails on missing prompt values, inspect `catalog-info.yaml` first, add only values you can justify confidently, and summarize those additions in chat.

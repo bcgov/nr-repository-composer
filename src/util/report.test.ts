@@ -53,6 +53,14 @@ describe('report metadata', () => {
       expect(typeof GENERATOR_REPORTS[gen].description).toBe('string');
     }
   });
+
+  it('reports the refresh skill instead of the migrated prompt file', () => {
+    const files = GENERATOR_REPORTS['gh-polaris-composer-agent'].workflows;
+    expect(files).toContain('.github/skills/refresh-polaris-pipeline/SKILL.md');
+    expect(files).not.toContain(
+      '.github/prompts/refresh-polaris-pipeline.prompt.md',
+    );
+  });
 });
 
 describe('outputReport', () => {

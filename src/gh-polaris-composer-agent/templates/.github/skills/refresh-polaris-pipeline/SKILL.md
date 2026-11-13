@@ -1,17 +1,17 @@
 ---
 name: refresh-polaris-pipeline
 description: "Run the Polaris Pipeline refresh workflow in the current repository."
+disable-model-invocation: true
 argument-hint: "Optional notes about repository scope or service runtime"
-agent: "agent"
 ---
 
 Refresh the Polaris Pipeline files in this repository.
 
 Use the repo-local guidance files created by this generator:
 
-- [AGENTS.md](../../AGENTS.md)
-- [.github/instructions/polaris-composer.instructions.md](../instructions/polaris-composer.instructions.md)
-- [.github/skills/polaris-pipeline-composer/SKILL.md](../skills/polaris-pipeline-composer/SKILL.md)
+- [AGENTS.md](../../../AGENTS.md)
+- [polaris-composer.instructions.md](../../instructions/polaris-composer.instructions.md)
+- [polaris-pipeline-composer skill](../polaris-pipeline-composer/SKILL.md)
 
 Follow the repository guidance to:
 

@@ -1,16 +1,17 @@
 # gh-polaris-composer-agent
 
-This optional generator adds a target-repository guidance pack and chat command
-for staff-run Polaris Pipeline composer updates.
+This optional generator adds a target-repository guidance pack and manually
+invoked refresh skill for staff-run Polaris Pipeline composer updates.
 
 It creates the following files:
 
 - `AGENTS.md`
 - `.github/instructions/polaris-composer.instructions.md`
-- `.github/prompts/refresh-polaris-pipeline.prompt.md`
+- `.github/skills/refresh-polaris-pipeline/SKILL.md`
 - `.github/skills/polaris-pipeline-composer/SKILL.md`
 
 Use `/refresh-polaris-pipeline` in Copilot Chat when you want a chat-driven run.
+When rerun, the generator removes its former `.github/prompts/refresh-polaris-pipeline.prompt.md` file.
 Use this generator when you want a repository to be ready for direct-in-repo,
 headless-first, agent-assisted execution without manually copying guidance files.
 

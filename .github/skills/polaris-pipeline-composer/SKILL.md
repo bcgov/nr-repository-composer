@@ -7,7 +7,7 @@ description: "Use when staff need to apply latest Polaris Pipeline generator upd
 
 ## When To Use
 
-Use this skill for staff-supervised updates that apply the latest Polaris Pipeline generated build and deploy workflows in application repositories.
+Use this skill for staff-supervised updates that apply the latest Polaris Pipeline generated build and deploy workflows in application repositories. For a chat-driven entry point, invoke the `/refresh-polaris-pipeline` skill installed in the target repository.
 
 ## Inputs
 
@@ -24,6 +24,7 @@ A repository is onboarded if all of the following are true:
 - `catalog-info.yaml` exists and the catalog's `NRComposer` document records `gh-polaris-composer-agent` in its `spec.generators` sequence (in the sibling `catalog-composer.yaml`); the legacy `composer.io.nrs.gov.bc.ca/generators` annotation on `catalog-info.yaml` is still honoured as a fallback.
 - `nr-repository-composer.sh` exists and is executable.
 - `.github/skills/polaris-pipeline-composer/SKILL.md` exists.
+- `.github/skills/refresh-polaris-pipeline/SKILL.md` exists.
 
 If any check fails, onboard the repository first:
 1. Run: `./nr-repository-composer.sh <target-repo> gh-polaris-composer-agent --headless --force`

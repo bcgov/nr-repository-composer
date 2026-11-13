@@ -3,7 +3,7 @@ import { ensureGitRepositoryRoot } from '../util/git.js';
 import { BACKSTAGE_KIND_NRCOMPOSER } from '../util/yaml.js';
 
 /**
- * Add Polaris Pipeline Composer agent guidance files and chat prompt to a repository
+ * Add Polaris Pipeline Composer agent guidance files and refresh skill to a repository
  */
 export default class extends BaseGenerator {
   constructor(args, opts) {
@@ -56,12 +56,17 @@ export default class extends BaseGenerator {
     );
 
     this.fs.copyTpl(
-      this.templatePath('.github/prompts/refresh-polaris-pipeline.prompt.md'),
-      this.destinationPath(
-        '.github/prompts/refresh-polaris-pipeline.prompt.md',
-      ),
+      this.templatePath('.github/skills/refresh-polaris-pipeline/SKILL.md'),
+      this.destinationPath('.github/skills/refresh-polaris-pipeline/SKILL.md'),
       {},
     );
+
+    const legacyPrompt = this.destinationPath(
+      '.github/prompts/refresh-polaris-pipeline.prompt.md',
+    );
+    if (this.fs.exists(legacyPrompt)) {
+      this.fs.delete(legacyPrompt);
+    }
   }
 
   writingBackstage() {

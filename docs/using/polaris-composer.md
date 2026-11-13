@@ -6,6 +6,7 @@ Pipeline refresh work in target application repositories.
 - `AGENTS.md` — Canonical composer runbook and generator selection rules.
 - `.github/instructions/polaris-composer.instructions.md` — Machine-readable safety and preflight constraints.
 - `.github/skills/polaris-pipeline-composer/SKILL.md` — Executable workflow for single-repo and multi-repo staff sessions.
+- `.github/skills/refresh-polaris-pipeline/SKILL.md` — Manually invoked chat entry point for the refresh workflow.
 
 Staff should run the composer against one repository at a time and confirm only
 expected generated Polaris Pipeline artifacts changed. Each run should end with

@@ -20,16 +20,34 @@ export PROJECT_NAME="<%= projectName %>"
 export SERVICE_NAME="<%= serviceName %>"
 export PACKAGE_REPO="<%= artifactRepositoryPath %>"
 
+SCRIPT_DIR="$(dirname "${BASH_SOURCE[0]}")"
 <% if (pomRoot) { -%>
 # Maven build configuration
 export POM_ROOT="<%= pomRoot %>"
 export MAVEN_ARGS="--file $POM_ROOT"
 export PUBLISH_DIR="<%= publishDirectory %>"
+# Base version precedence: VERSION env var > pom.xml > VERSION file > fallback.
+if [[ -z "${VERSION:-}" ]]; then
+  if command -v mvn >/dev/null 2>&1 && [[ -f "${POM_ROOT}/pom.xml" ]]; then
+    if MVN_VERSION="$(mvn help:evaluate -Dexpression=project.version -q -DforceStdout --file "${POM_ROOT}/pom.xml" 2>/dev/null)"; then
+      VERSION="$(printf '%s' "$MVN_VERSION" | tail -n 1 | tr -d '[:space:]')"
+    fi
+  fi
+  if [[ -z "${VERSION:-}" && -f "${SCRIPT_DIR}/VERSION" ]]; then
+    VERSION="$(head -n 1 "${SCRIPT_DIR}/VERSION" | tr -d '[:space:]')"
+  fi
+fi
 export VERSION="${VERSION:-0.0.0-SNAPSHOT}"
 <% } else { -%>
 # Non-Maven build configuration (e.g. Node)
-DEFAULT_VERSION="$(jq -r '.version // empty' "$(dirname "${BASH_SOURCE[0]}")/package.json" 2>/dev/null)"
-export VERSION="${VERSION:-${DEFAULT_VERSION:-0.0.0}}"
+# Base version precedence: VERSION env var > package.json > VERSION file > fallback.
+if [[ -z "${VERSION:-}" ]]; then
+  VERSION="$(jq -r '.version // empty' "${SCRIPT_DIR}/package.json" 2>/dev/null || true)"
+  if [[ -z "$VERSION" && -f "${SCRIPT_DIR}/VERSION" ]]; then
+    VERSION="$(head -n 1 "${SCRIPT_DIR}/VERSION" | tr -d '[:space:]')"
+  fi
+fi
+export VERSION="${VERSION:-0.0.0}"
 <% } -%>
 <% if (toolsLocalBuildSecrets) { %>
 # Only fetch vault secrets if --skip-vault is not set

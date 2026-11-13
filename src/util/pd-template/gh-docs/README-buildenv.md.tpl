@@ -48,11 +48,17 @@ The Flatten Maven Plugin is used for install / deploy as described in the offici
 | Context | Version resolved |
 |---|---|
 | **Local build — no env var, no env.sh** | Maven builds with version `UNSET` (clearly invalid, won't be mistaken for a real release) |
-| **Local build — after `source env.sh`** | `.env-build.sh` reads the base version from `VERSION` environment variable |
+| **Local build — after `source env.sh`** | `.env-build.sh` resolves `VERSION` by precedence: `VERSION` env var → `pom.xml` (via `mvn help:evaluate`) → a `VERSION` file beside `catalog-info.yaml` → `0.0.0-SNAPSHOT` |
 | **CI/CD — branch or PR** | "Set VERSION" step computes `<base>-<pr-or-branch>-SNAPSHOT` from the DEFAULT_VERSION repository variable and writes it to `$GITHUB_ENV`; `env.sh` sees it already set and skips the fallback |
 | **CI/CD — tag `v1.2.3`** | "Set VERSION" step strips the `v` prefix and writes `VERSION=1.2.3` to `$GITHUB_ENV` |
 
-To build with a specific version locally:
+The `VERSION` file is a fallback only: it is consulted when no `VERSION` environment
+variable is set and `mvn help:evaluate` cannot resolve a version from `pom.xml`. It
+must contain a single version string (for example `1.2.0-SNAPSHOT`); surrounding
+whitespace is ignored.
+
+To build with a specific version locally, set the `VERSION` environment variable —
+it takes precedence over `pom.xml` and the `VERSION` file:
 
 ```bash
 export VERSION=1.2.0-SNAPSHOT
@@ -65,8 +71,6 @@ Or as a one-liner (no shell modification):
 ```bash
 VERSION=1.2.0-SNAPSHOT ./mvnw clean package
 ```
-
-To bump the base development version for a local build, update the `VERSION` environment variable — `.env-build.sh` will derive from it automatically.
 <% } -%>
 <% } else if (isMonorepo) { -%>
 <!-- Monorepo Repository (Location with Components) -->

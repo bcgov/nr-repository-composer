@@ -19,6 +19,7 @@ export const ALL_GENERATORS = [
   'gh-issue-templates',
   'gh-maven-build',
   'gh-tomcat-deploy-onprem',
+  'gh-jasper-deploy-onprem',
   'gh-nodejs-build',
   'gh-oci-deploy-onprem',
   'migrations',
@@ -42,6 +43,8 @@ export const GENERATOR_ANCHORS: Record<string, string> = {
   'gh-maven-build': 'github-maven-build-gh-maven-build',
   'gh-tomcat-deploy-onprem':
     'github-tomcat-on-prem-deploy-gh-tomcat-deploy-onprem',
+  'gh-jasper-deploy-onprem':
+    'github-jasper-on-prem-deploy-gh-jasper-deploy-onprem',
   'gh-nodejs-build': 'github-nodejs-build-gh-nodejs-build',
   'gh-oci-deploy-onprem': 'github-oci-on-prem-deploy-gh-oci-deploy-onprem',
   migrations: 'db-migrations-migrations',
@@ -293,6 +296,13 @@ export const GENERATOR_REPORTS: Record<string, GeneratorReport> = {
           'Configure deployment environments in repository Settings > Environments',
       },
     ],
+  },
+  'gh-jasper-deploy-onprem': {
+    description: `Created on-premises deployment workflow for Jasper Reports`,
+    workflows: (answers) => [
+      `.github/workflows/jasper-reports-${answers.projectName}.yaml`,
+    ],
+    nextSteps: [],
   },
   'gh-nodejs-build': {
     description: 'Created Node.js build workflow and NR Broker intention files',

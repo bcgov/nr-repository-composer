@@ -41,7 +41,7 @@ If `git pull --ff-only` fails or unresolved conflicts are present, do not run ge
 ## Execution Rules
 
 1. Run from the target component root.
-2. Use the `/refresh-polaris-pipeline` chat prompt when you want a chat-driven run.
+2. Use the `/refresh-polaris-pipeline` skill when you want a chat-driven run.
 3. Assume required prompt values are already configured.
 4. Use `--headless --force` for non-interactive composer runs.
 5. If a headless run fails because prompt values are missing, inspect `catalog-info.yaml` and existing repo context, deduce any missing values you can justify confidently, and summarize any values you add.

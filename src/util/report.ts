@@ -144,7 +144,7 @@ export const GENERATOR_REPORTS: Record<string, GeneratorReport> = {
     workflows: [
       'AGENTS.md',
       '.github/instructions/polaris-composer.instructions.md',
-      '.github/prompts/refresh-polaris-pipeline.prompt.md',
+      '.github/skills/refresh-polaris-pipeline/SKILL.md',
       '.github/skills/polaris-pipeline-composer/SKILL.md',
     ],
     nextSteps: [

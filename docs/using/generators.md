@@ -65,7 +65,7 @@ the core build and deploy lifecycle for every service.
 | Generator | Purpose |
 | --- | --- |
 | [gh-issue-templates](using/generators/gh-issue-templates.md) | Adds standard GitHub issue templates. |
-| [gh-polaris-composer-agent](using/generators/gh-polaris-composer-agent.md) | Adds the Copilot agent and prompt guidance pack for Polaris work. |
+| [gh-polaris-composer-agent](using/generators/gh-polaris-composer-agent.md) | Adds the Copilot agent and skill guidance pack for Polaris work. |
 | [migrations](using/generators/migrations.md) | Adds database migration scaffolding and related documentation. |
 
 ## Reference
@@ -88,7 +88,7 @@ configurations) are documented on the [OCI Artifacts](oci-artifacts.md) page.
 | [gh-docs-deploy](using/generators/gh-docs-deploy.md) | Documentation | GitHub | GitHub Actions, GitHub Pages |
 | [gh-issue-templates](using/generators/gh-issue-templates.md) | Issue templates | All | GitHub issue templates |
 | [gh-maven-build](using/generators/gh-maven-build.md) | Pipeline | GitHub | Java, GitHub Actions |
-| [gh-polaris-composer-agent](using/generators/gh-polaris-composer-agent.md) | Chat command and agent guidance pack | All | Copilot prompt, agent, and skill files |
+| [gh-polaris-composer-agent](using/generators/gh-polaris-composer-agent.md) | Chat skill and agent guidance pack | All | Copilot agent and skill files |
 | [gh-tomcat-deploy-onprem](using/generators/gh-tomcat-deploy-onprem.md) | Deploy (collection ≤ v4.2.0) | GitHub | Java, Tomcat, GitHub Actions |
 | [gh-nodejs-build](using/generators/gh-nodejs-build.md) | Pipeline | GitHub | Node.js, GitHub Actions |
 | [gh-docker-build](using/generators/gh-docker-build.md) | Pipeline | GitHub | Docker, Container Buildx, GitHub Actions |

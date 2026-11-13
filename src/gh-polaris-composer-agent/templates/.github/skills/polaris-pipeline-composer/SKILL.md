@@ -7,7 +7,7 @@ description: "Use when staff need to apply latest Polaris Pipeline generator upd
 
 ## When To Use
 
-Use this skill for staff-supervised updates that apply the latest Polaris Pipeline generated build and deploy workflows. For a chat-driven entry point, use the `/refresh-polaris-pipeline` prompt that this generator also installs.
+Use this skill for staff-supervised updates that apply the latest Polaris Pipeline generated build and deploy workflows. For a chat-driven entry point, invoke the `/refresh-polaris-pipeline` skill that this generator also installs.
 
 ## Inputs
 

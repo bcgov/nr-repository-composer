@@ -94,7 +94,6 @@ export default class extends BaseGenerator {
     const removedProps = this.backstageConfig.processDeprecated();
     this.showGeneratorDeprecationWarning =
       removedProps.indexOf(PROMPT_PLAYBOOK_PATH.name) !== -1;
-    this.backstageConfig.processAssumeDefaultValue(questions);
   }
 
   _postPrompt() {

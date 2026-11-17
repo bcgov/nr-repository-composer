@@ -530,7 +530,7 @@ export class BackstageStorage {
     return removedProps;
   }
 
-  processAssumeDefaultValue(questions: PromptQuestion[]) {
+  processAssumeDefaultValue(questions: PromptQuestion[], persist = true) {
     const assumedDefaultProps: string[] = [];
     for (const pathToProp of pathToProps) {
       const path = pathToProp.path;
@@ -551,7 +551,7 @@ export class BackstageStorage {
         }
       }
     }
-    if (assumedDefaultProps.length > 0) {
+    if (assumedDefaultProps.length > 0 && persist) {
       this.save();
     }
     return assumedDefaultProps;

@@ -9,6 +9,7 @@ import {
   BACKSTAGE_KIND_NRCOMPOSER,
   getGeneratorsFromDoc,
 } from './yaml.js';
+import { PROMPT_CUSTOM_RUNNER } from './prompts.js';
 
 describe('BackstageStorage', () => {
   let tmpDir: string;
@@ -90,6 +91,39 @@ metadata:
       clientId: 'x',
     });
     expect(storage.doc.getIn(['metadata', 'name'])).toBe('my-service');
+  });
+
+  it('assumes defaults without saving when persistence is deferred', () => {
+    const storage = new BackstageStorage(
+      'my-service',
+      BACKSTAGE_KIND_COMPONENT,
+      undefined,
+      configPath,
+    );
+    const save = jest.spyOn(storage, 'save');
+
+    expect(
+      storage.processAssumeDefaultValue([PROMPT_CUSTOM_RUNNER], false),
+    ).toContain(PROMPT_CUSTOM_RUNNER.name);
+    expect(storage.getAnswers()[PROMPT_CUSTOM_RUNNER.name]).toBe(
+      PROMPT_CUSTOM_RUNNER.default,
+    );
+    expect(save).not.toHaveBeenCalled();
+  });
+
+  it('keeps catalog values instead of assuming defaults', () => {
+    const storage = new BackstageStorage(
+      'my-service',
+      BACKSTAGE_KIND_COMPONENT,
+      undefined,
+      configPath,
+    );
+    storage.set(PROMPT_CUSTOM_RUNNER.name, 'my-runner');
+
+    expect(
+      storage.processAssumeDefaultValue([PROMPT_CUSTOM_RUNNER], false),
+    ).not.toContain(PROMPT_CUSTOM_RUNNER.name);
+    expect(storage.getAnswers()[PROMPT_CUSTOM_RUNNER.name]).toBe('my-runner');
   });
 
   it('adds and detects generators on the document', () => {

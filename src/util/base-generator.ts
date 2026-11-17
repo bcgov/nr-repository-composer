@@ -132,10 +132,13 @@ export class BaseGenerator extends Generator {
   async prompting() {
     const headless = this.options[OPTION_HEADLESS.name];
     const askAnswered = this.options[YEOMAN_OPTION_ASK_ANSWERED];
-    this.answers = this.backstageConfig.getAnswers();
 
     // Pre-prompt hook (e.g., process deprecated properties)
     this._prePrompt();
+
+    // Persistence is deferred to writingBackstage (skipped by --skip-write).
+    this.backstageConfig.processAssumeDefaultValue(this._questions, false);
+    this.answers = this.backstageConfig.getAnswers();
 
     this._printIntro();
 

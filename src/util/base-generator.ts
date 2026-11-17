@@ -137,6 +137,11 @@ export class BaseGenerator extends Generator {
     // Pre-prompt hook (e.g., process deprecated properties)
     this._prePrompt();
 
+    if (headless) {
+      this.backstageConfig.processAssumeDefaultValue(this._questions, false);
+    }
+    this.answers = this.backstageConfig.getAnswers();
+
     this._printIntro();
 
     bailOnUnansweredQuestions(

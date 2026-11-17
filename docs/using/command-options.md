@@ -25,7 +25,10 @@ a clean repository. You can review the changes using Git and in a pull request.
 
 If `true`, exit with an error if any prompt is required. Obviously, this will
 always exit with an error if you enable `--ask-answered`. This option is useful
-for scripting the generators.
+for scripting the generators. Prompts configured to assume a default use that
+value when it is not already set; for example, `customRunner` uses the large
+OpenShift Static-IP runner by default. Other unanswered prompts still cause an
+error.
 
 ## `--all`
 

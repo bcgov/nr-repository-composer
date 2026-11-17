@@ -25,10 +25,11 @@ a clean repository. You can review the changes using Git and in a pull request.
 
 If `true`, exit with an error if any prompt is required. Obviously, this will
 always exit with an error if you enable `--ask-answered`. This option is useful
-for scripting the generators. Prompts configured to assume a default use that
-value when it is not already set; for example, `customRunner` uses the large
-OpenShift Static-IP runner by default. Other unanswered prompts still cause an
-error.
+for scripting the generators. Other unanswered prompts still cause an error.
+
+Prompts configured to assume a default (for example, `customRunner`, which uses
+the large OpenShift Static-IP runner) use that value whenever it is not already
+set in the catalog, whether or not `--headless` is enabled.
 
 ## `--all`
 

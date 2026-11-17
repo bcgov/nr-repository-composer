@@ -60,11 +60,14 @@ describe('BaseGenerator prompting', () => {
     });
   });
 
-  it('does not assume defaults in interactive mode', async () => {
+  it('also assumes defaults in interactive mode', async () => {
     const { generator, backstageConfig } = makeGenerator(false);
 
     await BaseGenerator.prototype.prompting.call(generator);
 
-    expect(backstageConfig.processAssumeDefaultValue).not.toHaveBeenCalled();
+    expect(backstageConfig.processAssumeDefaultValue).toHaveBeenCalledWith(
+      [PROMPT_CUSTOM_RUNNER],
+      false,
+    );
   });
 });

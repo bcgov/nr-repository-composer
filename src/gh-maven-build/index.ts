@@ -92,7 +92,6 @@ export default class extends BaseGenerator {
     const removedProps = this.backstageConfig.processDeprecated();
     this.showGeneratorDeprecationWarning =
       removedProps.indexOf(PROMPT_DEPLOY_ON_PREM.name) !== -1;
-    this.backstageConfig.processAssumeDefaultValue(questions);
   }
 
   async prompting() {

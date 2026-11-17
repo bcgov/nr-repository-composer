@@ -111,6 +111,21 @@ metadata:
     expect(save).not.toHaveBeenCalled();
   });
 
+  it('keeps catalog values instead of assuming defaults', () => {
+    const storage = new BackstageStorage(
+      'my-service',
+      BACKSTAGE_KIND_COMPONENT,
+      undefined,
+      configPath,
+    );
+    storage.set(PROMPT_CUSTOM_RUNNER.name, 'my-runner');
+
+    expect(
+      storage.processAssumeDefaultValue([PROMPT_CUSTOM_RUNNER], false),
+    ).not.toContain(PROMPT_CUSTOM_RUNNER.name);
+    expect(storage.getAnswers()[PROMPT_CUSTOM_RUNNER.name]).toBe('my-runner');
+  });
+
   it('adds and detects generators on the document', () => {
     const storage = new BackstageStorage(
       'my-service',

@@ -5,8 +5,13 @@ on:
     secrets:
       token:
         description: "The Broker token"
-        required: true
+        required: false
     inputs:
+      skip_broker_checks:
+        description: "Whether to skip Broker token and release-package checks"
+        default: false
+        required: false
+        type: boolean
       catalog_info:
         description: "The catalog file"
         type: string
@@ -35,6 +40,7 @@ jobs:
     uses: ./.github/workflows/check-token.yaml
     secrets:
       token: ${{ secrets.token }}
+    if: ${{ inputs.skip_broker_checks != true }}
 
   check-build-artifact:
     name: Check build artifact
@@ -51,7 +57,7 @@ jobs:
       token: ${{ secrets.token }}
     with:
       catalog_info: ${{ inputs.catalog_info }}
-    if: ${{ inputs.preflight_context == 'build' && github.ref_type == 'tag' }}
+    if: ${{ inputs.preflight_context == 'build' && github.ref_type == 'tag' && inputs.skip_broker_checks != true }}
 
   set-check-outputs:
     name: Set check outputs
@@ -76,8 +82,12 @@ jobs:
           fi
 
       - id: set-can-rebuild
+        env:
+          SKIP_BROKER_CHECKS: ${{ inputs.skip_broker_checks }}
         run: |
-          if [[ "${{ github.ref_type }}" == "tag" ]]; then
+          if [[ "$SKIP_BROKER_CHECKS" == "true" ]]; then
+            echo "can_rebuild=true" >> $GITHUB_OUTPUT
+          elif [[ "${{ github.ref_type }}" == "tag" ]]; then
             echo "can_rebuild=${{ needs.check-release-package.outputs.can_rebuild }}" >> $GITHUB_OUTPUT
           elif [[ "${{ github.ref_type }}" == "branch" ]]; then
             echo "can_rebuild=true" >> $GITHUB_OUTPUT

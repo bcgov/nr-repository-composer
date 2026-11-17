@@ -42,6 +42,7 @@ jobs:
       actions: read
     with:
       preflight_context: build
+      skip_broker_checks: <%= !brokerTrackingEnabled %>
       catalog_info: <%= relativePath %><%= relativePath ? '/' : '' %>catalog-info.yaml
     secrets:
       token: ${{ secrets.<%= brokerJwt %> }}
@@ -109,6 +110,7 @@ jobs:
         env:
           VERSION: ${{ steps.version-detect.outputs.version }}
       - name: Build intention
+        if: ${{ <%= brokerTrackingEnabled %> }}
         run: sh ./.github/workflows/build-intention-<%= serviceName %>.sh
         env:
           EVENT_REASON: Build ${{ github.ref_name }}
@@ -120,6 +122,7 @@ jobs:
           PACKAGE_TYPE: application/vnd.oci.image.layer.v1.tar+gzip
           PACKAGE_VERSION: ${{ steps.set-build-output-parameters.outputs.project_version }}
       - name: Open intention
+        if: ${{ <%= brokerTrackingEnabled %> }}
         uses: bcgov-nr/action-broker-intention-open@v2
         with:
           broker_jwt: ${{ secrets.<%= brokerJwt %> }}
@@ -127,6 +130,7 @@ jobs:
           quickstart: true
       - name: Echo intention ID for deploy job
         id: set-intention-id
+        if: ${{ <%= brokerTrackingEnabled %> }}
         run: |
           echo "intention_id=${INTENTION_ID}" >> $GITHUB_OUTPUT
         env:
@@ -175,7 +179,7 @@ jobs:
           working_directory: ./<%= publishRelativePath %>
           github_token: ${{ secrets.GITHUB_TOKEN }}
       - name: Send build info
-        if: ${{ '<%= type %>' != 'library' }}
+        if: ${{ '<%= type %>' != 'library' && <%= brokerTrackingEnabled %> }}
         run: |
           curl -s -X POST ${{ env.BROKER_URL }}/v1/intention/action/patch \
               -H 'Content-Type: application/json' \
@@ -190,12 +194,12 @@ jobs:
           ARTIFACT_SIZE: ${{ steps.publish-artifact.outputs.artifact_size }}
           BUILD_TOKEN: ${{ env.ACTION_TOKEN_BUILD }}
       - name: Close intention
-        if: ${{ success() && env.INTENTION_TOKEN != '' }}
+        if: ${{ success() && env.INTENTION_TOKEN != '' && <%= brokerTrackingEnabled %> }}
         uses: bcgov-nr/action-broker-intention-close@v3
         with:
           intention_token: ${{ env.INTENTION_TOKEN }}
       - name: Close intention (Failure)
-        if: ${{ failure() && env.INTENTION_TOKEN != '' }}
+        if: ${{ failure() && env.INTENTION_TOKEN != '' && <%= brokerTrackingEnabled %> }}
         uses: bcgov-nr/action-broker-intention-close@v3
         with:
           intention_token: ${{ env.INTENTION_TOKEN }}

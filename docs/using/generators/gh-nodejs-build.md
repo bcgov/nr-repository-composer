@@ -26,7 +26,7 @@ which should contain the `catalog-info.yaml` for it.
 | --- | --- |
 | **Project / Service** | Identifiers for the build; `Service` names the generated workflow. |
 | **License** | SPDX license (default `Apache-2.0`) embedded in the build. |
-| **Client ID** | Broker client ID; becomes the `BROKER_JWT` secret name. Blank falls back to the `BROKER_JWT` secret. |
+| **Client ID** | Broker client ID; becomes the Broker JWT secret name. Leave blank to skip Broker checks and intention tracking for the build. |
 | **GitHub Slug** | `<organization>/<repository>`; pre-filled from the git remote. |
 | **Node.js version** | `22` or `24` (default `24`) — selects the Node runtime image. |
 | **Node pattern** | `NPM` (default) or `unknown` — shapes the install/build steps. |
@@ -36,6 +36,8 @@ which should contain the `catalog-info.yaml` for it.
 | **Unit tests path** | Path to a unit-test workflow to invoke from the build. |
 | **Artifact repository type / path** | `GitHubPackages` (default) or `JFrogArtifactory`; the path defaults from the slug/type. |
 | **Tools / local build secrets** | Comma-separated secret names the build needs; local secrets default to the tools list. |
+
+When Client ID is blank, tagged builds also skip the Broker check for an already-recorded release, so a version may be rebuilt and republished. The build will not produce an intention ID, so deployments that depend on that ID need Broker tracking enabled.
 
 **Suggested Next Steps:**
 

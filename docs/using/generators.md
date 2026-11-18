@@ -55,6 +55,7 @@ move built artifacts to the target environment.
 | **[gh-oci-deploy-onprem](using/generators/gh-oci-deploy-onprem.md)** | Deploys OCI artifacts to on-premises infrastructure with the standard broker workflow. |
 | [gh-oci-deploy-ocp](using/generators/gh-oci-deploy-ocp.md) | Deploys OCI artifacts to OpenShift via Jenkins. |
 | [gh-tomcat-deploy-onprem](using/generators/gh-tomcat-deploy-onprem.md) | Deploys Tomcat-based Java services to on-premises infrastructure. |
+| [gh-jasper-deploy-onprem](using/generators/gh-jasper-deploy-onprem.md) | Deploys Jasper Reports to on-premises infrastructure. |
 | [gh-docs-deploy](using/generators/gh-docs-deploy.md) | Publishes documentation to GitHub Pages. |
 
 ## Utility
@@ -90,6 +91,7 @@ configurations) are documented on the [OCI Artifacts](oci-artifacts.md) page.
 | [gh-maven-build](using/generators/gh-maven-build.md) | Pipeline | GitHub | Java, GitHub Actions |
 | [gh-polaris-composer-agent](using/generators/gh-polaris-composer-agent.md) | Chat skill and agent guidance pack | All | Copilot agent and skill files |
 | [gh-tomcat-deploy-onprem](using/generators/gh-tomcat-deploy-onprem.md) | Deploy (collection ≤ v4.2.0) | GitHub | Java, Tomcat, GitHub Actions |
+| [gh-jasper-deploy-onprem](using/generators/gh-jasper-deploy-onprem.md) | Deploy | GitHub | Jasper Reports, GitHub Actions |
 | [gh-nodejs-build](using/generators/gh-nodejs-build.md) | Pipeline | GitHub | Node.js, GitHub Actions |
 | [gh-docker-build](using/generators/gh-docker-build.md) | Pipeline | GitHub | Docker, Container Buildx, GitHub Actions |
 | [gh-oci-deploy-onprem](using/generators/gh-oci-deploy-onprem.md) | Deploy | GitHub | OCI artifacts, GitHub Actions |

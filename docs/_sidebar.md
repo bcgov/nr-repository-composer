@@ -28,6 +28,7 @@
   - [ocp-knox-provision](using/generators/ocp-knox-provision.md)
   - [gh-polaris-composer-agent](using/generators/gh-polaris-composer-agent.md)
   - [gh-tomcat-deploy-onprem](using/generators/gh-tomcat-deploy-onprem.md)
+  - [gh-jasper-deploy-onprem](using/generators/gh-jasper-deploy-onprem.md)
   - [migrations](using/generators/migrations.md)
 
 - Extending the Tool

@@ -34,6 +34,19 @@ const templateData = {
 };
 
 describe.each(buildTemplates)('%s', (templatePath) => {
+  it('keeps failed tests, failed preflight, and cancellations blocking the build', () => {
+    const workflow = parseYaml(
+      ejs.render(fs.readFileSync(path.resolve(templatePath), 'utf8'), {
+        ...templateData,
+        unitTestsPath: './.github/workflows/test.yaml',
+      }),
+    );
+    expect(workflow.jobs['build-publish'].needs).toEqual(['preflight', 'test']);
+    expect(workflow.jobs['build-publish'].if).toBe(
+      "${{ needs.preflight.outputs.can_rebuild == 'true' }}",
+    );
+  });
+
   it.each([true, false])(
     'uses runtime secret checks with a configured Client ID=%s',
     (hasBrokerClientId) => {
@@ -48,6 +61,9 @@ describe.each(buildTemplates)('%s', (templatePath) => {
         : '';
       expect(workflow.env.BROKER_JWT).toBe(expectedToken);
       expect(workflow.jobs.preflight.secrets.token).toBe(expectedToken);
+      expect(workflow.jobs['build-publish'].env.BROKER_ENABLED).toBe(
+        '${{ needs.preflight.outputs.broker_enabled }}',
+      );
       const steps = workflow.jobs['build-publish'].steps;
       for (const name of [
         'Build intention',
@@ -55,7 +71,7 @@ describe.each(buildTemplates)('%s', (templatePath) => {
         'Echo intention ID for deploy job',
       ]) {
         expect(steps.find((step) => step.name === name).if).toBe(
-          "${{ env.BROKER_JWT != '' }}",
+          "${{ env.BROKER_ENABLED == 'true' }}",
         );
       }
       for (const name of [
@@ -64,7 +80,7 @@ describe.each(buildTemplates)('%s', (templatePath) => {
         'Close intention (Failure)',
       ]) {
         expect(steps.find((step) => step.name === name).if).toContain(
-          "env.BROKER_JWT != ''",
+          "env.BROKER_ENABLED == 'true'",
         );
       }
       expect(
@@ -89,7 +105,7 @@ describe.each(buildTemplates.slice(0, 2))(
       ],
       ['self-hosted', 'self-hosted'],
     ])(
-      'selects %s only when preflight finds a secret',
+      'selects %s only when preflight validates the token',
       (customRunner, expected) => {
         const workflow = parseYaml(
           ejs.render(fs.readFileSync(path.resolve(templatePath), 'utf8'), {
@@ -156,14 +172,119 @@ describe('runtime Broker configuration', () => {
       "needs.broker-config.outputs.enabled == 'true'",
     );
     expect(preflight.jobs['check-release-package'].if).toContain(
-      "needs.broker-config.outputs.enabled == 'true'",
+      "needs.check-jwt.outputs.valid == 'true'",
     );
     const rebuildStep = preflight.jobs['set-check-outputs'].steps.find(
       (step) => step.id === 'set-can-rebuild',
     );
     expect(rebuildStep.env.BROKER_ENABLED).toBe(
-      '${{ needs.broker-config.outputs.enabled }}',
+      "${{ needs.check-jwt.outputs.valid == 'true' }}",
     );
     expect(rebuildStep.run).toContain('if [[ "$BROKER_ENABLED" == "false" ]]');
+    const result = spawnSync('bash', ['-e', '-c', rebuildStep.run], {
+      env: {
+        ...process.env,
+        BROKER_ENABLED: 'false',
+        GITHUB_OUTPUT: '/dev/stdout',
+      },
+      encoding: 'utf8',
+    });
+    expect(result.status).toBe(0);
+    expect(result.stdout.trim()).toBe('can_rebuild=true');
   });
+
+  it('only tolerates token validation failures for builds, not deployment or other failed jobs', () => {
+    expect(preflight.jobs['check-jwt'].with.allow_untracked_build).toBe(
+      "${{ inputs.preflight_context == 'build' }}",
+    );
+    expect(preflight.on.workflow_call.outputs.broker_enabled.value).toBe(
+      "${{ jobs.check-jwt.outputs.valid == 'true' }}",
+    );
+    const outputs = preflight.jobs['set-check-outputs'];
+    expect(outputs.needs).toEqual([
+      'broker-config',
+      'check-jwt',
+      'check-release-package',
+    ]);
+    expect(outputs.if).toContain('!cancelled()');
+    expect(outputs.if).toContain("needs.check-jwt.result == 'success'");
+    expect(outputs.if).toContain(
+      "needs.check-release-package.result == 'success'",
+    );
+  });
+});
+
+describe('Broker token validation', () => {
+  const workflow = parseYaml(
+    ejs.render(
+      fs.readFileSync(
+        path.resolve('src/util/gh-workflow-template/check-token.yaml'),
+        'utf8',
+      ),
+      { customRunner: 'ubuntu-latest' },
+    ),
+  );
+  const validation = workflow.jobs['check-jwt'].steps.find(
+    (step) => step.id === 'validate',
+  );
+
+  it('continues only the validation step for builds and reports its actual outcome', () => {
+    expect(workflow.on.workflow_call.inputs.allow_untracked_build.default).toBe(
+      false,
+    );
+    expect(validation['continue-on-error']).toBe(
+      '${{ inputs.allow_untracked_build }}',
+    );
+    expect(workflow.jobs['check-jwt'].outputs.valid).toBe(
+      "${{ steps.validate.outcome == 'success' }}",
+    );
+    const warning = workflow.jobs['check-jwt'].steps.find(
+      (step) => step.name === 'Warn about untracked build',
+    );
+    expect(warning.if).toContain("steps.validate.outcome == 'failure'");
+    expect(warning.if).toContain('inputs.allow_untracked_build');
+    expect(warning.if).toContain('!cancelled()');
+    expect(warning.run).toContain('::warning::');
+    expect(warning.run).toContain('Deployment still requires');
+  });
+
+  it.each([
+    ['valid', 'test-token', '200', 0, 0],
+    ['empty', '', '200', 0, 1],
+    ['unauthorized', 'test-token', '401', 22, 1],
+    ['revoked', 'test-token', '403', 22, 1],
+    ['server error', 'test-token', '500', 22, 1],
+    ['redirect', 'test-token', '302', 0, 1],
+    ['timeout', 'test-token', '000', 28, 1],
+    ['connection error', 'test-token', '000', 7, 1],
+  ])(
+    'handles %s tokens/responses',
+    (_, token, httpCode, curlExit, expected) => {
+      const result = spawnSync(
+        'bash',
+        [
+          '-e',
+          '-o',
+          'pipefail',
+          '-c',
+          `curl() { printf '%s' "$MOCK_HTTP_CODE"; return "$MOCK_CURL_EXIT"; }\n${validation.run}`,
+        ],
+        {
+          env: {
+            ...process.env,
+            BROKER_JWT: token,
+            BROKER_URL: 'https://broker.example.invalid',
+            MOCK_HTTP_CODE: httpCode,
+            MOCK_CURL_EXIT: String(curlExit),
+          },
+          encoding: 'utf8',
+        },
+      );
+      expect(result.status).toBe(expected);
+      expect(result.stdout + result.stderr).not.toContain('test-token');
+      if (expected !== 0) {
+        expect(result.stdout).toContain('Error:');
+      }
+    },
+  );
 });

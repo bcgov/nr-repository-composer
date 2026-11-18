@@ -39,9 +39,9 @@ which should contain the `catalog-info.yaml` for it.
 | **Artifact repository type / path** | `GitHubPackages` (default) or `JFrogArtifactory`; the path defaults from the slug/type. |
 | **Tools / local build secrets** | Comma-separated secret names the build needs; local secrets default to the tools list. |
 
-At runtime, an empty Broker secret emits a warning and allows the build to continue without Broker checks or intention recording. Nonempty tokens retain Broker validation; invalid tokens still fail validation.
+At runtime, a missing, invalid, expired, or revoked Broker token, a connection error/timeout, or an unsuccessful token-validation HTTP response emits a warning and allows the build to continue without Broker release checks or intention recording. Only the token-validation step tolerates failure for builds; failed tests and cancellations still block the build. Successfully validated tokens retain Broker release checks and intention recording.
 
-Without a Broker token, tagged builds skip the check for an already-recorded release, so a version may be rebuilt and republished. No new build intention ID is produced. Generated deployment workflows still require Broker.
+Without successful Broker token validation, tagged builds skip the check for an already-recorded release, so a version may be rebuilt and republished. No new build intention ID is produced. Generated deployment workflows still require successful Broker token validation.
 
 **Suggested Next Steps:**
 

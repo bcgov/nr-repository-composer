@@ -24,7 +24,7 @@ on:
         type: string
     outputs:
       broker_enabled:
-        value: ${{ jobs.broker-config.outputs.enabled }}
+        value: ${{ jobs.check-jwt.outputs.valid == 'true' }}
       can_rebuild:
         value: ${{ jobs.set-check-outputs.outputs.can_rebuild }}
 permissions:
@@ -60,6 +60,8 @@ jobs:
     uses: ./.github/workflows/check-token.yaml
     secrets:
       token: ${{ secrets.token }}
+    with:
+      allow_untracked_build: ${{ inputs.preflight_context == 'build' }}
     needs: broker-config
     if: ${{ needs.broker-config.outputs.enabled == 'true' }}
 
@@ -78,16 +80,16 @@ jobs:
       token: ${{ secrets.token }}
     with:
       catalog_info: ${{ inputs.catalog_info }}
-    needs: broker-config
-    if: ${{ inputs.preflight_context == 'build' && github.ref_type == 'tag' && needs.broker-config.outputs.enabled == 'true' }}
+    needs: check-jwt
+    if: ${{ inputs.preflight_context == 'build' && github.ref_type == 'tag' && needs.check-jwt.outputs.valid == 'true' }}
 
   set-check-outputs:
     name: Set check outputs
     runs-on: ubuntu-latest
     outputs:
       can_rebuild: ${{ steps.set-can-rebuild.outputs.can_rebuild }}
-    needs: [broker-config, check-release-package]
-    if: ${{ always() && inputs.preflight_context == 'build' && needs.broker-config.result == 'success' }}
+    needs: [broker-config, check-jwt, check-release-package]
+    if: ${{ !cancelled() && inputs.preflight_context == 'build' && needs.broker-config.result == 'success' && (needs.check-jwt.result == 'success' || needs.check-jwt.result == 'skipped') && (needs.check-release-package.result == 'success' || needs.check-release-package.result == 'skipped') }}
     steps:
       - name: Display runner public IP
         shell: bash
@@ -105,7 +107,7 @@ jobs:
 
       - id: set-can-rebuild
         env:
-          BROKER_ENABLED: ${{ needs.broker-config.outputs.enabled }}
+          BROKER_ENABLED: ${{ needs.check-jwt.outputs.valid == 'true' }}
         run: |
           if [[ "$BROKER_ENABLED" == "false" ]]; then
             echo "can_rebuild=true" >> $GITHUB_OUTPUT

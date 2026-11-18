@@ -54,6 +54,8 @@ jobs:
 <% } -%>
   build-publish:
     name: Build and publish
+    env:
+      BROKER_ENABLED: ${{ needs.preflight.outputs.broker_enabled }}
     runs-on: >-
       ${{ fromJSON(needs.preflight.outputs.broker_enabled == 'true' && '<%- JSON.stringify(customRunner.startsWith('group:') ? { group: customRunner.slice(6).trim() } : customRunner).replace(/'/g, "''") %>' || '"ubuntu-latest"') }}
 <% if (unitTestsPath) { -%>
@@ -107,7 +109,7 @@ jobs:
         env:
           VERSION: ${{ steps.version-detect.outputs.version }}
       - name: Build intention
-        if: ${{ env.BROKER_JWT != '' }}
+        if: ${{ env.BROKER_ENABLED == 'true' }}
         run: sh ./.github/workflows/build-intention-<%= serviceName %>.sh
         env:
           EVENT_REASON: Build ${{ github.ref_name }}
@@ -119,7 +121,7 @@ jobs:
           PACKAGE_TYPE: ${{ '<%= type %>' != 'library' && 'application/vnd.oci.image.layer.v1.tar+gzip' || steps.set-build-output-parameters.outputs.package_type }}
           PACKAGE_VERSION: ${{ steps.set-build-output-parameters.outputs.project_version }}
       - name: Open intention
-        if: ${{ env.BROKER_JWT != '' }}
+        if: ${{ env.BROKER_ENABLED == 'true' }}
         uses: bcgov-nr/action-broker-intention-open@v2
         with:
           broker_jwt: ${{ env.BROKER_JWT }}
@@ -127,7 +129,7 @@ jobs:
           quickstart: true
       - name: Echo intention ID for deploy job
         id: set-intention-id
-        if: ${{ env.BROKER_JWT != '' }}
+        if: ${{ env.BROKER_ENABLED == 'true' }}
         run: |
           echo "intention_id=${INTENTION_ID}" >> $GITHUB_OUTPUT
         env:
@@ -177,7 +179,7 @@ jobs:
           working_directory: ./<%= publishRelativePath %>
           github_token: ${{ secrets.GITHUB_TOKEN }}
       - name: Send build info
-        if: ${{ '<%= type %>' != 'library' && env.BROKER_JWT != '' }}
+        if: ${{ '<%= type %>' != 'library' && env.BROKER_ENABLED == 'true' }}
         run: |
           curl -s -X POST ${{ env.BROKER_URL }}/v1/intention/action/patch \
               -H 'Content-Type: application/json' \
@@ -207,12 +209,12 @@ jobs:
           BUILD_NUMBER: ${{ github.run_number }}
           BUILD_URL: ${{ github.repositoryUrl }}
       - name: Close intention
-        if: ${{ success() && env.INTENTION_TOKEN != '' && env.BROKER_JWT != '' }}
+        if: ${{ success() && env.INTENTION_TOKEN != '' && env.BROKER_ENABLED == 'true' }}
         uses: bcgov-nr/action-broker-intention-close@v3
         with:
           intention_token: ${{ env.INTENTION_TOKEN }}
       - name: Close intention (Failure)
-        if: ${{ failure() && env.INTENTION_TOKEN != '' && env.BROKER_JWT != '' }}
+        if: ${{ failure() && env.INTENTION_TOKEN != '' && env.BROKER_ENABLED == 'true' }}
         uses: bcgov-nr/action-broker-intention-close@v3
         with:
           intention_token: ${{ env.INTENTION_TOKEN }}

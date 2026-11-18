@@ -37,9 +37,9 @@ which should contain the `catalog-info.yaml` for it.
 | **Artifact repository type / path** | `GitHubPackages` (default) or `JFrogArtifactory`; the path defaults from the slug/type. |
 | **Tools / local build secrets** | Comma-separated secret names the build needs; local secrets default to the tools list. |
 
-At runtime, the workflow checks whether the Broker secret is empty. If empty, it emits a warning and continues the build without Broker checks or intention recording, using `ubuntu-latest`. A nonempty token retains Broker checks and the configured custom runner; invalid tokens still fail validation. Deployment runner settings are unchanged, and deployment still requires a Broker token.
+At runtime, the workflow validates the Broker token. A missing, invalid, expired, or revoked token, a connection error/timeout, or an unsuccessful HTTP response emits a warning and allows an untracked build on `ubuntu-latest`. Only the token-validation step tolerates failure for builds; failed tests and cancellations still block the build. Successful validation retains Broker release checks, intention recording, and the configured custom runner. Deployment runner settings are unchanged, and deployment requires successful Broker token validation.
 
-Without a Broker token, tagged builds also skip the check for an already-recorded release, so a version may be rebuilt and republished. No new build intention ID is produced.
+Without successful Broker token validation, tagged builds skip the check for an already-recorded release, so a version may be rebuilt and republished. No new build intention ID is produced.
 
 **Suggested Next Steps:**
 

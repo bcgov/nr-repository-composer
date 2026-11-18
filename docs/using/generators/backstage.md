@@ -82,8 +82,7 @@ spec:
   type: library
   lifecycle: production
   owner: artist-relations-team
-  subcomponentOf:
-    - component:artist-web
+  subcomponentOf: component:artist-web
 ```
 ## Generator source
 

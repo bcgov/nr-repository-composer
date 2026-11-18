@@ -3,6 +3,7 @@ import path from 'node:path';
 import chalk from 'chalk';
 import type { PromptQuestion } from 'yeoman-generator';
 import { BaseGenerator } from '../util/base-generator.js';
+import { findSystemDefault } from '../util/backstage.js';
 import { BackstageStorage } from '../util/backstage.storage.js';
 import { BACKSTAGE_KIND_API } from '../util/yaml.js';
 import {
@@ -93,6 +94,7 @@ export default class extends BaseGenerator {
 
     this._printIntro();
 
+    const systemDefault = findSystemDefault();
     for (;;) {
       const storage = this.backstageConfig;
       const apiCount = storage.kindDocs(BACKSTAGE_KIND_API).length;
@@ -131,6 +133,9 @@ export default class extends BaseGenerator {
           return question;
         }
         const apiQuestion = { ...question };
+        if (apiQuestion.name === PROMPT_API_SYSTEM.name && systemDefault) {
+          apiQuestion.default = systemDefault;
+        }
         if (apiQuestion.name === PROMPT_API_NAME.name) {
           apiQuestion.validate = (input: string) => {
             const syntaxValidation = PROMPT_API_NAME.validate?.(input);

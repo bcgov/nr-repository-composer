@@ -15,6 +15,8 @@ import {
   PROMPT_API_DEFINITION,
   PROMPT_API_OWNER,
   PROMPT_API_TYPE,
+  PROMPT_SYSTEM_NAME,
+  PROMPT_SYSTEM_OWNER,
   PROMPT_TO_USAGE,
   getPromptToUsage,
 } from './prompts.js';
@@ -83,6 +85,14 @@ describe('prompt definitions', () => {
     expect(PROMPT_API_OWNER.validate('')).not.toBe(true);
     expect(PROMPT_API_DEFINITION.validate('openapi: "3.0.0"')).toBe(true);
     expect(PROMPT_API_DEFINITION.validate('')).not.toBe(true);
+  });
+
+  it('requires valid System names and non-empty owners', () => {
+    expect(PROMPT_SYSTEM_NAME.validate('artist-portal')).toBe(true);
+    expect(PROMPT_SYSTEM_NAME.validate('Bad name')).not.toBe(true);
+    expect(PROMPT_SYSTEM_NAME.validate('')).not.toBe(true);
+    expect(PROMPT_SYSTEM_OWNER.validate('group:artists')).toBe(true);
+    expect(PROMPT_SYSTEM_OWNER.validate('  ')).not.toBe(true);
   });
 });
 

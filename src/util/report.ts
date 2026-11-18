@@ -12,6 +12,7 @@ export const ALL_GENERATORS = [
   'gh-polaris-composer-agent',
   'backstage',
   'backstage-api',
+  'backstage-system',
   'backstage-instances',
   'backstage-location',
   'gh-common-mono-build',
@@ -35,6 +36,7 @@ export const GENERATOR_ANCHORS: Record<string, string> = {
     'polaris-pipeline-composer-agent-gh-polaris-composer-agent',
   backstage: 'backstage-backstage',
   'backstage-api': 'backstage-api-generator',
+  'backstage-system': 'backstage-system',
   'backstage-instances': 'backstage-backstage-instances',
   'backstage-location': 'backstage-backstage-location',
   'gh-common-mono-build': 'github-gh-common-mono-build',
@@ -188,6 +190,17 @@ export const GENERATOR_REPORTS: Record<string, GeneratorReport> = {
     description: 'Created or updated a Backstage API catalog entity',
     workflows: [],
     nextSteps: [],
+  },
+  'backstage-system': {
+    description: 'Created or updated a Backstage System catalog entity',
+    workflows: [],
+    nextSteps: [
+      {
+        generator: 'backstage',
+        description:
+          'Create component catalog entities belonging to the system',
+      },
+    ],
   },
   'backstage-instances': {
     description: 'Updated deployed-environment links in the catalog file',

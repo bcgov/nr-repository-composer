@@ -7,6 +7,7 @@ import {
   BACKSTAGE_KIND_COMPONENT,
   BACKSTAGE_KIND_LOCATION,
   BACKSTAGE_KIND_NRCOMPOSER,
+  BACKSTAGE_KIND_SYSTEM,
   getGeneratorsFromDoc,
 } from './yaml.js';
 import { PROMPT_CUSTOM_RUNNER } from './prompts.js';
@@ -36,6 +37,81 @@ describe('BackstageStorage', () => {
       configPath,
     );
     expect(storage.doc.get('kind')).toBe(BACKSTAGE_KIND_COMPONENT);
+  });
+
+  it('creates and edits a System without changing other catalog entities', () => {
+    fs.writeFileSync(
+      configPath,
+      'kind: Component\nmetadata:\n  name: artist-web\nspec:\n  system: artist-portal\n',
+    );
+    const storage = new BackstageStorage(
+      'test',
+      BACKSTAGE_KIND_SYSTEM,
+      undefined,
+      configPath,
+    );
+    const component = storage.kindDocs(BACKSTAGE_KIND_COMPONENT)[0].toString();
+    storage.set('promptValues', {
+      systemName: 'artist-portal',
+      systemDescription: 'The artist portal',
+      systemOwner: 'artists',
+      systemDomain: 'engagement',
+    });
+    storage.addGeneratorToDoc('backstage-system');
+    storage.save();
+
+    const reloaded = new BackstageStorage(
+      'test',
+      BACKSTAGE_KIND_SYSTEM,
+      undefined,
+      configPath,
+    );
+    expect(reloaded.doc.toJSON()).toEqual({
+      apiVersion: 'backstage.io/v1alpha1',
+      kind: 'System',
+      metadata: {
+        name: 'artist-portal',
+        description: 'The artist portal',
+      },
+      spec: { owner: 'artists', domain: 'engagement' },
+    });
+    expect(reloaded.getAnswers()).toEqual({
+      systemName: 'artist-portal',
+      systemDescription: 'The artist portal',
+      systemOwner: 'artists',
+      systemDomain: 'engagement',
+    });
+    expect(reloaded.hasGenerator('backstage-system')).toBe(true);
+    expect(reloaded.composer.hasIn(['spec', 'answers'])).toBe(false);
+    reloaded.set('promptValues', {
+      systemDescription: '',
+      systemDomain: '',
+      systemOwner: 'new-team',
+    });
+    reloaded.save();
+    expect(reloaded.doc.toJSON().spec).toEqual({ owner: 'new-team' });
+    expect(reloaded.getAnswers()).toMatchObject({
+      systemDescription: '',
+      systemDomain: '',
+      systemOwner: 'new-team',
+    });
+    expect(reloaded.kindDocs(BACKSTAGE_KIND_SYSTEM)).toHaveLength(1);
+    expect(reloaded.kindDocs(BACKSTAGE_KIND_COMPONENT)[0].toString()).toBe(
+      component,
+    );
+  });
+
+  it('rejects duplicate System documents', () => {
+    fs.writeFileSync(configPath, 'kind: System\n---\nkind: System\n');
+    expect(
+      () =>
+        new BackstageStorage(
+          'test',
+          BACKSTAGE_KIND_SYSTEM,
+          undefined,
+          configPath,
+        ),
+    ).toThrow('more than one "System" document');
   });
 
   it('loads an existing document from disk', () => {

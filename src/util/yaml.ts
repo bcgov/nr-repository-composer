@@ -17,6 +17,7 @@ export const BACKSTAGE_API_VERSION = 'backstage.io/v1alpha1';
 export const BACKSTAGE_KIND_COMPONENT = 'Component';
 export const BACKSTAGE_KIND_LOCATION = 'Location';
 export const BACKSTAGE_KIND_API = 'API';
+export const BACKSTAGE_KIND_SYSTEM = 'System';
 // A catalog file may also carry a `NRComposer` document that holds the
 // composer bookkeeping (the set of generators that produced it, plus scan
 // overrides). These fields used to live as `composer.io.nrs.gov.bc.ca/*`
@@ -1050,13 +1051,15 @@ export function generateSetAnswerPropPredicate(
   };
 }
 
-export function scanRepositoryForComponents(
+/**
+ * Scan all catalog entity kinds reachable through Location targets.
+ */
+export function scanRepositoryForEntities(
   rootCatalogPath = BACKSTAGE_FILENAME,
-  includeLocations = false,
 ) {
   const initCatalogPath = destinationGitPath(rootCatalogPath);
   const gitRoot = destinationGitPath('.');
-  const components: (CatalogEntity & {
+  const entities: (CatalogEntity & {
     path: string;
     name: string;
     parentPath?: string;
@@ -1067,15 +1070,23 @@ export function scanRepositoryForComponents(
   // point back at the same file, which otherwise yields duplicate records.
   const visited = new Set<string>();
 
-  const loadCatalog = (catalogPath, parentPath?: string) => {
+  const loadCatalog = (catalogPath: string, parentPath?: string) => {
     if (visited.has(catalogPath)) {
       return;
     }
     visited.add(catalogPath);
-    let entities: CatalogEntity[];
+    let catalogEntities: CatalogEntity[];
     try {
       fs.accessSync(catalogPath);
-      entities = loadCatalogFiles(catalogPath).entities;
+      const catalog = loadCatalogFiles(catalogPath);
+      for (const doc of catalog.docs) {
+        if (doc.errors.length > 0) {
+          throw new Error(
+            `Invalid catalog at ${catalogPath}: ${doc.errors.map((error) => error.message).join('; ')}`,
+          );
+        }
+      }
+      catalogEntities = catalog.entities;
     } catch (err) {
       console.error(
         `Error loading catalog at ${catalogPath}: ${
@@ -1085,23 +1096,17 @@ export function scanRepositoryForComponents(
       return;
     }
 
-    for (const { doc, composerDoc } of entities) {
+    for (const { doc, composerDoc } of catalogEntities) {
       const kind = doc.get('kind');
       const relativePath = path.relative(gitRoot, catalogPath);
-
-      if (
-        kind === BACKSTAGE_KIND_COMPONENT ||
-        (includeLocations && kind === BACKSTAGE_KIND_LOCATION)
-      ) {
-        const name = String(doc.getIn(['metadata', 'name']) || 'unknown');
-        components.push({
-          doc,
-          composerDoc,
-          path: relativePath,
-          name,
-          parentPath,
-        });
-      }
+      const name = String(doc.getIn(['metadata', 'name']) || 'unknown');
+      entities.push({
+        doc,
+        composerDoc,
+        path: relativePath,
+        name,
+        parentPath,
+      });
 
       if (kind === BACKSTAGE_KIND_LOCATION) {
         const targets = doc.getIn(['spec', 'targets']);
@@ -1127,7 +1132,18 @@ export function scanRepositoryForComponents(
     }
   };
 
-  loadCatalog(initCatalogPath);
+  loadCatalog(path.resolve(initCatalogPath));
 
-  return components;
+  return entities;
+}
+
+export function scanRepositoryForComponents(
+  rootCatalogPath = BACKSTAGE_FILENAME,
+  includeLocations = false,
+) {
+  return scanRepositoryForEntities(rootCatalogPath).filter(
+    ({ doc }) =>
+      doc.get('kind') === BACKSTAGE_KIND_COMPONENT ||
+      (includeLocations && doc.get('kind') === BACKSTAGE_KIND_LOCATION),
+  );
 }

@@ -46,6 +46,11 @@ For each component entity, developers should manually define the relationships
 | **Description / Title** | Free-text catalog metadata. |
 | **GitHub Slug** | `<organization>/<repository>`; pre-filled from the git remote and reused by build/deploy generators. |
 
+The **Project** prompt defaults to the first named `kind: System` found by the
+repository catalog scan, starting at the root catalog and following Location
+targets. Create one with [`backstage-system`](backstage-system.md).
+An existing `spec.system` is preserved; use `--ask-answered` to change it.
+
 **Suggested Next Steps:**
 
 - [`backstage-api`](backstage-api.md) — Describe APIs exposed by the component

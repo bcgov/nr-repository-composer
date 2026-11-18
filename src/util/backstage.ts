@@ -1,5 +1,23 @@
-import { BACKSTAGE_FILENAME } from './yaml.js';
+import {
+  BACKSTAGE_FILENAME,
+  BACKSTAGE_KIND_SYSTEM,
+  scanRepositoryForEntities,
+} from './yaml.js';
 import path from 'path';
+
+/**
+ * Find the first named System in the repository's catalog scan.
+ */
+export function findSystemDefault(): string | undefined {
+  return scanRepositoryForEntities().find(({ doc }) => {
+    const name = doc.getIn(['metadata', 'name']);
+    return (
+      doc.get('kind') === BACKSTAGE_KIND_SYSTEM &&
+      typeof name === 'string' &&
+      Boolean(name.trim())
+    );
+  })?.name;
+}
 
 /**
  * Normalize the entered target paths, appending the catalog file name to any

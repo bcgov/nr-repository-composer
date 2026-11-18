@@ -1,4 +1,5 @@
 import { BaseGenerator } from '../util/base-generator.js';
+import { findSystemDefault } from '../util/backstage.js';
 import {
   PROMPT_PROJECT,
   PROMPT_SERVICE,
@@ -50,6 +51,15 @@ export default class extends BaseGenerator {
 
   async prompting() {
     return super.prompting();
+  }
+
+  _prePrompt() {
+    const system = findSystemDefault();
+    this._questions = questions.map((question) =>
+      question.name === PROMPT_PROJECT.name && system
+        ? { ...question, default: system }
+        : question,
+    );
   }
 
   writingBackstage() {

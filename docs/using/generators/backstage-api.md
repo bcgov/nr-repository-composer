@@ -34,6 +34,11 @@ In `--headless` mode all existing APIs are processed; `--index` is not supported
 | System | `spec.system` | No |
 | Definition | `spec.definition` | Yes |
 
+The **System** prompt defaults to the first named `kind: System` found by the
+repository catalog scan, starting at the root catalog and following Location
+targets. Create one with [`backstage-system`](backstage-system.md).
+Stored answers are preserved; use `--ask-answered` to change them.
+
 The API type accepts values such as `openapi`, `asyncapi`, `graphql`, and
 `grpc`. Lifecycle options are `experimental`, `production`, and `deprecated`.
 API names must be unique among APIs in the same namespace. APIs without an

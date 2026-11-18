@@ -9,7 +9,10 @@ import {
   toScanRecord,
   type ScanRecord,
 } from './scan.js';
-import { scanRepositoryForComponents } from './yaml.js';
+import {
+  scanRepositoryForComponents,
+  scanRepositoryForEntities,
+} from './yaml.js';
 
 const doc = (yaml: string) => parseDocument(yaml);
 
@@ -196,6 +199,61 @@ describe('scanRepositoryForComponents', () => {
   afterEach(() => {
     process.chdir(previousCwd);
     fs.rmSync(repoDir, { recursive: true, force: true });
+    jest.restoreAllMocks();
+  });
+
+  it('shares entity scanning while preserving component filtering and parent paths', () => {
+    fs.mkdirSync(path.join(repoDir, 'service'));
+    fs.writeFileSync(
+      path.join(repoDir, 'catalog-info.yaml'),
+      'kind: System\nmetadata:\n  name: artist-portal\n---\nkind: Location\nmetadata:\n  name: services\nspec:\n  targets:\n    - service/catalog-info.yaml\n    - ./catalog-info.yaml\n',
+    );
+    fs.writeFileSync(
+      path.join(repoDir, 'service', 'catalog-info.yaml'),
+      'kind: API\nmetadata:\n  name: artist-api\n---\nkind: Component\nmetadata:\n  name: artist-web\n',
+    );
+    process.chdir(repoDir);
+
+    expect(
+      scanRepositoryForEntities().map(({ doc }) => doc.get('kind')),
+    ).toEqual(['System', 'Location', 'API', 'Component']);
+    const components = scanRepositoryForComponents();
+    expect(
+      components.map(({ name, path, parentPath }) => ({
+        name,
+        path,
+        parentPath,
+      })),
+    ).toEqual([
+      {
+        name: 'artist-web',
+        path: 'service/catalog-info.yaml',
+        parentPath: 'catalog-info.yaml',
+      },
+    ]);
+    expect(
+      scanRepositoryForComponents(undefined, true).map(({ name }) => name),
+    ).toEqual(['services', 'artist-web']);
+  });
+
+  it('logs missing Location targets and continues scanning other targets', () => {
+    fs.writeFileSync(
+      path.join(repoDir, 'catalog-info.yaml'),
+      'kind: Location\nspec:\n  targets:\n    - missing.yaml\n    - service.yaml\n',
+    );
+    fs.writeFileSync(
+      path.join(repoDir, 'service.yaml'),
+      'kind: Component\nmetadata:\n  name: artist-web\n',
+    );
+    const error = jest.spyOn(console, 'error').mockImplementation(() => {});
+    process.chdir(repoDir);
+
+    expect(scanRepositoryForComponents().map(({ name }) => name)).toEqual([
+      'artist-web',
+    ]);
+    expect(error).toHaveBeenCalledWith(
+      expect.stringContaining('Error loading catalog at'),
+    );
   });
 
   it('does not loop when a catalog Location targets its own file', () => {

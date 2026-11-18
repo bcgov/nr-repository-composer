@@ -61,23 +61,19 @@ export default class extends Generator {
 
     for (const doc of docs) {
       const serviceName = doc.getPath(['metadata', 'name']) as string;
-      const subcomponents = doc.getPath(
-        ['spec', 'subcomponentOf'],
-        'json',
-      ) as any[];
-      if (subcomponents) {
-        for (const subcomponent of subcomponents) {
-          const subServiceName = subcomponent.split(':')[1];
-          const dependency = services.find(
-            (service) => service.name === subServiceName,
+      const subcomponentOf = doc.getPath(['spec', 'subcomponentOf']) as
+        string | undefined;
+      if (subcomponentOf) {
+        const subServiceName = subcomponentOf.split(':')[1];
+        const dependency = services.find(
+          (service) => service.name === subServiceName,
+        );
+        if (!dependency) {
+          throw new Error(
+            `Subcomponent ${subServiceName} not found in mono-repo`,
           );
-          if (!dependency) {
-            throw new Error(
-              `Subcomponent ${subServiceName} not found in mono-repo`,
-            );
-          }
-          dependency.serviceNeeds.push(serviceName);
         }
+        dependency.serviceNeeds.push(serviceName);
       }
     }
 

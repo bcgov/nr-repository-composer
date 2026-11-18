@@ -1,5 +1,7 @@
 import * as fs from 'node:fs';
+import os from 'node:os';
 import path from 'node:path';
+import { spawnSync } from 'node:child_process';
 import ejs from 'ejs';
 import { parse as parseYaml } from 'yaml';
 
@@ -13,11 +15,8 @@ const templateData = {
   projectName: 'demo',
   serviceName: 'demo',
   type: 'service',
-  artifactRepositoryType: 'GitHubPackages',
-  artifactRepositoryPath: '',
-  brokerJwt: 'BROKER_JWT',
-  brokerTrackingEnabled: true,
-  gitHubProjectSlug: 'org/repo',
+  brokerJwt: 'broker_jwt_demo',
+  hasBrokerClientId: true,
   license: 'Apache-2.0',
   isMonoRepo: false,
   unitTestsPath: '',
@@ -28,49 +27,89 @@ const templateData = {
   publishDirectory: 'dist',
   pomRoot: '',
   javaVersion: '17',
-  javaPattern: 'SpringBoot',
   mavenBuildCommand: 'verify',
   ociArtifacts: [],
   customRunner: 'ubuntu-latest',
   toolsBuildSecrets: '',
-  toolsLocalBuildSecrets: '',
 };
 
 describe.each(buildTemplates)('%s', (templatePath) => {
   it.each([true, false])(
-    'renders Broker checks and intention tasks according to tracking being %s',
-    (brokerTrackingEnabled) => {
-      const source = fs.readFileSync(path.resolve(templatePath), 'utf8');
+    'uses runtime secret checks with a configured Client ID=%s',
+    (hasBrokerClientId) => {
       const workflow = parseYaml(
-        ejs.render(source, {
+        ejs.render(fs.readFileSync(path.resolve(templatePath), 'utf8'), {
           ...templateData,
-          brokerTrackingEnabled,
+          hasBrokerClientId,
         }),
       );
+      const expectedToken = hasBrokerClientId
+        ? '${{ secrets.broker_jwt_demo }}'
+        : '';
+      expect(workflow.env.BROKER_JWT).toBe(expectedToken);
+      expect(workflow.jobs.preflight.secrets.token).toBe(expectedToken);
       const steps = workflow.jobs['build-publish'].steps;
-      const findStep = (name: string) =>
-        steps.find((step) => step.name === name);
-
-      expect(workflow.jobs.preflight.with.skip_broker_checks).toBe(
-        !brokerTrackingEnabled,
-      );
-      expect(findStep('Build intention').if).toBe(
-        `\${{ ${brokerTrackingEnabled} }}`,
-      );
-      expect(findStep('Open intention').if).toBe(
-        `\${{ ${brokerTrackingEnabled} }}`,
-      );
-      expect(findStep('Send build info').if).toBe(
-        `\${{ 'service' != 'library' && ${brokerTrackingEnabled} }}`,
-      );
+      for (const name of [
+        'Build intention',
+        'Open intention',
+        'Echo intention ID for deploy job',
+      ]) {
+        expect(steps.find((step) => step.name === name).if).toBe(
+          "${{ env.BROKER_JWT != '' }}",
+        );
+      }
+      for (const name of [
+        'Send build info',
+        'Close intention',
+        'Close intention (Failure)',
+      ]) {
+        expect(steps.find((step) => step.name === name).if).toContain(
+          "env.BROKER_JWT != ''",
+        );
+      }
       expect(
-        findStep('Build artifact') || findStep('Build and push Docker image'),
+        steps.find((step) => step.name === 'Open intention').with.broker_jwt,
+      ).toBe('${{ env.BROKER_JWT }}');
+      expect(
+        steps.find((step) =>
+          ['Build artifact', 'Build and push Docker image'].includes(step.name),
+        ),
       ).toBeDefined();
     },
   );
 });
 
-describe('build preflight Broker opt-out', () => {
+describe.each(buildTemplates.slice(0, 2))(
+  '%s runner selection',
+  (templatePath) => {
+    it.each([
+      [
+        'group: Larger Runners - OpenShift Static-IP',
+        { group: 'Larger Runners - OpenShift Static-IP' },
+      ],
+      ['self-hosted', 'self-hosted'],
+    ])(
+      'selects %s only when preflight finds a secret',
+      (customRunner, expected) => {
+        const workflow = parseYaml(
+          ejs.render(fs.readFileSync(path.resolve(templatePath), 'utf8'), {
+            ...templateData,
+            customRunner,
+          }),
+        );
+        const runner = workflow.jobs['build-publish']['runs-on'];
+        expect(runner).toContain(
+          "needs.preflight.outputs.broker_enabled == 'true'",
+        );
+        const choices = runner.match(/&& '(.+)' \|\| '(.+)'/);
+        expect(JSON.parse(choices[1])).toEqual(expected);
+        expect(JSON.parse(choices[2])).toBe('ubuntu-latest');
+      },
+    );
+  },
+);
+
+describe('runtime Broker configuration', () => {
   const preflight = parseYaml(
     fs.readFileSync(
       path.resolve('src/util/gh-workflow-template/preflight.yaml'),
@@ -78,23 +117,53 @@ describe('build preflight Broker opt-out', () => {
     ),
   );
 
-  it('skips Broker checks and permits a build when tracking is disabled', () => {
-    expect(preflight.on.workflow_call.inputs.skip_broker_checks).toMatchObject({
-      default: false,
-      type: 'boolean',
-    });
-    expect(preflight.on.workflow_call.secrets.token.required).toBe(false);
-    expect(preflight.jobs['check-jwt'].if).toBe(
-      '${{ inputs.skip_broker_checks != true }}',
+  it.each([
+    ['', 'build', 0, 'enabled=false', '::warning::'],
+    ['test-token', 'build', 0, 'enabled=true', ''],
+    ['', 'deploy', 1, '', '::error::'],
+    ['test-token', 'deploy', 0, 'enabled=true', ''],
+  ])(
+    'handles secret=%s context=%s',
+    (token, context, status, output, message) => {
+      const directory = fs.mkdtempSync(path.join(os.tmpdir(), 'broker-check-'));
+      try {
+        const outputPath = path.join(directory, 'output');
+        fs.writeFileSync(outputPath, '');
+        const step = preflight.jobs['broker-config'].steps[0];
+        expect(step.env.BROKER_JWT).toBe('${{ secrets.token }}');
+        const result = spawnSync('bash', ['-e', '-c', step.run], {
+          env: {
+            ...process.env,
+            BROKER_JWT: token,
+            PREFLIGHT_CONTEXT: context,
+            GITHUB_OUTPUT: outputPath,
+          },
+          encoding: 'utf8',
+        });
+        expect(result.status).toBe(status);
+        expect(fs.readFileSync(outputPath, 'utf8').trim()).toBe(output);
+        expect(result.stdout).toContain(message);
+        expect(result.stdout).not.toContain('test-token');
+      } finally {
+        fs.rmSync(directory, { recursive: true, force: true });
+      }
+    },
+  );
+
+  it('gates Broker jobs on the runtime check and permits unrecorded tag builds', () => {
+    expect(preflight.jobs['check-jwt'].needs).toBe('broker-config');
+    expect(preflight.jobs['check-jwt'].if).toContain(
+      "needs.broker-config.outputs.enabled == 'true'",
     );
     expect(preflight.jobs['check-release-package'].if).toContain(
-      'inputs.skip_broker_checks != true',
+      "needs.broker-config.outputs.enabled == 'true'",
     );
     const rebuildStep = preflight.jobs['set-check-outputs'].steps.find(
       (step) => step.id === 'set-can-rebuild',
     );
-    expect(rebuildStep.run).toContain(
-      'if [[ "$SKIP_BROKER_CHECKS" == "true" ]]',
+    expect(rebuildStep.env.BROKER_ENABLED).toBe(
+      '${{ needs.broker-config.outputs.enabled }}',
     );
+    expect(rebuildStep.run).toContain('if [[ "$BROKER_ENABLED" == "false" ]]');
   });
 });

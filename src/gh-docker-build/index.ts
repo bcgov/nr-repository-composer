@@ -80,7 +80,7 @@ export default class extends BaseGenerator {
   // Generate GitHub workflows and NR Broker intention files
   writingWorkflow() {
     const relativePath = relativeGitPath();
-    const brokerTrackingEnabled = Boolean(this.answers.clientId.trim());
+    const hasBrokerClientId = Boolean(this.answers.clientId.trim());
     const brokerJwt = this.answers.clientId.trim()
       ? `broker-jwt:${this.answers.clientId.trim()}`.replace(
           /[^a-zA-Z0-9_]/g,
@@ -101,7 +101,7 @@ export default class extends BaseGenerator {
         type: this.answers.type,
         artifactRepositoryType: this.answers.artifactRepositoryType,
         artifactRepositoryPath: this.answers.artifactRepositoryPath,
-        brokerTrackingEnabled,
+        hasBrokerClientId,
         brokerJwt,
         gitHubProjectSlug: this.answers.gitHubProjectSlug,
         license: this.answers.license,

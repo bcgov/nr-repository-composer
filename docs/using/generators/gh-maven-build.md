@@ -28,7 +28,7 @@ which should contain the `catalog-info.yaml` for it.
 | **Project / Service** | Identifiers for the build; `Service` names the generated workflow. |
 | **Type** | `service`, `website`, or `library`. A `library` skips packaging/publishing (only `deploy` runs). |
 | **License** | SPDX license (default `Apache-2.0`) embedded in the build. |
-| **Client ID** | Broker client ID; becomes the Broker JWT secret name. Leave blank to skip Broker checks and intention tracking for the build. |
+| **Client ID** | Selects the Broker JWT secret. A blank Client ID supplies an empty token, just like an unset secret. |
 | **GitHub Slug** | `<organization>/<repository>`; pre-filled from the git remote. |
 | **Java version** | `8`, `11`, `17`, or `21` (default `8`) — selects the JDK image. |
 | **Java pattern** | `SpringBoot`, `Tomcat`, or `unknown` (default `SpringBoot`) — shapes the packaged artifact. |
@@ -41,7 +41,9 @@ which should contain the `catalog-info.yaml` for it.
 | **Tools / local build secrets** | Comma-separated secret names the build needs; local secrets default to the tools list. |
 | **Maven build arguments** | Maven CLI args; defaults to `--batch-mode -Dmaven.test.skip=true -Pgithub clean package` (`deploy` for libraries). |
 
-When Client ID is blank, tagged builds also skip the Broker check for an already-recorded release, so a version may be rebuilt and republished. The build will not produce an intention ID, so deployments that depend on that ID need Broker tracking enabled.
+At runtime, the workflow checks whether the Broker secret is empty. If empty, it emits a warning and continues the build without Broker checks or intention recording, using `ubuntu-latest`. A nonempty token retains Broker checks and the configured custom runner; invalid tokens still fail validation. Deployment runner settings are unchanged, and deployment still requires a Broker token.
+
+Without a Broker token, tagged builds also skip the check for an already-recorded release, so a version may be rebuilt and republished. No new build intention ID is produced.
 
 **Suggested Next Steps:**
 

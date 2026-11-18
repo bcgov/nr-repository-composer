@@ -28,7 +28,7 @@ concurrency:
 
 env:
   BROKER_URL: https://broker.io.nrs.gov.bc.ca
-  BROKER_JWT: ${{ secrets.<%= brokerJwt %> }}
+  BROKER_JWT: <%- hasBrokerClientId ? '${{ secrets.' + brokerJwt + ' }}' : "''" %>
   SERVICE_PROJECT: <%= projectName %>
   SERVICE_NAME: <%= serviceName %>
   DEFAULT_VERSION: ${{ vars.DEFAULT_VERSION || '0.0.0' }}-merge
@@ -42,10 +42,9 @@ jobs:
       actions: read
     with:
       preflight_context: build
-      skip_broker_checks: <%= !brokerTrackingEnabled %>
       catalog_info: <%= relativePath %><%= relativePath ? '/' : '' %>catalog-info.yaml
     secrets:
-      token: ${{ secrets.<%= brokerJwt %> }}
+      token: <%- hasBrokerClientId ? '${{ secrets.' + brokerJwt + ' }}' : "''" %>
 <% if (unitTestsPath) { -%>
   test:
     name: Test
@@ -101,7 +100,7 @@ jobs:
         env:
           VERSION: ${{ steps.version-detect.outputs.version }}
       - name: Build intention
-        if: ${{ <%= brokerTrackingEnabled %> }}
+        if: ${{ env.BROKER_JWT != '' }}
         run: sh ./.github/workflows/build-intention-<%= serviceName %>.sh
         env:
           EVENT_REASON: Build ${{ github.ref_name }}
@@ -113,15 +112,15 @@ jobs:
           PACKAGE_TYPE: application/vnd.oci.image.manifest.v1+json
           PACKAGE_VERSION: ${{ steps.set-build-output-parameters.outputs.project_version }}
       - name: Open intention
-        if: ${{ <%= brokerTrackingEnabled %> }}
+        if: ${{ env.BROKER_JWT != '' }}
         uses: bcgov-nr/action-broker-intention-open@v2
         with:
-          broker_jwt: ${{ secrets.<%= brokerJwt %> }}
+          broker_jwt: ${{ env.BROKER_JWT }}
           intention_path: intention.json
           quickstart: true
       - name: Echo intention ID for deploy job
         id: set-intention-id
-        if: ${{ <%= brokerTrackingEnabled %> }}
+        if: ${{ env.BROKER_JWT != '' }}
         run: |
           echo "intention_id=${INTENTION_ID}" >> $GITHUB_OUTPUT
         env:
@@ -151,7 +150,7 @@ jobs:
           cache-from: type=gha
           cache-to: type=gha,mode=max
       - name: Send build info
-        if: ${{ '<%= type %>' != 'library' && <%= brokerTrackingEnabled %> }}
+        if: ${{ '<%= type %>' != 'library' && env.BROKER_JWT != '' }}
         run: |
           curl -s POST ${{ env.BROKER_URL }}/v1/intention/action/patch \
               -H 'Content-Type: application/json' \
@@ -165,12 +164,12 @@ jobs:
           ARTIFACT_SHA256: ${{ steps.build-docker.outputs.digest }}
           BUILD_TOKEN: ${{ env.ACTION_TOKEN_BUILD }}
       - name: Close intention
-        if: ${{ success() && env.INTENTION_TOKEN != '' && <%= brokerTrackingEnabled %> }}
+        if: ${{ success() && env.INTENTION_TOKEN != '' && env.BROKER_JWT != '' }}
         uses: bcgov-nr/action-broker-intention-close@v3
         with:
           intention_token: ${{ env.INTENTION_TOKEN }}
       - name: Close intention (Failure)
-        if: ${{ failure() && env.INTENTION_TOKEN != '' && <%= brokerTrackingEnabled %> }}
+        if: ${{ failure() && env.INTENTION_TOKEN != '' && env.BROKER_JWT != '' }}
         uses: bcgov-nr/action-broker-intention-close@v3
         with:
           intention_token: ${{ env.INTENTION_TOKEN }}

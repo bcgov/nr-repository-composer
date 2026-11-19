@@ -181,16 +181,24 @@ describe('runtime Broker configuration', () => {
       "${{ needs.check-jwt.outputs.valid == 'true' }}",
     );
     expect(rebuildStep.run).toContain('if [[ "$BROKER_ENABLED" == "false" ]]');
-    const result = spawnSync('bash', ['-e', '-c', rebuildStep.run], {
-      env: {
-        ...process.env,
-        BROKER_ENABLED: 'false',
-        GITHUB_OUTPUT: '/dev/stdout',
-      },
-      encoding: 'utf8',
-    });
-    expect(result.status).toBe(0);
-    expect(result.stdout.trim()).toBe('can_rebuild=true');
+    const directory = fs.mkdtempSync(path.join(os.tmpdir(), 'broker-rebuild-'));
+    try {
+      const outputPath = path.join(directory, 'output');
+      const result = spawnSync('bash', ['-e', '-c', rebuildStep.run], {
+        env: {
+          ...process.env,
+          BROKER_ENABLED: 'false',
+          GITHUB_OUTPUT: outputPath,
+        },
+        encoding: 'utf8',
+      });
+      expect(result.status).toBe(0);
+      expect(fs.readFileSync(outputPath, 'utf8').trim()).toBe(
+        'can_rebuild=true',
+      );
+    } finally {
+      fs.rmSync(directory, { recursive: true, force: true });
+    }
   });
 
   it('only tolerates token validation failures for builds, not deployment or other failed jobs', () => {

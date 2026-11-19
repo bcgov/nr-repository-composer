@@ -72,6 +72,14 @@ interface PathToProp {
 }
 
 export const pathToProps: PathToProp[] = [
+  { path: ['metadata', 'name'], prop: 'systemName', writeEmpty: false },
+  {
+    path: ['metadata', 'description'],
+    prop: 'systemDescription',
+    writeEmpty: false,
+  },
+  { path: ['spec', 'owner'], prop: 'systemOwner', writeEmpty: false },
+  { path: ['spec', 'domain'], prop: 'systemDomain', writeEmpty: false },
   { path: ['spec', 'system'], prop: 'projectName', writeEmpty: false },
   { path: ['metadata', 'name'], prop: 'serviceName', writeEmpty: false },
   { path: ['metadata', 'description'], prop: 'description', writeEmpty: true },

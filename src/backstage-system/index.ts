@@ -31,4 +31,16 @@ export default class extends BaseGenerator {
   _getStorageOptions() {
     return { kind: BACKSTAGE_KIND_SYSTEM };
   }
+
+  async prompting() {
+    return super.prompting();
+  }
+
+  writingBackstage() {
+    super.writingBackstage();
+  }
+
+  end() {
+    super.end();
+  }
 }

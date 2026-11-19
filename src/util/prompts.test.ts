@@ -16,8 +16,11 @@ import {
   PROMPT_API_OWNER,
   PROMPT_API_TYPE,
   PROMPT_SYSTEM_NAME,
+  PROMPT_SYSTEM_DESCRIPTION,
   PROMPT_SYSTEM_OWNER,
+  PROMPT_SYSTEM_DOMAIN,
   PROMPT_TO_USAGE,
+  getPromptToLongMessage,
   getPromptToUsage,
 } from './prompts.js';
 import { STANDARD_ENVIRONMENTS } from './instances.js';
@@ -113,5 +116,31 @@ describe('getPromptToUsage', () => {
   it('omits the example line when none is defined', () => {
     const usage = getPromptToUsage(PROMPT_DESCRIPTION);
     expect(usage).not.toContain('Example:');
+  });
+});
+
+describe('getPromptToLongMessage', () => {
+  it.each([
+    [PROMPT_SYSTEM_NAME, 'metadata.name'],
+    [PROMPT_SYSTEM_DESCRIPTION, 'metadata.description'],
+    [PROMPT_SYSTEM_OWNER, 'spec.owner'],
+    [PROMPT_SYSTEM_DOMAIN, 'spec.domain'],
+  ])('formats $0.name with its Backstage path', (prompt, path) => {
+    const message = getPromptToLongMessage(prompt);
+    expect(message).toContain(prompt.message);
+    expect(message).toContain('\n❯');
+    expect(message).toContain(`Backstage: ${path}`);
+  });
+
+  it('includes the Backstage path for document-backed prompts', () => {
+    const message = getPromptToLongMessage(PROMPT_DESCRIPTION);
+    expect(message).toContain(PROMPT_DESCRIPTION.message);
+    expect(message).toContain('Backstage: metadata.description');
+  });
+
+  it('omits the Backstage path for composer-owned prompts', () => {
+    const message = getPromptToLongMessage(PROMPT_NODE_VERSION);
+    expect(message).toContain(PROMPT_NODE_VERSION.message);
+    expect(message).not.toContain('Backstage:');
   });
 });

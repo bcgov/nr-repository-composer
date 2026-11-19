@@ -161,6 +161,13 @@ export const PROMPT_SYSTEM_DOMAIN: PromptQuestion = {
   default: '',
 };
 
+export const PROMPT_SYSTEM_TYPE: PromptQuestion = {
+  type: 'input',
+  name: 'systemType',
+  message: 'System type (e.g., product, service, feature-set):',
+  default: 'product',
+};
+
 /**
  * Deployed-instance prompts used by the `backstage-instances` generator.
  * Answers are stored on a Component metadata.links entry.
@@ -655,6 +662,10 @@ export const PROMPT_TO_USAGE: Record<
     description:
       'Optional entity reference for the domain containing the system',
     example: 'artists',
+  },
+  systemType: {
+    description: 'Optional type of the system',
+    example: 'product',
   },
   lifecycle: {
     description:

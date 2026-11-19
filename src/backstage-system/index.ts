@@ -1,10 +1,12 @@
 import { BaseGenerator } from '../util/base-generator.js';
 import { BACKSTAGE_KIND_SYSTEM } from '../util/yaml.js';
 import {
+  PROMPT_TAGS,
   PROMPT_SYSTEM_DESCRIPTION,
   PROMPT_SYSTEM_DOMAIN,
   PROMPT_SYSTEM_NAME,
   PROMPT_SYSTEM_OWNER,
+  PROMPT_SYSTEM_TYPE,
 } from '../util/prompts.js';
 
 export default class extends BaseGenerator {
@@ -23,8 +25,10 @@ export default class extends BaseGenerator {
     this._questions = [
       PROMPT_SYSTEM_NAME,
       PROMPT_SYSTEM_DESCRIPTION,
+      PROMPT_SYSTEM_TYPE,
       PROMPT_SYSTEM_OWNER,
       PROMPT_SYSTEM_DOMAIN,
+      PROMPT_TAGS,
     ];
   }
 

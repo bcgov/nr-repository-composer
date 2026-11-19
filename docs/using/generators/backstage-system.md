@@ -24,12 +24,16 @@ Composer bookkeeping is stored separately in `catalog-composer.yaml`.
 | --- | --- | --- |
 | System name | `metadata.name` | Yes |
 | Description | `metadata.description` | No |
+| System type | `spec.type` | No |
 | Owner | `spec.owner` | Yes |
 | Domain | `spec.domain` | No |
+| Tags | `metadata.tags` | No |
 
 Names start with a lowercase letter and may contain lowercase letters, numbers,
 underscores, and hyphens. The owner and optional domain are Backstage entity
-references. Blank optional values are omitted.
+references. The system type defaults to `product` and tags are a
+comma-separated list (stored as a YAML sequence). Blank optional values are
+omitted.
 
 ## Defaulting Component and API systems
 
@@ -46,7 +50,10 @@ kind: System
 metadata:
   name: artist-engagement-portal
   description: Services for engaging with artists
+  tags:
+    - product
 spec:
+  type: product
   owner: artist-relations-team
   domain: artists
 ````

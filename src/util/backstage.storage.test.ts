@@ -78,8 +78,10 @@ describe('BackstageStorage', () => {
     expect(reloaded.getAnswers()).toEqual({
       systemName: 'artist-portal',
       systemDescription: 'The artist portal',
+      systemType: '',
       systemOwner: 'artists',
       systemDomain: 'engagement',
+      tags: '',
     });
     expect(reloaded.hasGenerator('backstage-system')).toBe(true);
     expect(reloaded.composer.hasIn(['spec', 'answers'])).toBe(false);
@@ -112,6 +114,39 @@ describe('BackstageStorage', () => {
           configPath,
         ),
     ).toThrow('more than one "System" document');
+  });
+
+  it('stores a System type and splits tags into a sequence', () => {
+    const storage = new BackstageStorage(
+      'test',
+      BACKSTAGE_KIND_SYSTEM,
+      undefined,
+      configPath,
+    );
+    storage.set('promptValues', {
+      systemName: 'artist-portal',
+      systemOwner: 'artists',
+      systemType: 'product',
+      tags: 'java, api, frontend',
+    });
+    storage.save();
+
+    const reloaded = new BackstageStorage(
+      'test',
+      BACKSTAGE_KIND_SYSTEM,
+      undefined,
+      configPath,
+    );
+    expect(reloaded.doc.getIn(['spec', 'type'])).toBe('product');
+    expect(reloaded.doc.getIn(['metadata', 'tags']).toJSON()).toEqual([
+      'java',
+      'api',
+      'frontend',
+    ]);
+    expect(reloaded.getAnswers()).toMatchObject({
+      systemType: 'product',
+      tags: 'java,api,frontend',
+    });
   });
 
   it('loads an existing document from disk', () => {

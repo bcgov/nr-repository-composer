@@ -58,8 +58,10 @@ const KIND_PROMPTS: Record<
     prompts: {
       systemName: ['metadata', 'name'],
       systemDescription: ['metadata', 'description'],
+      systemType: ['spec', 'type'],
       systemOwner: ['spec', 'owner'],
       systemDomain: ['spec', 'domain'],
+      tags: ['metadata', 'tags'],
     },
   },
 };
@@ -292,6 +294,9 @@ export class BackstageStorage {
     }
     const value = this.backstageDoc.getIn(path);
     if (value !== undefined) {
+      if (propRecord[name]?.csv && isSeq(value)) {
+        return value.toJSON().join();
+      }
       return value;
     }
     if (config.requiredPrompts.includes(name)) {
@@ -301,6 +306,7 @@ export class BackstageStorage {
   }
 
   private setDocPrompt(name: string, value: unknown) {
+    const csv = propRecord[name]?.csv === true;
     const trimmed = typeof value === 'string' ? value.trim() : value;
     const path =
       KIND_PROMPTS[String(this.backstageDoc.get('kind'))]?.prompts[name];
@@ -310,7 +316,15 @@ export class BackstageStorage {
     if (trimmed === null || trimmed === undefined || trimmed === '') {
       this.backstageDoc.deleteIn(path);
     } else {
-      this.backstageDoc.setIn(path, trimmed);
+      this.backstageDoc.setIn(
+        path,
+        csv && typeof value === 'string'
+          ? value
+              .split(',')
+              .map((item) => item.trim())
+              .filter(Boolean)
+          : trimmed,
+      );
     }
   }
 

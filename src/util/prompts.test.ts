@@ -19,6 +19,8 @@ import {
   PROMPT_SYSTEM_DESCRIPTION,
   PROMPT_SYSTEM_OWNER,
   PROMPT_SYSTEM_DOMAIN,
+  PROMPT_SYSTEM_TYPE,
+  PROMPT_TAGS,
   PROMPT_TO_USAGE,
   getPromptToLongMessage,
   getPromptToUsage,
@@ -39,6 +41,7 @@ describe('prompt definitions', () => {
     expect(PROMPT_NODE_VERSION.default).toBe('24');
     expect(PROMPT_JAVA_VERSION.default).toBe('8');
     expect(PROMPT_AUTO_DEPLOY_EPHEMERAL.default).toBe(false);
+    expect(PROMPT_SYSTEM_TYPE.default).toBe('product');
   });
 
   it('derives the artifact repository path from the repository type', () => {
@@ -123,8 +126,10 @@ describe('getPromptToLongMessage', () => {
   it.each([
     [PROMPT_SYSTEM_NAME, 'metadata.name'],
     [PROMPT_SYSTEM_DESCRIPTION, 'metadata.description'],
+    [PROMPT_SYSTEM_TYPE, 'spec.type'],
     [PROMPT_SYSTEM_OWNER, 'spec.owner'],
     [PROMPT_SYSTEM_DOMAIN, 'spec.domain'],
+    [PROMPT_TAGS, 'metadata.tags'],
   ])('formats $0.name with its Backstage path', (prompt, path) => {
     const message = getPromptToLongMessage(prompt);
     expect(message).toContain(prompt.message);

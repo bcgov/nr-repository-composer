@@ -15,6 +15,7 @@
   - [nr-repository-composer](using/generators/nr-repository-composer.md)
   - [backstage](using/generators/backstage.md)
   - [backstage-api](using/generators/backstage-api.md)
+  - [backstage-system](using/generators/backstage-system.md)
   - [backstage-instances](using/generators/backstage-instances.md)
   - [backstage-location](using/generators/backstage-location.md)
   - [gh-common-mono-build](using/generators/gh-common-mono-build.md)

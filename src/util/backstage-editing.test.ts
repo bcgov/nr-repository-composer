@@ -3,6 +3,7 @@ import * as os from 'node:os';
 import * as path from 'node:path';
 import { Document } from 'yaml';
 import ApiGenerator from '../backstage-api/index.js';
+import ComponentGenerator from '../backstage/index.js';
 import InstancesGenerator from '../backstage-instances/index.js';
 import { BackstageStorage } from './backstage.storage.js';
 import { BackstageInstancesStorage } from '../backstage-instances/storage.js';
@@ -27,6 +28,7 @@ jest.mock('./base-generator.js', () => ({ BaseGenerator: class {} }));
 describe.each(['API', 'instances'])('%s index editing', (kind) => {
   let tmpDir: string;
   let configPath: string;
+  let previousCwd: string;
   const questions =
     kind === 'API'
       ? [
@@ -41,12 +43,17 @@ describe.each(['API', 'instances'])('%s index editing', (kind) => {
       : [PROMPT_INSTANCE_ENV, PROMPT_INSTANCE_NAME, PROMPT_INSTANCE_URL];
 
   beforeEach(() => {
+    previousCwd = process.cwd();
     tmpDir = fs.mkdtempSync(path.join(os.tmpdir(), 'backstage-editing-'));
+    fs.mkdirSync(path.join(tmpDir, '.git'));
+    fs.writeFileSync(path.join(tmpDir, '.git', 'config'), '[core]\n');
+    process.chdir(tmpDir);
     configPath = path.join(tmpDir, 'catalog-info.yaml');
     jest.spyOn(console, 'log').mockImplementation(() => {});
   });
 
   afterEach(() => {
+    process.chdir(previousCwd);
     fs.rmSync(tmpDir, { recursive: true, force: true });
     jest.restoreAllMocks();
   });
@@ -180,6 +187,64 @@ describe.each(['API', 'instances'])('%s index editing', (kind) => {
   );
 
   if (kind === 'API') {
+    it('defaults the API system to a System in the same catalog', async () => {
+      const storage = createStorage(1);
+      fs.appendFileSync(
+        configPath,
+        '\n---\nkind: System\nmetadata:\n  name: artist-portal\nspec:\n  owner: artists\n',
+      );
+      const { completion, prompt } = run(storage, {
+        index: 0,
+        'ask-answered': true,
+      });
+      await completion;
+
+      expect(
+        prompt.mock.calls[0][0].find(
+          (question) => question.name === PROMPT_API_SYSTEM.name,
+        )?.default,
+      ).toBe('artist-portal');
+    });
+
+    it('suggests a System without overwriting the component project', () => {
+      createStorage(1);
+      fs.appendFileSync(
+        configPath,
+        '\n---\nkind: System\nmetadata:\n  name: artist-portal\nspec:\n  owner: artists\n',
+      );
+      const context = {
+        _questions: [] as PromptQuestion[],
+      };
+      const storage = new BackstageStorage(
+        'test',
+        BACKSTAGE_KIND_COMPONENT,
+        undefined,
+        configPath,
+      );
+      storage.setPath('projectName', 'existing-project');
+      ComponentGenerator.prototype._prePrompt.call(context);
+
+      expect(
+        context._questions.find((question) => question.name === 'projectName')
+          ?.default,
+      ).toBe('artist-portal');
+      expect(storage.getPath('projectName')).toBe('existing-project');
+    });
+
+    it('keeps an existing API system on a headless rerun', async () => {
+      const storage = createStorage(1);
+      storage.setPath('apiSystem', 'existing-system');
+      fs.appendFileSync(
+        configPath,
+        '\n---\nkind: System\nmetadata:\n  name: artist-portal\nspec:\n  owner: artists\n',
+      );
+      const { completion, prompt } = run(storage, { headless: true });
+      await completion;
+
+      expect(prompt).not.toHaveBeenCalled();
+      expect(storage.getPath('apiSystem')).toBe('existing-system');
+    });
+
     it('rejects API names already used in the selected namespace', async () => {
       const storage = createStorage(3);
       const docs = storage.kindDocs(BACKSTAGE_KIND_API);

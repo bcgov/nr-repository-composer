@@ -15,7 +15,14 @@ import {
   PROMPT_API_DEFINITION,
   PROMPT_API_OWNER,
   PROMPT_API_TYPE,
+  PROMPT_SYSTEM_NAME,
+  PROMPT_SYSTEM_DESCRIPTION,
+  PROMPT_SYSTEM_OWNER,
+  PROMPT_SYSTEM_DOMAIN,
+  PROMPT_SYSTEM_TYPE,
+  PROMPT_TAGS,
   PROMPT_TO_USAGE,
+  getPromptToLongMessage,
   getPromptToUsage,
 } from './prompts.js';
 import { STANDARD_ENVIRONMENTS } from './instances.js';
@@ -34,6 +41,7 @@ describe('prompt definitions', () => {
     expect(PROMPT_NODE_VERSION.default).toBe('24');
     expect(PROMPT_JAVA_VERSION.default).toBe('8');
     expect(PROMPT_AUTO_DEPLOY_EPHEMERAL.default).toBe(false);
+    expect(PROMPT_SYSTEM_TYPE.default).toBe('product');
   });
 
   it('derives the artifact repository path from the repository type', () => {
@@ -84,6 +92,14 @@ describe('prompt definitions', () => {
     expect(PROMPT_API_DEFINITION.validate('openapi: "3.0.0"')).toBe(true);
     expect(PROMPT_API_DEFINITION.validate('')).not.toBe(true);
   });
+
+  it('requires valid System names and non-empty owners', () => {
+    expect(PROMPT_SYSTEM_NAME.validate('artist-portal')).toBe(true);
+    expect(PROMPT_SYSTEM_NAME.validate('Bad name')).not.toBe(true);
+    expect(PROMPT_SYSTEM_NAME.validate('')).not.toBe(true);
+    expect(PROMPT_SYSTEM_OWNER.validate('group:artists')).toBe(true);
+    expect(PROMPT_SYSTEM_OWNER.validate('  ')).not.toBe(true);
+  });
 });
 
 describe('getPromptToUsage', () => {
@@ -103,5 +119,33 @@ describe('getPromptToUsage', () => {
   it('omits the example line when none is defined', () => {
     const usage = getPromptToUsage(PROMPT_DESCRIPTION);
     expect(usage).not.toContain('Example:');
+  });
+});
+
+describe('getPromptToLongMessage', () => {
+  it.each([
+    [PROMPT_SYSTEM_NAME, 'metadata.name'],
+    [PROMPT_SYSTEM_DESCRIPTION, 'metadata.description'],
+    [PROMPT_SYSTEM_TYPE, 'spec.type'],
+    [PROMPT_SYSTEM_OWNER, 'spec.owner'],
+    [PROMPT_SYSTEM_DOMAIN, 'spec.domain'],
+    [PROMPT_TAGS, 'metadata.tags'],
+  ])('formats $0.name with its Backstage path', (prompt, path) => {
+    const message = getPromptToLongMessage(prompt);
+    expect(message).toContain(prompt.message);
+    expect(message).toContain('\n❯');
+    expect(message).toContain(`Backstage: ${path}`);
+  });
+
+  it('includes the Backstage path for document-backed prompts', () => {
+    const message = getPromptToLongMessage(PROMPT_DESCRIPTION);
+    expect(message).toContain(PROMPT_DESCRIPTION.message);
+    expect(message).toContain('Backstage: metadata.description');
+  });
+
+  it('omits the Backstage path for composer-owned prompts', () => {
+    const message = getPromptToLongMessage(PROMPT_NODE_VERSION);
+    expect(message).toContain(PROMPT_NODE_VERSION.message);
+    expect(message).not.toContain('Backstage:');
   });
 });

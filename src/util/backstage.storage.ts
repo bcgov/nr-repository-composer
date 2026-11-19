@@ -8,6 +8,7 @@ import {
   BACKSTAGE_KIND_COMPONENT,
   BACKSTAGE_KIND_LOCATION,
   BACKSTAGE_KIND_NRCOMPOSER,
+  BACKSTAGE_KIND_SYSTEM,
   NRCOMPOSER_ANSWERS_PATH,
   NRCOMPOSER_API_VERSION,
   addGeneratorToDoc,
@@ -22,15 +23,17 @@ import {
   pathToProps,
 } from './yaml.js';
 
-const MULTI_DOCUMENT_KINDS: Record<
+const KIND_PROMPTS: Record<
   string,
   {
+    multiple?: boolean;
     required: string[];
     requiredPrompts: string[];
     prompts: Record<string, string[]>;
   }
 > = {
   [BACKSTAGE_KIND_API]: {
+    multiple: true,
     required: ['spec', 'definition'],
     requiredPrompts: [
       'apiName',
@@ -49,6 +52,18 @@ const MULTI_DOCUMENT_KINDS: Record<
       apiDefinition: ['spec', 'definition'],
     },
   },
+  [BACKSTAGE_KIND_SYSTEM]: {
+    required: ['spec', 'owner'],
+    requiredPrompts: ['systemName', 'systemOwner'],
+    prompts: {
+      systemName: ['metadata', 'name'],
+      systemDescription: ['metadata', 'description'],
+      systemType: ['spec', 'type'],
+      systemOwner: ['spec', 'owner'],
+      systemDomain: ['spec', 'domain'],
+      tags: ['metadata', 'tags'],
+    },
+  },
 };
 
 // The generator that creates each catalog entity kind.
@@ -56,6 +71,7 @@ const KIND_GENERATORS: Record<string, string> = {
   [BACKSTAGE_KIND_API]: 'backstage-api',
   [BACKSTAGE_KIND_COMPONENT]: 'backstage',
   [BACKSTAGE_KIND_LOCATION]: 'backstage-location',
+  [BACKSTAGE_KIND_SYSTEM]: 'backstage-system',
 };
 
 export class BackstageStorage {
@@ -88,7 +104,7 @@ export class BackstageStorage {
       .map((doc) => String(doc.get('kind')));
     const duplicate = kinds.find(
       (kind, index) =>
-        !MULTI_DOCUMENT_KINDS[kind] && kinds.indexOf(kind) !== index,
+        !KIND_PROMPTS[kind]?.multiple && kinds.indexOf(kind) !== index,
     );
     if (duplicate) {
       throw new Error(
@@ -171,7 +187,7 @@ export class BackstageStorage {
    */
   kindDoc(kind: string, index: number): Document {
     const docs = this.kindDocs(kind);
-    const max = MULTI_DOCUMENT_KINDS[kind] ? docs.length : 0;
+    const max = KIND_PROMPTS[kind]?.multiple ? docs.length : 0;
     if (!Number.isInteger(index) || index < 0 || index > max) {
       throw new Error(
         `${kind} index ${index} is out of range: ${docs.length} ${kind} document(s) exist.`,
@@ -265,19 +281,22 @@ export class BackstageStorage {
       : undefined;
   }
 
-  /** Prompt fields stored on the selected repeated kind document. */
+  /** Prompt fields stored on the selected kind document. */
   private get docPrompts() {
-    return MULTI_DOCUMENT_KINDS[String(this.backstageDoc.get('kind'))]?.prompts;
+    return KIND_PROMPTS[String(this.backstageDoc.get('kind'))]?.prompts;
   }
 
   private getDocPrompt(name: string): unknown {
-    const config = MULTI_DOCUMENT_KINDS[String(this.backstageDoc.get('kind'))];
+    const config = KIND_PROMPTS[String(this.backstageDoc.get('kind'))];
     const path = config?.prompts[name];
     if (!path) {
       return undefined;
     }
     const value = this.backstageDoc.getIn(path);
     if (value !== undefined) {
+      if (propRecord[name]?.csv && isSeq(value)) {
+        return value.toJSON().join();
+      }
       return value;
     }
     if (config.requiredPrompts.includes(name)) {
@@ -287,18 +306,25 @@ export class BackstageStorage {
   }
 
   private setDocPrompt(name: string, value: unknown) {
+    const csv = propRecord[name]?.csv === true;
     const trimmed = typeof value === 'string' ? value.trim() : value;
     const path =
-      MULTI_DOCUMENT_KINDS[String(this.backstageDoc.get('kind'))]?.prompts[
-        name
-      ];
+      KIND_PROMPTS[String(this.backstageDoc.get('kind'))]?.prompts[name];
     if (!path) {
       return;
     }
     if (trimmed === null || trimmed === undefined || trimmed === '') {
       this.backstageDoc.deleteIn(path);
     } else {
-      this.backstageDoc.setIn(path, trimmed);
+      this.backstageDoc.setIn(
+        path,
+        csv && typeof value === 'string'
+          ? value
+              .split(',')
+              .map((item) => item.trim())
+              .filter(Boolean)
+          : trimmed,
+      );
     }
   }
 

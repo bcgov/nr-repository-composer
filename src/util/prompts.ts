@@ -132,6 +132,42 @@ export const PROMPT_API_DEFINITION: PromptQuestion = {
     Boolean(input.trim()) || 'API definition is required',
 };
 
+export const PROMPT_SYSTEM_NAME: PromptQuestion = {
+  type: 'input',
+  name: 'systemName',
+  message: 'System name:',
+  validate: alphaDashValidate,
+};
+
+export const PROMPT_SYSTEM_DESCRIPTION: PromptQuestion = {
+  type: 'input',
+  name: 'systemDescription',
+  message: 'System description (optional):',
+  default: '',
+};
+
+export const PROMPT_SYSTEM_OWNER: PromptQuestion = {
+  type: 'input',
+  name: 'systemOwner',
+  message: 'System owner:',
+  validate: (input: string) =>
+    Boolean(input.trim()) || 'System owner is required',
+};
+
+export const PROMPT_SYSTEM_DOMAIN: PromptQuestion = {
+  type: 'input',
+  name: 'systemDomain',
+  message: 'System domain (optional):',
+  default: '',
+};
+
+export const PROMPT_SYSTEM_TYPE: PromptQuestion = {
+  type: 'input',
+  name: 'systemType',
+  message: 'System type (e.g., product, service, feature-set):',
+  default: 'product',
+};
+
 /**
  * Deployed-instance prompts used by the `backstage-instances` generator.
  * Answers are stored on a Component metadata.links entry.
@@ -609,6 +645,27 @@ export const PROMPT_TO_USAGE: Record<
     description:
       'Required YAML/JSON API definition, or a path to a definition file in the repository',
     example: 'openapi: "3.0.0"',
+  },
+  systemName: {
+    description: 'Unique Backstage name for the System entity',
+    example: 'artist-engagement-portal',
+  },
+  systemDescription: {
+    description: 'Optional summary of the system',
+  },
+  systemOwner: {
+    description:
+      'Entity reference for the team or person responsible for the system',
+    example: 'artist-relations-team',
+  },
+  systemDomain: {
+    description:
+      'Optional entity reference for the domain containing the system',
+    example: 'artists',
+  },
+  systemType: {
+    description: 'Optional type of the system',
+    example: 'product',
   },
   lifecycle: {
     description:

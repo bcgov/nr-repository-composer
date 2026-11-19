@@ -30,7 +30,7 @@ which should contain the `catalog-info.yaml` for it.
 | **Project / Service** | Identifiers for the build; `Service` names the generated workflow. |
 | **Type** | `service`, `website`, or `library`. A `library` skips packaging/publishing (only `deploy` runs). |
 | **License** | SPDX license (default `Apache-2.0`) embedded in the build. |
-| **Client ID** | Broker client ID; becomes the `BROKER_JWT` secret name. Blank falls back to the `BROKER_JWT` secret. |
+| **Client ID** | Selects the Broker JWT secret. A blank Client ID supplies an empty token, just like an unset secret. |
 | **GitHub Slug** | `<organization>/<repository>`; pre-filled from the git remote. |
 | **OCI Artifacts** | JSON array of `[{"artifact":...,"output":...}]` static assets pulled from other builds (see [OCI Artifacts](../oci-artifacts.md#static-assets)). |
 | **Published files/folders** | Artifact contents to publish (default `dist`); skipped for `library` type. |
@@ -38,6 +38,10 @@ which should contain the `catalog-info.yaml` for it.
 | **Deployment config paths** | Comma-separated deployment configuration paths (default `charts`); see [Deployment Configuration](../oci-artifacts.md#deployment-configuration). |
 | **Artifact repository type / path** | `GitHubPackages` (default) or `JFrogArtifactory`; the path defaults from the slug/type. |
 | **Tools / local build secrets** | Comma-separated secret names the build needs; local secrets default to the tools list. |
+
+At runtime, a missing, invalid, expired, or revoked Broker token, a connection error/timeout, or an unsuccessful token-validation HTTP response emits a warning and allows the build to continue without Broker release checks or intention recording. Only the token-validation step tolerates failure for builds; failed tests and cancellations still block the build. Successfully validated tokens retain Broker release checks and intention recording.
+
+Without successful Broker token validation, tagged builds skip the check for an already-recorded release, so a version may be rebuilt and republished. No new build intention ID is produced. Generated deployment workflows still require successful Broker token validation.
 
 **Suggested Next Steps:**
 

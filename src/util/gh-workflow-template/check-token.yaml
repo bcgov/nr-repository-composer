@@ -3,6 +3,10 @@ name: Check token expiration
 on:
   workflow_call:
     inputs:
+      allow_untracked_build:
+        description: "Warn and permit an untracked build if token validation fails"
+        default: false
+        type: boolean
       url:
         description: "The Broker URL"
         default: https://broker.io.nrs.gov.bc.ca
@@ -11,11 +15,17 @@ on:
       token:
         description: "The Broker token"
         required: true
+    outputs:
+      valid:
+        description: "Whether Broker token validation succeeded"
+        value: ${{ jobs.check-jwt.outputs.valid }}
 permissions: {}
 
 jobs:
   check-jwt:
     name: Check broker token
+    outputs:
+      valid: ${{ steps.validate.outcome == 'success' }}
 <% if (customRunner.startsWith('group:')) { -%>
     runs-on:
       <%= customRunner %>
@@ -38,16 +48,26 @@ jobs:
           fi
 
       - name: Check token expiration
+        id: validate
+        continue-on-error: ${{ inputs.allow_untracked_build }}
+        env:
+          BROKER_JWT: ${{ secrets.token }}
+          BROKER_URL: ${{ inputs.url }}
         shell: bash
         run: |
-          TOKEN_CHECK_URL="${{ inputs.url }}/v1/health/token-check"
+          if [[ -z "$BROKER_JWT" ]]; then
+            echo "Error: Broker token is empty."
+            exit 1
+          fi
+          TOKEN_CHECK_URL="${BROKER_URL}/v1/health/token-check"
           CURL_ERR_FILE=$(mktemp)
 
           set +e
           RESPONSE_CODE=$(curl -o /dev/null -sS -w "%{http_code}" -X 'GET' \
             "$TOKEN_CHECK_URL" \
             -H 'accept: */*' \
-            -H 'Authorization: Bearer '"${{ secrets.token }}"'' \
+            -H "Authorization: Bearer ${BROKER_JWT}" \
+            --fail \
             --retry 2 \
             --retry-all-errors \
             --max-time 30 \
@@ -92,3 +112,12 @@ jobs:
           else
             echo "Response code: $RESPONSE_CODE"
           fi
+          if [[ ! "$RESPONSE_CODE" =~ ^2[0-9][0-9]$ ]]; then
+            echo "Error: Broker token validation returned an unsuccessful HTTP response."
+            exit 1
+          fi
+
+      - name: Warn about untracked build
+        if: ${{ !cancelled() && inputs.allow_untracked_build && steps.validate.outcome == 'failure' }}
+        shell: bash
+        run: echo "::warning::Broker token validation failed. Building without Broker checks or intention recording; release versions may be republished. Deployment still requires successful Broker validation."

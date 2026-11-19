@@ -5,7 +5,7 @@ on:
     secrets:
       token:
         description: "The Broker token"
-        required: true
+        required: false
     inputs:
       catalog_info:
         description: "The catalog file"
@@ -23,6 +23,8 @@ on:
         required: false
         type: string
     outputs:
+      broker_enabled:
+        value: ${{ jobs.check-jwt.outputs.valid == 'true' }}
       can_rebuild:
         value: ${{ jobs.set-check-outputs.outputs.can_rebuild }}
 permissions:
@@ -30,11 +32,38 @@ permissions:
   actions: read
 
 jobs:
+  broker-config:
+    name: Check Broker configuration
+    runs-on: ubuntu-latest
+    outputs:
+      enabled: ${{ steps.check.outputs.enabled }}
+    steps:
+      - name: Check Broker secret
+        id: check
+        env:
+          BROKER_JWT: ${{ secrets.token }}
+          PREFLIGHT_CONTEXT: ${{ inputs.preflight_context }}
+        shell: bash
+        run: |
+          if [[ -n "$BROKER_JWT" ]]; then
+            echo "enabled=true" >> "$GITHUB_OUTPUT"
+          elif [[ "$PREFLIGHT_CONTEXT" == "build" ]]; then
+            echo "::warning::Broker secret is empty. Building without Broker checks or intention recording; release versions may be republished."
+            echo "enabled=false" >> "$GITHUB_OUTPUT"
+          else
+            echo "::error::Broker secret is required for deployment."
+            exit 1
+          fi
+
   check-jwt:
     name: Check broker token
     uses: ./.github/workflows/check-token.yaml
     secrets:
       token: ${{ secrets.token }}
+    with:
+      allow_untracked_build: ${{ inputs.preflight_context == 'build' }}
+    needs: broker-config
+    if: ${{ needs.broker-config.outputs.enabled == 'true' }}
 
   check-build-artifact:
     name: Check build artifact
@@ -51,15 +80,16 @@ jobs:
       token: ${{ secrets.token }}
     with:
       catalog_info: ${{ inputs.catalog_info }}
-    if: ${{ inputs.preflight_context == 'build' && github.ref_type == 'tag' }}
+    needs: check-jwt
+    if: ${{ inputs.preflight_context == 'build' && github.ref_type == 'tag' && needs.check-jwt.outputs.valid == 'true' }}
 
   set-check-outputs:
     name: Set check outputs
     runs-on: ubuntu-latest
     outputs:
       can_rebuild: ${{ steps.set-can-rebuild.outputs.can_rebuild }}
-    needs: check-release-package
-    if: ${{ always() && inputs.preflight_context == 'build' }}
+    needs: [broker-config, check-jwt, check-release-package]
+    if: ${{ !cancelled() && inputs.preflight_context == 'build' && needs.broker-config.result == 'success' && (needs.check-jwt.result == 'success' || needs.check-jwt.result == 'skipped') && (needs.check-release-package.result == 'success' || needs.check-release-package.result == 'skipped') }}
     steps:
       - name: Display runner public IP
         shell: bash
@@ -76,8 +106,12 @@ jobs:
           fi
 
       - id: set-can-rebuild
+        env:
+          BROKER_ENABLED: ${{ needs.check-jwt.outputs.valid == 'true' }}
         run: |
-          if [[ "${{ github.ref_type }}" == "tag" ]]; then
+          if [[ "$BROKER_ENABLED" == "false" ]]; then
+            echo "can_rebuild=true" >> $GITHUB_OUTPUT
+          elif [[ "${{ github.ref_type }}" == "tag" ]]; then
             echo "can_rebuild=${{ needs.check-release-package.outputs.can_rebuild }}" >> $GITHUB_OUTPUT
           elif [[ "${{ github.ref_type }}" == "branch" ]]; then
             echo "can_rebuild=true" >> $GITHUB_OUTPUT

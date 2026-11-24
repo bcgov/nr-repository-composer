@@ -195,6 +195,7 @@ jobs:
           BUILD_TOKEN: ${{ env.ACTION_TOKEN_BUILD }}
       - name: Publish library artifact
         if: ${{ '<%= type %>' == 'library' }}
+        working-directory: ./
         run: |
           source ./env.sh build ./<%= relativePath %> --skip-vault
           PACKAGE_DIR="${PUBLISH_DIR:-<%= publishDirectory %>}"

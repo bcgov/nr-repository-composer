@@ -24,7 +24,7 @@ jobs:
   <%= service.name %>:
     uses: ./<%= service.workflow %>
 <% if (service.serviceNeeds.length > 0) { -%>
-  needs: [<%= service.serviceNeeds.join(', ') %>]
+    needs: [<%= service.serviceNeeds.join(', ') %>]
 <% } -%>
     secrets: inherit
 <% } -%>

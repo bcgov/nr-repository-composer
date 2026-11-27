@@ -191,15 +191,10 @@ export function copyCommonDeploymentConfigWorkflow(
   const allPaths = new Set(additionalPaths);
   allPaths.add('catalog-info.yaml'); // Always include root catalog-info.yaml for scanning
   for (const service of services) {
-    const configPaths = service.composerDoc.getIn([
-      'spec',
-      'answers',
-      'deploymentConfigPaths',
-    ]);
-    if (configPaths) {
+    if (answers.deploymentConfigPaths) {
       const serviceDir = path.dirname(service.path);
       allPaths.add(service.path);
-      String(configPaths)
+      String(answers.deploymentConfigPaths)
         .split(',')
         .map((p) => path.join(serviceDir, p.trim()))
         .filter(Boolean)
@@ -349,9 +344,9 @@ export function updateReadmeWithPipelineGuide(generator) {
   const services = scanRepositoryForComponents();
 
   const templateData = {
-    hasMavenBuild: services.some((s) =>
-      hasGeneratorInDoc(s.composerDoc, 'gh-maven-build'),
-    ),
+    hasMavenBuild:
+      generator._getGeneratorName() == 'gh-maven-build' ||
+      services.some((s) => hasGeneratorInDoc(s.composerDoc, 'gh-maven-build')),
     services,
     isMonorepo: services.length > 1,
   };

@@ -170,6 +170,24 @@ build_container_args() {
     printf '%s' "$args"
 }
 
+# Check that the docker/podman is logged into the container registry
+if [ "$PULL_IMAGE" = "true" ]; then
+  if ! $CONTAINER_CMD manifest inspect "$IMAGE" &> /dev/null; then
+    echo "Error: unable to fetch $IMAGE" >&2
+    if [ "$CONTAINER_CMD" = "podman" ] && $CONTAINER_CMD login --get-login ghcr.io &> /dev/null; then
+      echo "This may be caused by invalid or expired credentials." >&2
+      echo "Run '$CONTAINER_CMD login ghcr.io' first to authenticate and fix this error." >&2
+    else
+      if [ "$CONTAINER_CMD" = "docker" ]; then
+        echo "A common cause is invalid or expired credentials." >&2
+        echo "Run '$CONTAINER_CMD login ghcr.io' to authenticate." >&2
+      fi
+      echo "Try '$CONTAINER_CMD manifest inspect $IMAGE' to review the error." >&2
+    fi
+    exit 1
+  fi
+fi
+
 # Dispatch to --all discovery or a single generator run.
 #
 # --all is handled inside the container: the image's entrypoint runs the

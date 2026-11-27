@@ -99,6 +99,11 @@ The script:
 - **Passes all options** to the generator
 - **Discovers all generators** — pass `--all` to re-run every generator recorded in the catalog (see [Command Options](command-options.md#--all))
 
+> **Note:** When pulling the latest image (ie. default `PULL_IMAGE="true"`) and podman
+> or docker has stored credentials for ghcr.io (ex. `podman login ghcr.io`) they must be
+> valid. If the credentials are invalid the script will fail and suggest setting valid
+> credentials with `podman login ghcr.io`
+
 **Using a local image:**
 
 Pass `--local` as the first argument to run against a locally built image
